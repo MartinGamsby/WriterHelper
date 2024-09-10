@@ -49,7 +49,7 @@ Window {
             Layout.fillWidth: true
             LeftMenu {
                 Layout.fillWidth: false
-                width: 300
+                width: 500
                 clip: true
             }
             
@@ -64,8 +64,10 @@ Window {
 
                     Text {
                         anchors {
-                            bottom: parent.bottom
-                            bottomMargin: 12
+                            //bottom: parent.bottom
+                            //bottomMargin: 12
+                            top: parent.top
+                            topMargin: 12
                             left: parent.left
                             leftMargin: 12
                         }

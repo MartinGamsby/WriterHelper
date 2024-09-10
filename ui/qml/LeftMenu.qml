@@ -30,7 +30,7 @@ Flickable {
             Layout.fillWidth: true            
             //desc: ""
             
-            TextInput {
+            TextField {
                 Layout.fillWidth: true
                 text: "text"
                                     
@@ -39,6 +39,26 @@ Flickable {
                 }
             }
         }
+        Rectangle {
+            width: parent.width
+            height: 400
+            TextArea {
+                id: contentEdit
+                anchors.fill: parent
+                text: "content"
+                                    
+                onEditingFinished: {
+                    root.backend.set_content(text)
+                }
+            }
+            Timer {
+                id: timer
+                interval: 3000
+                running: true
+                repeat: true
+                onTriggered: contentEdit.onEditingFinished()
+            }
+        }        
         
         Setting { 
             name: "Int select"

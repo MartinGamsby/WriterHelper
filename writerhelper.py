@@ -10,7 +10,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import QTimer, QObject, Signal, Slot
 
 from time import strftime, localtime
-from threading import Thread
+import model
 
 
 data = ""
@@ -18,10 +18,11 @@ data = ""
 
 # --------------- Backend of the UI --------------
 class Backend(QObject):
-    updated = Signal(str, arguments=['time'])
+    updated = Signal(str, arguments=['time']) 
 
     def __init__(self):
         super().__init__()
+        self.model = model.ArticleModel()
 
         # Define timer.
         self.timer = QTimer()
@@ -44,11 +45,16 @@ class Backend(QObject):
 
     @Slot(str, result=bool)
     def set_title(self, text):
-        #print("set_title", text)
+        # TODO: It's only taking from the UI, it should read from the model at the beginning in the UI, so we can save? (At some point... We don't need MVC for now...)
+        self.model.title = text
+        self.update_data()
         
-        global data
-        data = text
-        self.update_string()
+    @Slot(str, result=bool)
+    def set_content(self, text):
+        if self.model.content != text:
+            self.model.content = text
+            self.update_data()
+        
         
     @Slot(int, result=bool)
     def set_int_select(self, idx):
@@ -58,6 +64,11 @@ class Backend(QObject):
     def set_bool(self, enabled):
         print("set_bool", enabled)
 
+    def update_data(self):    
+        global data
+        data = self.model.content_md()
+        self.update_string()
+        
     def get_time(self):
         return strftime("%H:%M:%S", localtime())
 
@@ -71,7 +82,7 @@ class Backend(QObject):
 backend = None
 
 def run_ui():
-    sys.argv += ['--style', 'Fusion']
+    #sys.argv += ['--style', 'Fusion']
     app = QApplication(sys.argv)
     backend = Backend()
 
@@ -82,16 +93,12 @@ def run_ui():
     # Initial call to trigger first update. Must be after the setProperty to connect signals.
     backend.update_string()
 
-    #thread = Thread(target=run_demo)
-    #thread.start()
-
     app.exec()
 
 
 
 
 def main():
-    p = None
     try:
         run_ui()
     except KeyboardInterrupt as e:
@@ -101,9 +108,6 @@ def main():
         print("[ERROR] Exception received %s" % str(e))
         QApplication.instance().quit()
         raise
-    finally:
-        if p:
-            p.terminate()
 
 
 if __name__ == '__main__':
