@@ -28,14 +28,15 @@ Flickable {
         Setting { 
             name: "Title"
             Layout.fillWidth: true            
-            //desc: ""
+            desc: root.backend? root.backend.data().slug : "Loading"
             
             TextField {
+                id: titleEdit
                 Layout.fillWidth: true
-                text: "text"
+                text: "Title"
                                     
                 onEditingFinished: {
-                    root.backend.set_title(text)
+                    root.backend.data().set_title(text)
                 }
             }
         }
@@ -45,20 +46,36 @@ Flickable {
             TextArea {
                 id: contentEdit
                 anchors.fill: parent
-                text: "content"
+                text: "Content"
                                     
                 onEditingFinished: {
-                    root.backend.set_content(text)
+                    root.backend.data().set_content(text)
                 }
             }
-            Timer {
-                id: timer
-                interval: 3000
-                running: true
-                repeat: true
-                onTriggered: contentEdit.onEditingFinished()
-            }
         }        
+        
+        Setting { 
+            name: "Posts path"
+            Layout.fillWidth: true
+            
+            TextField {
+                id: postsPathEdit
+                Layout.fillWidth: true
+                text: "."
+                
+                Connections {
+                    target: backend
+
+                    function onInitialized() {
+                        postsPathEdit.text = root.backend.data().get_posts_folder()
+                    }
+                }
+                                    
+                onEditingFinished: {
+                    root.backend.data().set_posts_path(text)
+                }
+            }
+        }
         
         Setting { 
             name: "Int select"
@@ -72,7 +89,7 @@ Flickable {
                 stepSize: 1
                                     
                 onValueModified: {
-                    root.backend.set_int_select(value)
+                    root.backend.data().set_int_select(value)
                 }            
             }
         }
@@ -84,13 +101,23 @@ Flickable {
                 checked: true
                                     
                 onToggled: {
-                    root.backend.set_bool(checked)
+                    root.backend.data().set_bool(checked)
                 }            
             }
         }
         
         Label {
                 Layout.fillHeight: true            
+        }
+        Timer {
+            id: timer
+            interval: 1000 // 3000
+            running: true
+            repeat: true
+            onTriggered: {
+                contentEdit.onEditingFinished()
+                titleEdit.onEditingFinished()
+            }
         }
     }
 }
