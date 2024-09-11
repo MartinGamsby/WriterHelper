@@ -10,8 +10,17 @@ Flickable {
     Layout.fillHeight: true
     
     boundsBehavior: Flickable.StopAtBounds
-    contentHeight: 1000// I don't have time for this shit columnLayout.height
-    
+    contentHeight: 2000// I don't have time for this shit columnLayout.height
+
+    Connections {
+        target: backend
+
+        function onInitialized() {
+            postsPathEdit.text = root.backend.data().get_posts_folder()
+            imageEdit.text = root.backend.data().get_excerpt_image()
+        }
+    }
+                 
     ColumnLayout
     {
         id: columnLayout
@@ -29,6 +38,7 @@ Flickable {
             name: "Title"
             Layout.fillWidth: true            
             desc: root.backend? root.backend.data().slug : "Loading"
+            enabled: !cbTitle.checked
             
             TextField {
                 id: titleEdit
@@ -43,16 +53,92 @@ Flickable {
         Rectangle {
             width: parent.width
             height: 400
+            color: cbContent.checked ? "#aaa" : "white"
             TextArea {
                 id: contentEdit
                 anchors.fill: parent
                 text: "Content"
+                readOnly: cbContent.checked
                                     
                 onEditingFinished: {
                     root.backend.data().set_content(text)
                 }
             }
-        }        
+        }
+        Button {
+            text: "Translate"
+            enabled: !cbTranslate.checked
+            onClicked: { 
+                root.backend.data().translate()
+            }
+        }
+        // TODO: Translate tags
+        Setting { 
+            name: "Tags"
+            Layout.fillWidth: true            
+            desc: root.backend? root.backend.get_used_tags() : "Loading"
+            TextField {
+                id: tagsEdit
+                Layout.fillWidth: true
+                text: ""                                    
+                onEditingFinished: {
+                    root.backend.data().set_tags(text)
+                }
+            }
+        }
+        Setting { 
+            name: "Links"
+            
+            GridLayout {
+                columns: 2
+                Label { text: "Medium" }
+                TextField {
+                    Layout.fillWidth: true
+                    text: ""
+                                        
+                    onEditingFinished: {
+                        root.backend.data().set_link("Medium", text)
+                    }
+                }
+                Label { text: "X" }
+                TextField {
+                    Layout.fillWidth: true
+                    text: ""
+                                        
+                    onEditingFinished: {
+                        root.backend.data().set_link("Version courte: X/Twitter", text)
+                    }
+                }
+                Label { text: "[EN] Typeshare" }
+                TextField {
+                    Layout.fillWidth: true
+                    text: ""
+                                        
+                    onEditingFinished: {
+                        root.backend.data().set_link("Version anglaise: Typeshare", text)
+                    }
+                }
+            }
+        }
+        Setting { 
+            name: "Image"
+            Layout.fillWidth: true
+            
+            desc: root.backend? root.backend.data().excerpt_img : "Loading"
+            //Image{
+            //    source : root.backend.data().excerpt_img_local()
+            //    width: 100
+            //    height: 100
+            //}
+            TextField {
+                id: imageEdit
+                Layout.fillWidth: true
+                text: ""                                    
+                onEditingFinished: {
+                    root.backend.data().set_excerpt_image(text)
+                }
+            }
+        }
         
         Setting { 
             name: "Posts path"
@@ -62,49 +148,41 @@ Flickable {
                 id: postsPathEdit
                 Layout.fillWidth: true
                 text: "."
-                
-                Connections {
-                    target: backend
-
-                    function onInitialized() {
-                        postsPathEdit.text = root.backend.data().get_posts_folder()
-                    }
-                }
-                                    
+                       
                 onEditingFinished: {
-                    root.backend.data().set_posts_path(text)
+                    root.backend.data().set_posts_folder(text)
                 }
             }
         }
         
-        Setting { 
-            name: "Int select"
-            desc: "0==x, 1==y"
-            
-            SpinBox {
-                Layout.fillWidth: true
-                from: 0
-                to: 1
-                value: 0
-                stepSize: 1
-                                    
-                onValueModified: {
-                    root.backend.data().set_int_select(value)
-                }            
-            }
-        }
-        Setting { 
-            name: "Enable bool"
-            
-            CheckBox {
-                Layout.fillWidth: true
-                checked: true
-                                    
-                onToggled: {
-                    root.backend.data().set_bool(checked)
-                }            
-            }
-        }
+        //Setting { 
+        //    name: "Int select"
+        //    desc: "0==x, 1==y"
+        //    
+        //    SpinBox {
+        //        Layout.fillWidth: true
+        //        from: 0
+        //        to: 1
+        //        value: 0
+        //        stepSize: 1
+        //                            
+        //        onValueModified: {
+        //            root.backend.data().set_int_select(value)
+        //        }            
+        //    }
+        //}
+        //Setting { 
+        //    name: "Enable bool"
+        //    
+        //    CheckBox {
+        //        Layout.fillWidth: true
+        //        checked: true
+        //                            
+        //        onToggled: {
+        //            root.backend.data().set_bool(checked)
+        //        }            
+        //    }
+        //}
         
         Label {
                 Layout.fillHeight: true            

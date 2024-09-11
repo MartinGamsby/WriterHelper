@@ -67,7 +67,7 @@ class Backend(QObject):
             self.initialized.emit()
             
         data = self.model.content_md()
-        self.create_file(self.model.posts_folder, self.model.filename_escaped(), content=data)
+        self.create_file(self.model.get_posts_folder(), self.model.filename_escaped(), content=data)
         self.updated.emit(data)
 
 
@@ -105,7 +105,7 @@ class Backend(QObject):
             new_file = os.path.join(folder, filename)
             with open(new_file, "w") as file:
                 file.write(content)
-            print("Wrote '%s'" % new_file)
+            #print("Wrote '%s'" % new_file)
             
             
             if self.last_filename != filename:
@@ -116,3 +116,41 @@ class Backend(QObject):
                         print("Deleting old name ", self.last_filename)
                 self.last_filename = filename
             
+    # ====================================================================================
+    @Slot(None, result=str)
+    def get_used_tags(self):
+        tags = {}
+        
+        folder = self.model.get_posts_folder()
+        date_str = self.get_date_str()
+                
+        if os.path.isdir(folder):
+            for f in os.listdir(folder):
+                full_f = os.path.join(folder,f)
+                if f.endswith("md") and not f.startswith(date_str):
+                    print(full_f)
+                    with open(full_f, mode="r", encoding="utf-8") as f:
+                        #f.read()
+                        #print(full_f, f.read())
+                                        
+                        # Strips the newline character
+                        for line in f.readlines():
+                            if line.startswith("tags"):
+                                start = line.index("[")+1
+                                end = line.index("]")
+                                l = line[start:end]                                
+                                t = l.split(",")
+                                for tag in t:
+                                    if not tag in tags:
+                                        tags[tag] = 1
+                                    else:
+                                        tags[tag] += 1
+        #print(tags)
+        sorted_tags = sorted(tags.items(), key=lambda x:x[1], reverse=True)
+        
+        tags_str = ""
+        for t in sorted_tags:
+            tags_str += t[0] + ","
+        return tags_str
+        #return ",".join(tags)
+        

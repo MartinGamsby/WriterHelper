@@ -15,12 +15,12 @@ Rectangle {
     implicitWidth: delegateLayout.width+margin*2+smallMargin*2
     implicitHeight: delegateLayout.height+margin*2+smallMargin*2
     
-    color: "white"//#eee"
+    color: enabled ? "white" : "#aaa"
     
     default property alias content: rowLayout.children
     
     Rectangle {
-        color: "#eee"//#ceb640
+        color: enabled ? "#eee" : "#999"
         radius: 5
         
         implicitWidth: delegateLayout.width
@@ -51,6 +51,9 @@ Rectangle {
                     color: "gray"
                     padding: 5
                     visible: setting.desc
+                    Layout.fillWidth: true
+                    width: 300
+                    wrapMode: Text.WordWrap
                 }
             }
           //Rectangle { color: "silver"; height: 1; Layout.fillWidth: true }//SEPARATOR!!
