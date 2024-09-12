@@ -10,7 +10,7 @@ Flickable {
     Layout.fillHeight: true
     
     boundsBehavior: Flickable.StopAtBounds
-    contentHeight: 2000// I don't have time for this shit columnLayout.height
+    contentHeight: 4000// I don't have time for this shit columnLayout.height
 
     Connections {
         target: backend
@@ -52,18 +52,22 @@ Flickable {
         }
         Rectangle {
             width: parent.width
-            height: 400
+            height: 2400
             color: cbContent.checked ? "#aaa" : "white"
-            TextArea {
-                id: contentEdit
-                anchors.fill: parent
-                text: "Content"
-                readOnly: cbContent.checked
-                                    
-                onEditingFinished: {
-                    root.backend.data().set_content(text)
+            
+            //TODO: ScrollView {
+            //anchors.fill:parent
+                TextArea {
+                    id: contentEdit
+                    anchors.fill: parent
+                    text: "Content"
+                    readOnly: cbContent.checked
+                                        
+                    onEditingFinished: {
+                        root.backend.data().set_content(text)
+                    }
                 }
-            }
+            //}
         }
         Button {
             text: "Translate"
