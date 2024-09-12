@@ -110,7 +110,8 @@ class ArticleModel(QObject):
     def footer_md(self) -> str:
         footer = ""
         for l in self.links:
-            footer += "- [%s](%s)\n" % (l.text, l.url)
+            if l.url:
+                footer += "- [%s](%s)\n" % (l.text, l.url)
         return footer
         
     @Slot(None, result=str)
