@@ -20,6 +20,7 @@ class ArticleModel(QObject):
     excerpt_image: str = "/assets/images/default-image.jpeg"
     #tags = []
     tags = ""#[]
+    mini: bool = False
     
     links = []
     
@@ -104,8 +105,10 @@ class ArticleModel(QObject):
         print("set_int_select", idx)
     
     @Slot(bool, result=bool)
-    def set_bool(self, enabled):
-        print("set_bool", enabled)
+    def set_mini(self, mini):
+        self.mini = mini
+        self.updated.emit()
+        
         
     def footer_md(self) -> str:
         footer = ""
@@ -118,7 +121,16 @@ class ArticleModel(QObject):
     def get_tags(self):
         return self.tags#(",".join(self.tags))
         
-    
+    def categories(self):
+        categories = ["Langue: Français","Langue: Anglais","Gamsblurb"]
+        if self.mini:
+            categories.insert(0,"Longueur: Mini")
+        else:
+            categories.insert(0,"Longueur: Court")
+            
+        # double quotes instead of single:
+        return "[%s]" % ", ".join(map(lambda e: '"%s"' % e, categories))
+        #return str(categories)
         
     def content_md(self) -> str:
         if os.path.isdir(self.config["Paths"]["Posts"]):
@@ -129,6 +141,7 @@ class ArticleModel(QObject):
                 .replace("<CONTENT>", self.content) \
                 .replace("<TAGS>", self.get_tags()) \
                 .replace("<FOOTER>", self.footer_md()) \
+                .replace("<CATEGORIES>", self.categories()) \
                 
                 
             #return "# %s\n\n%s" % (self.title, self.content)

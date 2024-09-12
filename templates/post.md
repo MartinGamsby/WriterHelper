@@ -1,7 +1,7 @@
 ---
 layout: post
 title: <TITLE>
-categories: ["Longueur: Court","Langue: Français","Langue: Anglais","Gamsblurb"]
+categories: <CATEGORIES>
 tags: [<TAGS>,Gamsblurb]
 excerpt_image: <EXCERPT_IMAGE>
 

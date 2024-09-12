@@ -34,6 +34,19 @@ Flickable {
             padding: 5
         }
         
+        //Setting { 
+        //    name: "Mini (vs Court)"
+            
+            CheckBox {
+                Layout.fillWidth: true
+                checked: false
+                text: "Mini (vs Court)"
+                                    
+                onToggled: {
+                    root.backend.data().set_mini(checked)
+                }            
+            }
+        //}
         Setting { 
             name: "Title"
             Layout.fillWidth: true            
@@ -172,18 +185,6 @@ Flickable {
         //                            
         //        onValueModified: {
         //            root.backend.data().set_int_select(value)
-        //        }            
-        //    }
-        //}
-        //Setting { 
-        //    name: "Enable bool"
-        //    
-        //    CheckBox {
-        //        Layout.fillWidth: true
-        //        checked: true
-        //                            
-        //        onToggled: {
-        //            root.backend.data().set_bool(checked)
         //        }            
         //    }
         //}
