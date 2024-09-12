@@ -103,7 +103,7 @@ class Backend(QObject):
             #    print("File for %s already exists" % filename)
             #else:
             new_file = os.path.join(folder, filename)
-            with open(new_file, "w") as file:
+            with open(new_file, "w", encoding="utf-8") as file:
                 file.write(content)
             #print("Wrote '%s'" % new_file)
             
