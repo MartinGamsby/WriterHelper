@@ -10,7 +10,7 @@ Flickable {
     Layout.fillHeight: true
     
     boundsBehavior: Flickable.StopAtBounds
-    contentHeight: 4000// I don't have time for this shit columnLayout.height
+    contentHeight: 2000// I don't have time for this shit columnLayout.height
 
     Connections {
         target: backend
@@ -63,24 +63,41 @@ Flickable {
                 }
             }
         }
+
         Rectangle {
             width: parent.width
-            height: 2400
+            height: 400
             color: cbContent.checked ? "#aaa" : "white"
+            Flickable {
+              id: flickable
+              flickableDirection: Flickable.VerticalFlick
+              anchors.fill: parent
+
+              TextArea.flickable: TextArea {
+                  id: contentEdit
+                  //textFormat: Qt.RichText
+                  wrapMode: TextArea.Wrap
+                  focus: true
+                  selectByMouse: true
+                  persistentSelection: true
+                  leftPadding: 6
+                  rightPadding: 6
+                  topPadding: 6
+                  bottomPadding: 6
+                  background: null
             
-            //TODO: ScrollView {
-            //anchors.fill:parent
-                TextArea {
-                    id: contentEdit
-                    anchors.fill: parent
-                    text: "Content"
-                    readOnly: cbContent.checked
-                                        
-                    onEditingFinished: {
-                        root.backend.data().set_content(text)
-                    }
-                }
-            //}
+                  onEditingFinished: {
+                      root.backend.data().set_content(text)
+                  }
+                  //MouseArea {
+                  //    acceptedButtons: Qt.RightButton
+                  //    anchors.fill: parent
+                  //    onClicked: contextMenu.open()
+                  //}
+              }
+
+              ScrollBar.vertical: ScrollBar {}
+            }
         }
         Button {
             text: "Translate"
