@@ -56,6 +56,12 @@ Flickable {
                         model().set_posts_folder(text)
                     }
                 }
+                TextField {
+                    text: root.backend ? model().p_website_url : "..."                           
+                    onEditingFinished: {
+                        model().set_website_url(text)
+                    }
+                }
             //}
         }
         Setting { 

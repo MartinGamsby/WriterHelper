@@ -41,9 +41,10 @@ class ArticleModel(QObject):
         self.hl = hl
         self.config = configparser.ConfigParser()
         self.config['Paths'] = {'Posts': '.'}
-        print("Default", self.config["Paths"]["Posts"])
+        self.config['URLs'] = {'Website': 'http://'}
         self.load_config()
-        print("Loaded", self.config["Paths"]["Posts"])
+        print("Loaded", self.hl, self.config["Paths"]["Posts"])
+        print("Loaded", self.hl, self.config["URLs"]["Website"])
         
         self.load_templates()
         #self.translator = Translator()
@@ -53,7 +54,7 @@ class ArticleModel(QObject):
         self.ref = ref
     def get_ref(self):
         if self.ref:
-            return filemanager.ContentFile().get_date_slug(self.ref.get_slug())
+            return self.ref.get_website_url() + self.ref.get_slug()
         return ""
         
     # ====================================================================================    
@@ -86,6 +87,18 @@ class ArticleModel(QObject):
             self.write_config()
             self.updated.emit()
     p_posts_folder = Property(str, get_posts_folder, set_posts_folder, notify=updated)
+    
+    # ====================================================================================    
+    @Slot(None, result=str)
+    def get_website_url(self):
+        return self.config["URLs"]["Website"]
+    @Slot(str, result=bool)
+    def set_website_url(self, text):
+        if self.config["URLs"]["Website"] != text:
+            self.config["URLs"]["Website"] = text
+            self.write_config()
+            self.updated.emit()
+    p_website_url = Property(str, get_website_url, set_website_url, notify=updated)
             
     # ====================================================================================    
     @Slot(None, result=str)
