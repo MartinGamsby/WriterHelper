@@ -11,7 +11,6 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import QTimer, QObject, Signal, Slot
 
 from time import strftime, localtime
-import model
 import backend as bak
 
 
@@ -30,9 +29,6 @@ def run_ui():
     engine.quit.connect(backend.quit)
 
     engine.rootObjects()[0].setProperty('backend', backend)
-    # Initial call to trigger first update. Must be after the setProperty to connect signals.
-    backend.on_model_updated()
-
     app.exec()
 
 

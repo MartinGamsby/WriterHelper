@@ -5,68 +5,79 @@ import QtQuick.Controls
 import QtQuick.Controls.Material 2.12
 
 Flickable {
-    id: todoList
+    id: menu
     Layout.fillWidth: true
     Layout.fillHeight: true
     
     boundsBehavior: Flickable.StopAtBounds
     contentHeight: 2000// I don't have time for this shit columnLayout.height
-
-    Connections {
-        target: backend
-
-        function onInitialized() {
-            postsPathEdit.text = root.backend.data().get_posts_folder()
-            imageEdit.text = root.backend.data().get_excerpt_image()
-        }
-    }
-                 
+    
+    required property string hl
+    
+    function model(){
+        return root.backend.article(menu.hl) // TODO: Set as a variable
+    }                 
     ColumnLayout
     {
         id: columnLayout
         anchors.fill: parent
         anchors.margins: 0
-        Label {
-            text: "Settings"
-            width: parent.width
-            horizontalAlignment: Text.AlignHCenter
-            font.pointSize: 15
-            padding: 5
-        }
+        RowLayout {
+            Label {
+                text: menu.hl + " Article"
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                font.pointSize: 15
+                padding: 5
+            }
         
         //Setting { 
         //    name: "Mini (vs Court)"
             
             CheckBox {
-                Layout.fillWidth: true
                 checked: false
                 text: "Mini (vs Court)"
                                     
                 onToggled: {
-                    root.backend.data().set_mini(checked)
+                    model().set_mini(checked)
                 }            
             }
         //}
+        
+            //Setting { 
+            //    name: "Posts path"
+            //    Layout.fillWidth: true
+                
+                TextField {
+                    id: postsPathEdit
+                    text: root.backend ? model().p_posts_folder : "..."
+                           
+                    onEditingFinished: {
+                        model().set_posts_folder(text)
+                    }
+                }
+            //}
+        }
         Setting { 
-            name: "Title"
+            //name: "Title"
             Layout.fillWidth: true            
-            desc: root.backend? root.backend.data().slug : "Loading"
+            desc: root.backend ? model().p_slug : "..."
             enabled: !cbTitle.checked
             
             TextField {
                 id: titleEdit
                 Layout.fillWidth: true
-                text: "Title"
+                text: root.backend ? model().p_title : "..."
                                     
                 onEditingFinished: {
-                    root.backend.data().set_title(text)
+                    model().set_title(text)
                 }
             }
         }
 
         Rectangle {
             width: parent.width
-            height: 400
+            height: 240
             color: cbContent.checked ? "#aaa" : "white"
             Flickable {
               id: flickable
@@ -85,9 +96,11 @@ Flickable {
                   topPadding: 6
                   bottomPadding: 6
                   background: null
+                  
+                  text: root.backend ? model().p_content : "..."
             
                   onEditingFinished: {
-                      root.backend.data().set_content(text)
+                      model().set_content(text)
                   }
                   //MouseArea {
                   //    acceptedButtons: Qt.RightButton
@@ -103,20 +116,20 @@ Flickable {
             text: "Translate"
             enabled: !cbTranslate.checked
             onClicked: { 
-                root.backend.data().translate()
+                root.backend.translate(menu.hl)
             }
         }
         // TODO: Translate tags
         Setting { 
             name: "Tags"
             Layout.fillWidth: true            
-            desc: root.backend? root.backend.get_used_tags() : "Loading"
+            desc: root.backend? root.backend.get_used_tags(menu.hl) : "Loading"
             TextField {
                 id: tagsEdit
                 Layout.fillWidth: true
-                text: ""                                    
+                text: root.backend ? model().p_tags : "..."
                 onEditingFinished: {
-                    root.backend.data().set_tags(text)
+                    model().set_tags(text)
                 }
             }
         }
@@ -128,28 +141,36 @@ Flickable {
                 Label { text: "Medium" }
                 TextField {
                     Layout.fillWidth: true
-                    text: ""
-                                        
                     onEditingFinished: {
-                        root.backend.data().set_link("Medium", text)
+                        model().set_link("Medium", text)
                     }
                 }
                 Label { text: "X" }
                 TextField {
                     Layout.fillWidth: true
-                    text: ""
-                                        
                     onEditingFinished: {
-                        root.backend.data().set_link("Version courte: X/Twitter", text)
+                        model().set_link("X/Twitter", text)
                     }
                 }
-                Label { text: "[EN] Typeshare" }
+                Label { text: "Typeshare" }
                 TextField {
                     Layout.fillWidth: true
-                    text: ""
-                                        
                     onEditingFinished: {
-                        root.backend.data().set_link("Version anglaise: Typeshare", text)
+                        model().set_link("Typeshare", text)
+                    }
+                }
+                Label { text: "LinkedIn" }
+                TextField {
+                    Layout.fillWidth: true
+                    onEditingFinished: {
+                        model().set_link("LinkedIn", text)
+                    }
+                }
+                Label { text: "Facebook" }
+                TextField {
+                    Layout.fillWidth: true                                        
+                    onEditingFinished: {
+                        model().set_link("Facebook", text)
                     }
                 }
             }
@@ -158,60 +179,31 @@ Flickable {
             name: "Image"
             Layout.fillWidth: true
             
-            desc: root.backend? root.backend.data().excerpt_img : "Loading"
+            //desc: root.backend? model().p_excerpt_img : "Loading"
             //Image{
-            //    source : root.backend.data().excerpt_img_local()
-            //    width: 100
-            //    height: 100
+            //    source : model().excerpt_img_local()
             //}
             TextField {
                 id: imageEdit
                 Layout.fillWidth: true
-                text: ""                                    
+                text: root.backend ? model().p_excerpt_img : "..."
                 onEditingFinished: {
-                    root.backend.data().set_excerpt_image(text)
+                    model().set_excerpt_img(text)
                 }
             }
         }
-        
-        Setting { 
-            name: "Posts path"
-            Layout.fillWidth: true
-            
-            TextField {
-                id: postsPathEdit
-                Layout.fillWidth: true
-                text: "."
-                       
-                onEditingFinished: {
-                    root.backend.data().set_posts_folder(text)
-                }
-            }
+
+        TextArea {
+            text: root.backend ? model().p_content_md : "..."
+            wrapMode: Text.WrapAnywhere
+            readOnly: true
         }
-        
-        //Setting { 
-        //    name: "Int select"
-        //    desc: "0==x, 1==y"
-        //    
-        //    SpinBox {
-        //        Layout.fillWidth: true
-        //        from: 0
-        //        to: 1
-        //        value: 0
-        //        stepSize: 1
-        //                            
-        //        onValueModified: {
-        //            root.backend.data().set_int_select(value)
-        //        }            
-        //    }
-        //}
-        
         Label {
                 Layout.fillHeight: true            
         }
         Timer {
             id: timer
-            interval: 1000 // 3000
+            interval: 2000 // 3000
             running: true
             repeat: true
             onTriggered: {

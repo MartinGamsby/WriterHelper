@@ -28,7 +28,7 @@ Rectangle {
         anchors.centerIn: parent
         ColumnLayout {
             id: delegateLayout
-            width: todoList.width-margin*2-smallMargin-2//1:border right
+            width: menu.width-margin*2-smallMargin-2//1:border right
             
             ColumnLayout {
                 spacing: 0//9

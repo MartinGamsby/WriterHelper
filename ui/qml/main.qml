@@ -16,9 +16,7 @@ Window {
     
     color: "lightgray"
     Material.accent: Material.Teal
-
     
-    property string debugString: "Debug string from backend"
     property QtObject backend
     
     
@@ -78,55 +76,16 @@ Window {
             }
             LeftMenu {
                 Layout.fillWidth: false
-                width: 640
+                width: 480
                 clip: true
+                hl: "fr"
             }
-            
-            Rectangle {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: "transparent"
-
-                    RowLayout {
-                        Text {
-                            anchors {
-                                //bottom: parent.bottom
-                                //bottomMargin: 12
-                                top: parent.top
-                                topMargin: 12
-                                left: parent.left
-                                leftMargin: 12
-                            }
-                            text: debugString
-                            wrapMode: Text.WrapAnywhere
-                        }
-                        ColumnLayout {
-                            TextArea {
-                                text: root.backend? root.backend.data().title_en : "Loading"
-                                readOnly: true
-                            }
-                            TextArea {
-                                text: root.backend? root.backend.data().content_en : "Loading"
-                                readOnly: true
-                            }
-                        }
-                    }                        
-                }
-
-            }
-
-            Connections {
-                target: backend
-
-                function onUpdated(msg) {
-                    debugString = msg;
-                    
-                }
-            }
-            
+            LeftMenu {
+                Layout.fillWidth: false
+                width: 480
+                clip: true
+                hl: "en"
+            }            
         }
         Label {
             id: bottomPart
