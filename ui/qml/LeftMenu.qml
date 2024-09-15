@@ -14,9 +14,9 @@ Flickable {
     
     required property string hl
     
-    function model(){
-        return root.backend.article(menu.hl) // TODO: Set as a variable
-    }                 
+    property QtObject hl_model: root.backend ? root.backend.article(hl) : null
+    
+    
     ColumnLayout
     {
         id: columnLayout
@@ -39,7 +39,7 @@ Flickable {
                 text: "Mini (vs Court)"
                                     
                 onToggled: {
-                    model().set_mini(checked)
+                    hl_model.set_mini(checked)
                 }            
             }
         //}
@@ -50,16 +50,16 @@ Flickable {
                 
                 TextField {
                     id: postsPathEdit
-                    text: root.backend ? model().p_posts_folder : "..."
+                    text: hl_model ? hl_model.p_posts_folder : "..."
                            
                     onEditingFinished: {
-                        model().set_posts_folder(text)
+                        hl_model.set_posts_folder(text)
                     }
                 }
                 TextField {
-                    text: root.backend ? model().p_website_url : "..."                           
+                    text: hl_model ? hl_model.p_website_url : "..."                           
                     onEditingFinished: {
-                        model().set_website_url(text)
+                        hl_model.set_website_url(text)
                     }
                 }
             //}
@@ -67,16 +67,16 @@ Flickable {
         Setting { 
             //name: "Title"
             Layout.fillWidth: true            
-            desc: root.backend ? model().p_slug : "..."
+            desc: hl_model ? hl_model.p_slug : "..."
             enabled: !cbTitle.checked
             
             TextField {
                 id: titleEdit
                 Layout.fillWidth: true
-                text: root.backend ? model().p_title : "..."
+                text: hl_model ? hl_model.p_title : "..."
                                     
                 onEditingFinished: {
-                    model().set_title(text)
+                    hl_model.set_title(text)
                 }
             }
         }
@@ -103,10 +103,10 @@ Flickable {
                   bottomPadding: 6
                   background: null
                   
-                  text: root.backend ? model().p_content : "..."
+                  text: hl_model ? hl_model.p_content : "..."
             
                   onEditingFinished: {
-                      model().set_content(text)
+                      hl_model.set_content(text)
                   }
                   //MouseArea {
                   //    acceptedButtons: Qt.RightButton
@@ -133,9 +133,9 @@ Flickable {
             TextField {
                 id: tagsEdit
                 Layout.fillWidth: true
-                text: root.backend ? model().p_tags : "..."
+                text: hl_model ? hl_model.p_tags : "..."
                 onEditingFinished: {
-                    model().set_tags(text)
+                    hl_model.set_tags(text)
                 }
             }
         }
@@ -148,35 +148,35 @@ Flickable {
                 TextField {
                     Layout.fillWidth: true
                     onEditingFinished: {
-                        model().set_link("Medium", text)
+                        hl_model.set_link("Medium", text)
                     }
                 }
                 Label { text: "X" }
                 TextField {
                     Layout.fillWidth: true
                     onEditingFinished: {
-                        model().set_link("X/Twitter", text)
+                        hl_model.set_link("X/Twitter", text)
                     }
                 }
                 Label { text: "Typeshare" }
                 TextField {
                     Layout.fillWidth: true
                     onEditingFinished: {
-                        model().set_link("Typeshare", text)
+                        hl_model.set_link("Typeshare", text)
                     }
                 }
                 Label { text: "LinkedIn" }
                 TextField {
                     Layout.fillWidth: true
                     onEditingFinished: {
-                        model().set_link("LinkedIn", text)
+                        hl_model.set_link("LinkedIn", text)
                     }
                 }
                 Label { text: "Facebook" }
                 TextField {
                     Layout.fillWidth: true                                        
                     onEditingFinished: {
-                        model().set_link("Facebook", text)
+                        hl_model.set_link("Facebook", text)
                     }
                 }
             }
@@ -185,22 +185,22 @@ Flickable {
             name: "Image"
             Layout.fillWidth: true
             
-            //desc: root.backend? model().p_excerpt_img : "Loading"
+            //desc: root.backend? hl_model.p_excerpt_img : "Loading"
             //Image{
-            //    source : model().excerpt_img_local()
+            //    source : hl_model.excerpt_img_local()
             //}
             TextField {
                 id: imageEdit
                 Layout.fillWidth: true
-                text: root.backend ? model().p_excerpt_img : "..."
+                text: hl_model ? hl_model.p_excerpt_img : "..."
                 onEditingFinished: {
-                    model().set_excerpt_img(text)
+                    hl_model.set_excerpt_img(text)
                 }
             }
         }
 
         TextArea {
-            text: root.backend ? model().p_content_md : "..."
+            text: hl_model ? hl_model.p_content_md : "..."
             wrapMode: Text.WrapAnywhere
             readOnly: true
         }
@@ -213,8 +213,11 @@ Flickable {
             running: true
             repeat: true
             onTriggered: {
-                contentEdit.onEditingFinished()
-                titleEdit.onEditingFinished()
+                if( titleEdit.activeFocus )
+                    hl_model.set_title(titleEdit.text)
+                
+                if( contentEdit.activeFocus )
+                    hl_model.set_content(contentEdit.text)
             }
         }
     }

@@ -63,7 +63,7 @@ class Backend(QObject):
             for f in os.listdir(folder):
                 full_f = os.path.join(folder,f)
                 if f.endswith("md") and not f.startswith(date_str):
-                    print(full_f)
+                    #print(full_f)
                     with open(full_f, mode="r", encoding="utf-8") as f:
                         #f.read()
                         #print(full_f, f.read())

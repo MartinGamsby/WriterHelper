@@ -63,7 +63,7 @@ class ArticleModel(QObject):
         
     # ====================================================================================    
     def load_templates(self):        
-        with open(os.path.join('templates', 'post.md'), mode="r", encoding="utf-8") as f:
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates', 'post.md'), mode="r", encoding="utf-8") as f:
             self.template_post_md = f.read()
         
     def config_filename(self):
@@ -172,7 +172,7 @@ class ArticleModel(QObject):
         return self.excerpt_image
     p_excerpt_img = Property(str, get_excerpt_img, set_excerpt_img, notify=updated)
                         
-            
+    #TODO: set_link is weird since bilingual? mixed them? See footer_md?
     # ====================================================================================    
     @Slot(str, str, result=bool)
     def set_link(self, text, url):
@@ -183,12 +183,7 @@ class ArticleModel(QObject):
                 return True
         self.links.append(Link(url=url, text=text))
         self.updated.emit()
-        return True        
-    @Slot(str, result=bool)
-    def set_link_medium(self, text):
-        if self.title != text:
-            self.title = text
-            self.updated.emit()
+        return True
             
     
     # ====================================================================================    
