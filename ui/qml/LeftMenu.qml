@@ -66,7 +66,6 @@ Flickable {
         }
         Setting { 
             //name: "Title"
-            Layout.fillWidth: true            
             desc: hl_model ? hl_model.p_slug : "..."
             enabled: !cbTitle.checked
             
@@ -94,14 +93,14 @@ Flickable {
                   id: contentEdit
                   //textFormat: Qt.RichText
                   wrapMode: TextArea.Wrap
-                  focus: true
+                  //focus: true
                   selectByMouse: true
                   persistentSelection: true
                   leftPadding: 6
                   rightPadding: 6
                   topPadding: 6
                   bottomPadding: 6
-                  background: null
+                  //background: null
                   
                   text: hl_model ? hl_model.p_content : "..."
             
@@ -127,8 +126,7 @@ Flickable {
         }
         // TODO: Translate tags
         Setting { 
-            name: "Tags"
-            Layout.fillWidth: true            
+            name: "Tags"          
             desc: root.backend? root.backend.get_used_tags(menu.hl) : "Loading"
             TextField {
                 id: tagsEdit
@@ -183,7 +181,6 @@ Flickable {
         }
         Setting { 
             name: "Image"
-            Layout.fillWidth: true
             
             //desc: root.backend? hl_model.p_excerpt_img : "Loading"
             //Image{
