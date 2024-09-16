@@ -30,7 +30,7 @@ class ArticleModel(QObject):
     mini: bool = False
     ref = None
     delete_last = True
-    
+    date: str = filemanager.ContentFile().get_date_str()    
     links = []
     
     updated = Signal()
@@ -64,8 +64,9 @@ class ArticleModel(QObject):
     # ====================================================================================    
     def on_updated(self):
         #TODO: get_date_str(), OR override (add a textEdit..)
+        ##
         self.content_file.create_file(self.get_posts_folder(), self.get_slug(), 
-            content=self.content_md(), delete_last=self.delete_last)
+            content=self.content_md(), delete_last=self.delete_last, date_override=self.date)
         
     # ====================================================================================    
     def load_templates(self):        
@@ -117,6 +118,17 @@ class ArticleModel(QObject):
             self.title = text
             self.updated.emit()
     p_title = Property(str, get_title, set_title, notify=updated)
+    
+    # ====================================================================================    
+    @Slot(None, result=str)
+    def get_date(self):
+        return self.date        
+    @Slot(str, result=bool)
+    def set_date(self, date):
+        if self.date != date:
+            self.date = date
+            self.updated.emit()
+    p_date = Property(str, get_date, set_date, notify=updated)
     
     # ====================================================================================
     def get_slug(self):
@@ -266,10 +278,12 @@ class ArticleModel(QObject):
         
         print("new article", self.hl)
         self.title = ""
+        self.date = filemanager.ContentFile().get_date_str()
         self.content = ""
         self.excerpt_image = "/assets/images/default-image.jpeg"
         self.tags = ""
         self.mini = False
+        self.links = []
         self.updated.emit()        
         
         self.delete_last = True
@@ -284,13 +298,16 @@ class ArticleModel(QObject):
         if file_name:
             with open(file_name, mode="r", encoding="utf-8") as f:
                 file_contents = f.read()
-            self.change_article(file_contents)
+            self.change_article(file_contents, os.path.basename(file_name)[:10])
         
-    def change_article(self, file_contents):
+    def change_article(self, file_contents, old_date):
         parts = file_contents.split("---")
         nb_parts = len(parts)
         if nb_parts >= 3:
             self.delete_last = False
+            
+            self.date = old_date
+            
             header = parts[1]
             content = parts[2]
             
@@ -298,12 +315,12 @@ class ArticleModel(QObject):
             cats = header["categories"]
             
             
-            self.title = header["title"]            
+            self.title = header["title"]
             self.content = content.replace("### **%s**"%self.title,"")
             self.excerpt_image = header["excerpt_image"]
             self.mini = self.get_length_category(mini=True) in cats
             self.tags = ",".join(header["tags"][:-1])
-            
+            self.links = []
            
             if nb_parts == 4:
                 footer = parts[3]
@@ -384,4 +401,8 @@ class ArticlesModel(QObject):
             
         if src.get_excerpt_img():
             dst.set_excerpt_img(src.get_excerpt_img())
+            
+        if src.get_date():
+            dst.set_date(src.get_date())
+            
         return True

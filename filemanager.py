@@ -20,7 +20,10 @@ class ContentFile():
 
     # ====================================================================================
     @staticmethod
-    def get_date_str():
+    def get_date_str(date_override=""):
+        #Stupid test... but there shouldn't be any wrong date, and if there is, nothing catastrophic will happen
+        if len(date_override) == 10 and date_override.startswith("20"):
+            return date_override
         n = datetime.now()
         date_str = n.strftime("%Y-%m-%d")
         return date_str
@@ -39,12 +42,12 @@ class ContentFile():
         return exists
         
     # ====================================================================================
-    def get_date_slug(self, slug):
-        return ContentFile.get_date_str() + "-" + slug
+    def get_date_slug(self, slug, date_override=""):
+        return ContentFile.get_date_str(date_override) + "-" + slug
         
     # ====================================================================================
-    def create_file(self, folder, filename, content, delete_last=True):
-        filename = self.get_date_slug(filename) + ".md"
+    def create_file(self, folder, filename, content, delete_last=True, date_override=""):
+        filename = self.get_date_slug(filename, date_override) + ".md"
         
         with self.file_lock:
             #if ContentFile.check_post_exists(folder, filename):

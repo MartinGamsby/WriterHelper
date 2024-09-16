@@ -85,13 +85,27 @@ Flickable {
             desc: hl_model ? hl_model.p_slug : "..."
             enabled: !cbTitle.checked
             
-            TextField {
-                id: titleEdit
-                Layout.fillWidth: true
-                text: hl_model ? hl_model.p_title : "..."
-                                    
-                onEditingFinished: {
-                    hl_model.set_title(text)
+            ColumnLayout {
+                TextField {
+                    id: titleEdit
+                    Layout.fillWidth: true
+                    text: hl_model ? hl_model.p_title : "..."
+                                        
+                    onEditingFinished: {
+                        hl_model.set_title(text)
+                    }
+                }
+                RowLayout {
+                    CheckBox {   
+                        id: cbDate
+                        checked: false
+                        text: "Date override"
+                    }
+                    TextField {
+                        Layout.fillWidth: true
+                        enabled: cbDate.checked//TODO: visible instead of enabled
+                        text: hl_model ? hl_model.p_date : "..."
+                    }
                 }
             }
         }
