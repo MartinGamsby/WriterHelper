@@ -43,7 +43,7 @@ class ContentFile():
         return ContentFile.get_date_str() + "-" + slug
         
     # ====================================================================================
-    def create_file(self, folder, filename, content):
+    def create_file(self, folder, filename, content, delete_last=True):
         filename = self.get_date_slug(filename) + ".md"
         
         with self.file_lock:
@@ -55,11 +55,11 @@ class ContentFile():
                 file.write(content)
             
             
-            if self.last_filename != filename:
+            if delete_last and self.last_filename != filename:
                 last_filename = os.path.join(folder, self.last_filename)
                 if os.path.isfile(last_filename):
                     if ContentFile.check_post_exists(folder, self.last_filename):
                         os.remove(last_filename)
                         print("Deleting old name ", self.last_filename)
-                self.last_filename = filename
+            self.last_filename = filename
             

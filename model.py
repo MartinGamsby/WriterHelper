@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 from PySide6.QtCore import QObject, Signal, Slot, Property
+from PySide6.QtWidgets import QFileDialog
 
 from unidecode import unidecode
+import re
 import configparser
 import os
 import re
+import yaml
 from deep_translator import GoogleTranslator
 
 import filemanager
@@ -26,6 +29,7 @@ class ArticleModel(QObject):
     tags = ""#[]
     mini: bool = False
     ref = None
+    delete_last = True
     
     links = []
     
@@ -59,7 +63,9 @@ class ArticleModel(QObject):
         
     # ====================================================================================    
     def on_updated(self):
-        self.content_file.create_file(self.get_posts_folder(), self.get_slug(), content=self.content_md())
+        #TODO: get_date_str(), OR override (add a textEdit..)
+        self.content_file.create_file(self.get_posts_folder(), self.get_slug(), 
+            content=self.content_md(), delete_last=self.delete_last)
         
     # ====================================================================================    
     def load_templates(self):        
@@ -183,7 +189,34 @@ class ArticleModel(QObject):
                 return True
         self.links.append(Link(url=url, text=text))
         self.updated.emit()
-        return True
+        return True  
+        
+    def get_link(self, name):
+        for l in self.links:
+            if l.text == name:
+                return l.url
+        return ""        
+    @Slot(None, result=str)
+    def get_link_medium(self):
+        return self.get_link("Medium")
+    @Slot(None, result=str)
+    def get_link_x(self):
+        return self.get_link("X/Twitter")
+    @Slot(None, result=str)
+    def get_link_Typeshare(self):
+        return self.get_link("Typeshare")
+    @Slot(None, result=str)
+    def get_link_LinkedIn(self):
+        return self.get_link("LinkedIn")
+    def get_link_Facebook(self):
+        return self.get_link("Facebook")
+
+    p_link_medium = Property(str, get_link_medium, notify=updated)
+    p_link_x = Property(str, get_link_x, notify=updated)
+    p_link_typeshare = Property(str, get_link_Typeshare, notify=updated)
+    p_link_linkedin = Property(str, get_link_LinkedIn, notify=updated)
+    p_link_facebook = Property(str, get_link_Facebook, notify=updated)
+    
             
     
     # ====================================================================================    
@@ -203,16 +236,95 @@ class ArticleModel(QObject):
         
         
     # ====================================================================================    
-    def categories(self):
-        categories = ["Langue: Français","Langue: Anglais","Gamsblurb"]
-        if self.mini:
-            categories.insert(0,"Longueur: Mini")
+    def get_length_category(self, mini):
+        # TODO: Use tr() instead...
+        if self.hl == "en":
+            if mini:
+                return "Length: Mini"
+            else:
+                return "Length: Short"
         else:
-            categories.insert(0,"Longueur: Court")
+            if mini:
+                return "Longueur: Mini"
+            else:
+                return "Longueur: Court"
+        
+    
+    # ====================================================================================    
+    def categories(self):
+        categories = ["Gamsblurb"]
+        categories.insert(0, self.get_length_category(mini=self.mini))
             
         # double quotes instead of single:
         return "[%s]" % ", ".join(map(lambda e: '"%s"' % e, categories))
-        #return str(categories)
+        #return str(categories)    
+    
+    # ====================================================================================     
+    @Slot(None, result=bool)
+    def new_article(self):
+        self.delete_last = False
+        
+        print("new article", self.hl)
+        self.title = ""
+        self.content = ""
+        self.excerpt_image = "/assets/images/default-image.jpeg"
+        self.tags = ""
+        self.mini = False
+        self.updated.emit()        
+        
+        self.delete_last = True
+        
+    # ====================================================================================     
+    @Slot(None, result=bool)
+    def open_article(self):
+        print("open article", self.hl)
+        (file_name, _) = QFileDialog.getOpenFileName(None, "Open Article",
+            self.get_posts_folder(),
+            "Markdown (*.md)")
+        if file_name:
+            with open(file_name, mode="r", encoding="utf-8") as f:
+                file_contents = f.read()
+            self.change_article(file_contents)
+        
+    def change_article(self, file_contents):
+        parts = file_contents.split("---")
+        nb_parts = len(parts)
+        if nb_parts >= 3:
+            self.delete_last = False
+            header = parts[1]
+            content = parts[2]
+            
+            header = yaml.full_load(header)
+            cats = header["categories"]
+            
+            
+            self.title = header["title"]            
+            self.content = content.replace("### **%s**"%self.title,"")
+            self.excerpt_image = header["excerpt_image"]
+            self.mini = self.get_length_category(mini=True) in cats
+            self.tags = ",".join(header["tags"][:-1])
+            
+           
+            if nb_parts == 4:
+                footer = parts[3]
+
+                # https://stackoverflow.com/questions/67940820/how-to-extract-markdown-links-with-a-regex
+                # Extract []() style links
+                link_name = "[^\[]+"
+                link_url = "http[s]?://.+"
+                markup_regex = f'\[({link_name})]\(\s*({link_url})\s*\)'
+
+                for match in re.findall(markup_regex, footer):
+                    name = match[0]
+                    url = match[1]
+                    self.set_link(name, url)
+                    print(url, name)
+        
+            self.updated.emit()
+            self.delete_last = True
+            return True
+        print("Couldn't parse the md file", nb_parts)
+        
         
     #@Slot(None, result=str)
     #def excerpt_img_local(self):
