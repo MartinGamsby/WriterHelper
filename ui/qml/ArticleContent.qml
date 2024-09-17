@@ -24,20 +24,6 @@ Flickable {
         anchors.margins: 0
             
         RowLayout {
-            Button {
-                text: "New"
-                onClicked: { 
-                    hl_model.new_article()
-                }
-            }
-            Button {
-                text: "Open"
-                onClicked: { 
-                    hl_model.open_article()
-                }
-            }
-        }
-        RowLayout {
             Label {
                 text: menu.hl + " Article"
                 width: parent.width
@@ -112,7 +98,7 @@ Flickable {
 
         Rectangle {
             width: parent.width
-            height: 240
+            height: 320
             color: cbContent.checked ? "#aaa" : "white"
             Flickable {
               id: flickable
@@ -146,96 +132,48 @@ Flickable {
 
               ScrollBar.vertical: ScrollBar {}
             }
-        }
-        Button {
-            text: "Translate"
-            enabled: !cbTranslate.checked
-            onClicked: { 
-                root.backend.translate(menu.hl)
+        }        
+        
+        Rectangle {
+            width: parent.width
+            height: 320
+            color: "#333"
+            Flickable {
+              flickableDirection: Flickable.VerticalFlick
+              anchors.fill: parent
+
+              TextArea.flickable: TextArea {
+                  color: "#aaa"
+                  wrapMode: TextArea.Wrap
+                  readOnly: true
+                  selectByMouse: true
+                  persistentSelection: true
+                  textFormat: TextEdit.RichText
+                  leftPadding: 6
+                  rightPadding: 6
+                  topPadding: 6
+                  bottomPadding: 6
+                  
+                  text: hl_model ? hl_model.p_content_md_rich : "..."
+              }
+              ScrollBar.vertical: ScrollBar {}
             }
         }
-        // TODO: Translate tags
-        Setting { 
-            name: "Tags"          
-            desc: root.backend? root.backend.get_used_tags(menu.hl) : "Loading"
-            TextField {
-                id: tagsEdit
-                Layout.fillWidth: true
-                text: hl_model ? hl_model.p_tags : "..."
-                onEditingFinished: {
-                    hl_model.set_tags(text)
-                }
-            }
-        }
-        Setting { 
-            name: "Links"
-            
-            GridLayout {
-                columns: 2
-                Label { text: "Medium" }
-                TextField {
-                    Layout.fillWidth: true
-                    text: hl_model ? hl_model.p_link_medium : "..."
-                    onEditingFinished: {
-                        hl_model.set_link("Medium", text)
-                    }
-                }
-                Label { text: "X/Twitter" }
-                TextField {
-                    Layout.fillWidth: true
-                    text: hl_model ? hl_model.p_link_x : "..."
-                    onEditingFinished: {
-                        hl_model.set_link("X/Twitter", text)
-                    }
-                }
-                Label { text: "Typeshare" }
-                TextField {
-                    Layout.fillWidth: true
-                    text: hl_model ? hl_model.p_link_typeshare : "..."
-                    onEditingFinished: {
-                        hl_model.set_link("Typeshare", text)
-                    }
-                }
-                Label { text: "LinkedIn" }
-                TextField {
-                    Layout.fillWidth: true
-                    text: hl_model ? hl_model.p_link_linkedin : "..."
-                    onEditingFinished: {
-                        hl_model.set_link("LinkedIn", text)
-                    }
-                }
-                Label { text: "Facebook" }
-                TextField {
-                    Layout.fillWidth: true     
-                    text: hl_model ? hl_model.p_link_facebook : "..."                                   
-                    onEditingFinished: {
-                        hl_model.set_link("Facebook", text)
-                    }
-                }
-            }
-        }
-        Setting { 
-            name: "Image"
-            
-            //desc: root.backend? hl_model.p_excerpt_img : "Loading"
-            //Image{
-            //    source : hl_model.excerpt_img_local()
-            //}
-            TextField {
-                id: imageEdit
-                Layout.fillWidth: true
-                text: hl_model ? hl_model.p_excerpt_img : "..."
-                onEditingFinished: {
-                    hl_model.set_excerpt_img(text)
-                }
-            }
+        
+        Flickable {
+          width: parent.width
+          height: 320
+          flickableDirection: Flickable.VerticalFlick
+
+          TextArea.flickable: TextArea {
+              wrapMode: TextArea.Wrap
+              readOnly: true
+              
+              text: hl_model ? hl_model.p_content_md : "..."
+          }
+          ScrollBar.vertical: ScrollBar {}
         }
 
-        TextArea {
-            text: hl_model ? hl_model.p_content_md : "..."
-            wrapMode: Text.WrapAnywhere
-            readOnly: true
-        }
         Label {
                 Layout.fillHeight: true            
         }

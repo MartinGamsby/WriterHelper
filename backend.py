@@ -38,7 +38,7 @@ class Backend(QObject):
     @Slot(str, result=bool)
     def translate(self, hl):
         return self.articles.translate(hl)
-        
+                
     # ====================================================================================
     @Slot(None, result=model.ArticlesModel)
     def articles(self):
@@ -62,7 +62,7 @@ class Backend(QObject):
         if os.path.isdir(folder):
             for f in os.listdir(folder):
                 full_f = os.path.join(folder,f)
-                if f.endswith("md") and not f.startswith(date_str):
+                if f.endswith("md") and not f.startswith(date_str):# For the current file
                     #print(full_f)
                     with open(full_f, mode="r", encoding="utf-8") as f:
                         #f.read()
@@ -76,16 +76,17 @@ class Backend(QObject):
                                 l = line[start:end]                                
                                 t = l.split(",")
                                 for tag in t:
-                                    if not tag in tags:
-                                        tags[tag] = 1
+                                    stripped = tag.strip()
+                                    if not stripped in tags:
+                                        tags[stripped] = 1
                                     else:
-                                        tags[tag] += 1
+                                        tags[stripped] += 1
         #print(tags)
         sorted_tags = sorted(tags.items(), key=lambda x:x[1], reverse=True)
         
         tags_str = ""
         for t in sorted_tags:
-            tags_str += t[0] + ","
+            tags_str += t[0] + ", "
         return tags_str
         #return ",".join(tags)
         

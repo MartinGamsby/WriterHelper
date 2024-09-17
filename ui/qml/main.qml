@@ -74,18 +74,30 @@ Window {
                     CheckBox { text: "10. GITHUB: Upload the article!" }
                 }
             }
-            LeftMenu {
+            ArticleContent {
                 Layout.fillWidth: false
                 width: 480
                 clip: true
                 hl: "fr"
             }
-            LeftMenu {
+            ArticleMeta {
+                Layout.fillWidth: false
+                width: 320
+                clip: true
+                hl: "fr"
+            }
+            ArticleContent {
                 Layout.fillWidth: false
                 width: 480
                 clip: true
                 hl: "en"
-            }            
+            }      
+            ArticleMeta {
+                Layout.fillWidth: false
+                width: 320
+                clip: true
+                hl: "en"
+            }      
         }
         Label {
             id: bottomPart

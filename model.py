@@ -8,6 +8,7 @@ import configparser
 import os
 import re
 import yaml
+import markdown
 from deep_translator import GoogleTranslator
 
 import filemanager
@@ -72,6 +73,8 @@ class ArticleModel(QObject):
     def load_templates(self):        
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates', 'post.md'), mode="r", encoding="utf-8") as f:
             self.template_post_md = f.read()
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates', 'post_content.md'), mode="r", encoding="utf-8") as f:
+            self.template_post_content_md = f.read()
         
     def config_filename(self):
         return 'settings_%s.ini' % self.hl
@@ -151,9 +154,9 @@ class ArticleModel(QObject):
     p_content = Property(str, get_content, set_content, notify=updated)
     
     # ====================================================================================   
-    def content_md(self) -> str:
+    def templated(self, template) -> str:
         if os.path.isdir(self.config["Paths"]["Posts"]):
-            content = self.template_post_md
+            content = template
             return content \
                 .replace("<TITLE>", self.title) \
                 .replace("<EXCERPT_IMAGE>", self.excerpt_image) \
@@ -164,8 +167,18 @@ class ArticleModel(QObject):
                 .replace("<REF>", self.get_ref())
         else:
             return "%s is not a folder" % self.config["Paths"]["Posts"]
+            
+    # ====================================================================================   
+    def content_md(self) -> str:
+        return self.templated(self.template_post_md)
     p_content_md = Property(str, content_md, notify=updated)
-             
+    
+    # ====================================================================================   
+    def content_md_rich(self) -> str:
+        md = self.templated(self.template_post_content_md)
+        return markdown.markdown(md)
+    p_content_md_rich = Property(str, content_md_rich, notify=updated)
+                 
             
     # ====================================================================================    
     @Slot(None, result=str)
@@ -220,6 +233,7 @@ class ArticleModel(QObject):
     @Slot(None, result=str)
     def get_link_LinkedIn(self):
         return self.get_link("LinkedIn")
+    @Slot(None, result=str)
     def get_link_Facebook(self):
         return self.get_link("Facebook")
 
