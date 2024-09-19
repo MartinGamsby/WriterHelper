@@ -134,35 +134,9 @@ Flickable {
             }
         }        
         
-        Rectangle {
-            width: parent.width
-            height: 320
-            color: "#333"
-            Flickable {
-              flickableDirection: Flickable.VerticalFlick
-              anchors.fill: parent
-
-              TextArea.flickable: TextArea {
-                  color: "#aaa"
-                  wrapMode: TextArea.Wrap
-                  readOnly: true
-                  selectByMouse: true
-                  persistentSelection: true
-                  textFormat: TextEdit.RichText
-                  leftPadding: 6
-                  rightPadding: 6
-                  topPadding: 6
-                  bottomPadding: 6
-                  
-                  text: hl_model ? hl_model.p_content_md_rich : "..."
-              }
-              ScrollBar.vertical: ScrollBar {}
-            }
-        }
-        
         Flickable {
           width: parent.width
-          height: 320
+          height: 180
           flickableDirection: Flickable.VerticalFlick
 
           TextArea.flickable: TextArea {
@@ -173,6 +147,59 @@ Flickable {
           }
           ScrollBar.vertical: ScrollBar {}
         }
+        RowLayout {
+            Label {
+                text: "Font size:"
+            }
+            SpinBox {
+                id: sbFontSize
+                value: 20
+                from: 8
+                to: 48
+                stepSize: 2
+            }
+            Label {
+                text: "Height:"
+            }
+            SpinBox {
+                id: sbHeight
+                value: 640
+                from: 320
+                to: 1280
+                stepSize: 80
+            }
+            CheckBox {
+                id: cbCentered
+                checked: false
+                text: "Centered"
+            }
+        }
+        Rectangle {
+            width: parent.width
+            height: sbHeight.value
+            color: "white"//"#333"
+            Flickable {
+              flickableDirection: Flickable.VerticalFlick
+              anchors.fill: parent
+
+              TextArea.flickable: TextArea {
+                  color: "black"//"#aaa"
+                  font.pointSize: sbFontSize.value
+                  wrapMode: TextArea.Wrap
+                  readOnly: true
+                  selectByMouse: true
+                  persistentSelection: true
+                  textFormat: TextEdit.RichText
+                  
+                  verticalAlignment: TextEdit.AlignVCenter
+                  horizontalAlignment: cbCentered.checked ? TextEdit.AlignHCenter : TextEdit.AlignLeft
+                  
+                  text: hl_model ? hl_model.p_content_md_rich : "..."
+              }
+              ScrollBar.vertical: ScrollBar {}
+            }
+        }
+        
 
         Label {
                 Layout.fillHeight: true            

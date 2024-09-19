@@ -45,13 +45,29 @@ Flickable {
             }
         }
         Setting { 
+            name: "Image"
+            
+            //desc: root.backend? hl_model.p_excerpt_img : "Loading"
+            //Image{
+            //    source : hl_model.excerpt_img_local()
+            //}
+            TextField {
+                id: imageEdit
+                Layout.fillWidth: true
+                text: hl_model ? hl_model.p_excerpt_img : "..."
+                onEditingFinished: {
+                    hl_model.set_excerpt_img(text)
+                }
+            }
+        }
+        Setting { 
             name: "Links"
             
             GridLayout {
                 columns: 2
-                Label { text: "Medium" }
+                Label { text: "Medium"; visible: menu.hl == "fr" }
                 TextField {
-                    Layout.fillWidth: true
+                    Layout.fillWidth: true; visible: menu.hl == "fr"
                     text: hl_model ? hl_model.p_link_medium : "..."
                     onEditingFinished: {
                         hl_model.set_link("Medium", text)
@@ -65,45 +81,29 @@ Flickable {
                         hl_model.set_link("X/Twitter", text)
                     }
                 }
-                Label { text: "Typeshare" }
+                Label { text: "Typeshare"; visible: menu.hl == "en" }
                 TextField {
-                    Layout.fillWidth: true
+                    Layout.fillWidth: true; visible: menu.hl == "en"
                     text: hl_model ? hl_model.p_link_typeshare : "..."
                     onEditingFinished: {
                         hl_model.set_link("Typeshare", text)
                     }
                 }
-                Label { text: "LinkedIn" }
+                Label { text: "LinkedIn"; visible: menu.hl == "en" }
                 TextField {
-                    Layout.fillWidth: true
+                    Layout.fillWidth: true; visible: menu.hl == "en"
                     text: hl_model ? hl_model.p_link_linkedin : "..."
                     onEditingFinished: {
                         hl_model.set_link("LinkedIn", text)
                     }
                 }
-                Label { text: "Facebook" }
+                Label { text: "Facebook"; visible: menu.hl == "fr" }
                 TextField {
-                    Layout.fillWidth: true     
+                    Layout.fillWidth: true ; visible: menu.hl == "fr"    
                     text: hl_model ? hl_model.p_link_facebook : "..."                                   
                     onEditingFinished: {
                         hl_model.set_link("Facebook", text)
                     }
-                }
-            }
-        }
-        Setting { 
-            name: "Image"
-            
-            //desc: root.backend? hl_model.p_excerpt_img : "Loading"
-            //Image{
-            //    source : hl_model.excerpt_img_local()
-            //}
-            TextField {
-                id: imageEdit
-                Layout.fillWidth: true
-                text: hl_model ? hl_model.p_excerpt_img : "..."
-                onEditingFinished: {
-                    hl_model.set_excerpt_img(text)
                 }
             }
         }

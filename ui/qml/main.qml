@@ -47,8 +47,9 @@ Window {
             Layout.fillHeight: true
             Layout.fillWidth: true
             Rectangle {
-                width: 240
+                width: 200
                 Layout.fillHeight: true
+                clip: true
                 ColumnLayout {
                     CheckBox { text: "1. Choose content (Asana?)" }
                     CheckBox { text: "2. Find a title"; id: cbTitle }
@@ -74,27 +75,27 @@ Window {
                     CheckBox { text: "10. GITHUB: Upload the article!" }
                 }
             }
-            ArticleContent {
-                Layout.fillWidth: false
-                width: 480
-                clip: true
-                hl: "fr"
-            }
             ArticleMeta {
                 Layout.fillWidth: false
-                width: 320
+                width: 240
                 clip: true
                 hl: "fr"
             }
             ArticleContent {
                 Layout.fillWidth: false
-                width: 480
+                width: 640
+                clip: true
+                hl: "fr"
+            }
+            ArticleContent {
+                Layout.fillWidth: false
+                width: 640
                 clip: true
                 hl: "en"
             }      
             ArticleMeta {
                 Layout.fillWidth: false
-                width: 320
+                width: 240
                 clip: true
                 hl: "en"
             }      

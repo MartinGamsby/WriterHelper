@@ -75,6 +75,8 @@ class ArticleModel(QObject):
             self.template_post_md = f.read()
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates', 'post_content.md'), mode="r", encoding="utf-8") as f:
             self.template_post_content_md = f.read()
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates', 'post_content_only.md'), mode="r", encoding="utf-8") as f:
+            self.template_post_content_only_md = f.read()
         
     def config_filename(self):
         return 'settings_%s.ini' % self.hl
@@ -175,7 +177,11 @@ class ArticleModel(QObject):
     
     # ====================================================================================   
     def content_md_rich(self) -> str:
-        md = self.templated(self.template_post_content_md)
+        #md = self.templated(self.template_post_content_md)
+        md = self.templated(self.template_post_content_only_md)
+        #print(markdown.markdown(md))
+        # TODO: Better than that ... if I "grabToImage", ... will it include things I put in it? (It can be a component)
+        #return '<div align="right" valign="top">test</div>' + markdown.markdown(md)
         return markdown.markdown(md)
     p_content_md_rich = Property(str, content_md_rich, notify=updated)
                  
