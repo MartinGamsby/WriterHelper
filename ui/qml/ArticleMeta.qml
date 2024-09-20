@@ -10,7 +10,7 @@ Flickable {
     Layout.fillHeight: true
     
     boundsBehavior: Flickable.StopAtBounds
-    contentHeight: 2000// I don't have time for this shit columnLayout.height
+    contentHeight: 1000// I don't have time for this shit columnLayout.height
     
     required property string hl
     

@@ -10,7 +10,7 @@ Flickable {
     Layout.fillHeight: true
     
     boundsBehavior: Flickable.StopAtBounds
-    contentHeight: 3000// I don't have time for this shit columnLayout.height
+    contentHeight: 2400// I don't have time for this shit columnLayout.height
     
     required property string hl
     
@@ -20,6 +20,8 @@ Flickable {
     property string outputName: "richTextArea_" + menu.hl
     property int outputId: 0
     
+    property bool centeredName: false//vertically
+    property bool nameAtTop: false
     
     function grabCallback(result) {
         outputId += 1
@@ -187,22 +189,9 @@ Flickable {
             }
         }        
         
-        Flickable {
-          width: parent.width
-          height: 180
-          flickableDirection: Flickable.VerticalFlick
-
-          TextArea.flickable: TextArea {
-              wrapMode: TextArea.Wrap
-              readOnly: true
-              
-              text: hl_model ? hl_model.p_content_md : "..."
-          }
-          ScrollBar.vertical: ScrollBar {}
-        }
         RowLayout {
             Label {
-                text: "Font size:"
+                text: "Font:"
             }
             SpinBox {
                 id: sbFontSize
@@ -210,27 +199,37 @@ Flickable {
                 from: 8
                 to: 48
                 stepSize: 2
+                editable: true
             }
             Label {
                 text: "Height:"
             }
             SpinBox {
                 id: sbHeight
-                value: 680
+                value: 906
                 from: 320
                 to: 12800
-                stepSize: 80
+                stepSize: 32
+                editable: true
             }
             CheckBox {
                 id: cbCentered
                 checked: false
-                text: "Centered"
+                text: "Center"
+            }
+            // TODO: Add "add image"
+            Button {
+                text: "Grab"
+                onClicked: { 
+                    render()
+                }
             }
         }
         Rectangle {
             width: parent.width
             height: sbHeight.value
             color: "white"//"#333"
+            visible: false
             Flickable {
               flickableDirection: Flickable.VerticalFlick
               anchors.fill: parent
@@ -250,13 +249,6 @@ Flickable {
                   text: hl_model ? hl_model.p_content_md_rich : "..."
               }
               ScrollBar.vertical: ScrollBar {}
-            }
-        }
-        
-        Button {
-            text: "Grab"
-            onClicked: { 
-                render()
             }
         }
         Rectangle {
@@ -298,20 +290,30 @@ Flickable {
                   ScrollBar.vertical: ScrollBar {}
                 }
                 Rectangle {
-                    visible: false // TODO
-                    color: "#24475b"
-                    anchors.right: parent.right; anchors.top: parent.top
-                    anchors.topMargin: 0//-1
-                    anchors.rightMargin: 21
+                    //visible: false // TODO
+                    color: centeredName ? "#24475b" : "transparent"
+                    anchors.right: parent.right; 
+                    anchors.top: nameAtTop ? parent.top : undefined
+                    anchors.bottom: nameAtTop ? undefined : parent.bottom
+                                        
+                    anchors.topMargin: 0
+                    anchors.bottomMargin: 0
+                    anchors.rightMargin: centeredName ? 21 : 0
+                    
                     width: myName.implicitWidth + 12 // rightMargin*2
                     height: 10
                     Text {
                         id: myName
-                        color: "white"//"#1d3853"
-                        anchors.right: parent.right; anchors.top: parent.top
-                        anchors.topMargin: -9
+                        color: centeredName ? "silver" :"#7a9295"//"#1d3853"
+                        anchors.right: parent.right; 
+                        anchors.top: nameAtTop ? parent.top : undefined
+                        anchors.bottom: nameAtTop ? undefined : parent.bottom
+                        
+                        anchors.topMargin: centeredName ? -9 : 0
+                        anchors.bottomMargin: centeredName ? -9 : 0
                         anchors.rightMargin: 6
-                        text: "Martin Gamsby"
+                        text: menu.hl == "en" ? "@MartinGamsby_EN" : "@MartinGamsby"
+                        font.pointSize: 8
                     }
                 }
                 Text {
@@ -321,6 +323,7 @@ Flickable {
                     anchors.topMargin: 3 -contentBg.anchors.topMargin + contentMargin
                     anchors.rightMargin: 4
                     anchors.bottomMargin: -contentBg.anchors.bottomMargin + contentMargin
+                    visible: !(contentFlickable.atYEnd && contentFlickable.atYBeginning)
                     text: outputId+1
                 }
             }
@@ -352,6 +355,19 @@ Flickable {
             }
         }
 
+        Flickable {
+          width: parent.width
+          height: 120
+          flickableDirection: Flickable.VerticalFlick
+
+          TextArea.flickable: TextArea {
+              wrapMode: TextArea.Wrap
+              readOnly: true
+              
+              text: hl_model ? hl_model.p_content_md : "..."
+          }
+          ScrollBar.vertical: ScrollBar {}
+        }
         Label {
                 Layout.fillHeight: true            
         }

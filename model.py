@@ -186,14 +186,16 @@ class ArticleModel(QObject):
     p_content_md_rich = Property(str, content_md_rich, notify=updated)
                  
     # ====================================================================================   
-    def content_md_separators(self) -> str:
-        ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
+    def content_md_separators(self) -> str:        
+        #ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
+        ret = '<img src="' + self.excerpt_image + '" style="float:right; width: 240px; padding-left: 12px;" width=240 />' + self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
             .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
-            .replace("<h1","<h1 style='color: #ade6b9' ") \
-            .replace("<h2","<h2 style='color: #ade6b9' ") \
-            .replace("<h3","<h3 style='color: #ade6b9' ") \
+            .replace("<h1","<h1 align='center' style='color: #ade6b9' ") \
+            .replace("<h2","<h2 align='center' style='color: #ade6b9' ") \
+            .replace("<h3","<h3 align='center' style='color: #ade6b9' ") \
             .replace("<h4","<h4 style='color: #ade6b9' ") #ade6b9, 099d02, ade6b9
+        #print(ret)
         return ret
     p_content_md_separators = Property(str, content_md_separators, notify=updated)
         
@@ -202,9 +204,9 @@ class ArticleModel(QObject):
         ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
             .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
-            .replace("</h1>","</h1><br />") \
-            .replace("</h2>","</h2><br />") \
-            .replace("</h3>","</h3><br />") \
+            .replace("</h1>","</h1 align='center'><br />") \
+            .replace("</h2>","</h2 align='center'><br />") \
+            .replace("</h3>","</h3 align='center'><br />") \
             .replace("</p>","<br /></p>") \
             .replace("</blockquote>","</blockquote><br />")
         #print(ret)
@@ -345,7 +347,7 @@ class ArticleModel(QObject):
                 file_contents = f.read()
             self.change_article(file_contents, os.path.basename(file_name)[:10])
         
-    def change_article(self, file_contents, old_date):
+    def change_article(self, file_contents, old_date, change_ref=True):
         parts = file_contents.split("---")
         nb_parts = len(parts)
         if nb_parts >= 3:
@@ -366,7 +368,7 @@ class ArticleModel(QObject):
             self.mini = self.get_length_category(mini=True) in cats
             self.tags = ",".join(header["tags"][:-1])
             self.links = []
-           
+            
             if nb_parts == 4:
                 footer = parts[3]
 
@@ -382,6 +384,15 @@ class ArticleModel(QObject):
                     self.set_link(name, url)
                     print(url, name)
         
+            if change_ref:
+                potential_ref_file = self.date + "-" + header["ref"].replace(self.ref.get_website_url(),"") + ".md"
+                potential_ref_file_full = os.path.join( self.ref.get_posts_folder(), potential_ref_file )
+                if os.path.isfile(potential_ref_file_full):
+                    print( "REF:", potential_ref_file_full )
+                    with open(potential_ref_file_full, mode="r", encoding="utf-8") as f:
+                        file_contents = f.read()
+                        self.ref.change_article(file_contents, os.path.basename(potential_ref_file_full)[:10], change_ref=False)
+                
             self.updated.emit()
             self.delete_last = True
             return True
