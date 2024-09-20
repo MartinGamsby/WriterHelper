@@ -9,7 +9,7 @@ Window {
     // Just some window configuration
     id: root
     visible: true
-    width: 1280
+    width: 1800
     height: 1024
     
     title: qsTr("Writer Helper")
@@ -47,7 +47,7 @@ Window {
             Layout.fillHeight: true
             Layout.fillWidth: true
             Rectangle {
-                width: 200
+                width: 120
                 Layout.fillHeight: true
                 clip: true
                 ColumnLayout {
@@ -77,25 +77,25 @@ Window {
             }
             ArticleMeta {
                 Layout.fillWidth: false
-                width: 240
+                width: 320
                 clip: true
                 hl: "fr"
             }
             ArticleContent {
                 Layout.fillWidth: false
-                width: 640
+                width: 520
                 clip: true
                 hl: "fr"
             }
             ArticleContent {
                 Layout.fillWidth: false
-                width: 640
+                width: 520
                 clip: true
                 hl: "en"
             }      
             ArticleMeta {
                 Layout.fillWidth: false
-                width: 240
+                width: 320
                 clip: true
                 hl: "en"
             }      

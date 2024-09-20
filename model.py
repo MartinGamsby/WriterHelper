@@ -185,6 +185,31 @@ class ArticleModel(QObject):
         return markdown.markdown(md)
     p_content_md_rich = Property(str, content_md_rich, notify=updated)
                  
+    # ====================================================================================   
+    def content_md_separators(self) -> str:
+        ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
+            .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
+            .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
+            .replace("<h1","<h1 style='color: #ade6b9' ") \
+            .replace("<h2","<h2 style='color: #ade6b9' ") \
+            .replace("<h3","<h3 style='color: #ade6b9' ") \
+            .replace("<h4","<h4 style='color: #ade6b9' ") #ade6b9, 099d02, ade6b9
+        return ret
+    p_content_md_separators = Property(str, content_md_separators, notify=updated)
+        
+    # ====================================================================================   
+    def content_md_separators_br(self) -> str:
+        ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
+            .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
+            .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
+            .replace("</h1>","</h1><br />") \
+            .replace("</h2>","</h2><br />") \
+            .replace("</h3>","</h3><br />") \
+            .replace("</p>","<br /></p>") \
+            .replace("</blockquote>","</blockquote><br />")
+        #print(ret)
+        return ret
+    p_content_md_separators_br = Property(str, content_md_separators_br, notify=updated)
             
     # ====================================================================================    
     @Slot(None, result=str)
@@ -329,7 +354,7 @@ class ArticleModel(QObject):
             self.date = old_date
             
             header = parts[1]
-            content = parts[2]
+            content = parts[2].strip()
             
             header = yaml.full_load(header)
             cats = header["categories"]

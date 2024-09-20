@@ -10,12 +10,65 @@ Flickable {
     Layout.fillHeight: true
     
     boundsBehavior: Flickable.StopAtBounds
-    contentHeight: 2000// I don't have time for this shit columnLayout.height
+    contentHeight: 3000// I don't have time for this shit columnLayout.height
     
     required property string hl
     
     property QtObject hl_model: root.backend ? root.backend.article(hl) : null
     
+    property int contentMargin: 9
+    property string outputName: "richTextArea_" + menu.hl
+    property int outputId: 0
+    
+    
+    function grabCallback(result) {
+        outputId += 1
+        console.log(outputId.toString())
+        result.saveToFile(outputName+outputId.toString()+".png") 
+        if( !contentFlickable.atYEnd )
+        {
+            contentFlickable.contentY += ( contentFlickable.height - 1.8*contentMargin - outputLabel.anchors.bottomMargin - outputLabel.anchors.topMargin  )//3.8?
+            
+            contentBg.anchors.bottomMargin = contentFlickable.atYEnd ? contentMargin : -3
+            contentBg.anchors.topMargin = contentFlickable.atYBeginning ? contentMargin : -3
+            richTextArea.grabToImage( grabCallback )
+        }
+        else
+        {            
+            contentBg.anchors.bottomMargin = contentMargin
+            contentBg.anchors.topMargin = contentMargin
+            outputId = 0
+        }
+    }
+    // where -- string
+    function render() {
+        //var i = 0
+        //var found = false
+        //for (i = 0; i < columnLayout.children.length; i++) {
+        //    if (columnLayout.children[i].objectName === what) {
+        //        // We found respective item
+        //        found = true
+        //        break
+        //    }
+        //}
+       // if (found) {
+            //console.log("We found item " + richTextArea + ". Grabbing it to " + where)
+            // Grab image and save it (via callback f-ion)
+            
+            //contentFlickable.forceActiveFocus()
+            contentFlickable.contentY = 0
+            
+            if( !contentFlickable.atYEnd )
+            {
+                contentBg.anchors.bottomMargin = -3
+            }
+            
+            console.log(outputId.toString())
+            richTextArea.grabToImage( grabCallback )
+        //} else {
+        //    console.warn("No item called " + what)
+        //}
+    }
     
     ColumnLayout
     {
@@ -153,7 +206,7 @@ Flickable {
             }
             SpinBox {
                 id: sbFontSize
-                value: 20
+                value: 12
                 from: 8
                 to: 48
                 stepSize: 2
@@ -163,9 +216,9 @@ Flickable {
             }
             SpinBox {
                 id: sbHeight
-                value: 640
+                value: 680
                 from: 320
-                to: 1280
+                to: 12800
                 stepSize: 80
             }
             CheckBox {
@@ -200,6 +253,104 @@ Flickable {
             }
         }
         
+        Button {
+            text: "Grab"
+            onClicked: { 
+                render()
+            }
+        }
+        Rectangle {
+            id: richTextArea
+            width: parent.width
+            height: sbHeight.value
+                color: "#7a9295"//"#455b55"//"#767679"
+                
+            Rectangle {
+                id: contentBg
+                anchors.fill: parent
+                anchors.margins: contentMargin
+                radius: 5
+                
+                color: "#24475b"//"#003d2b"//"#182c25"//"#262626"
+                Flickable {
+                  id: contentFlickable
+                  flickableDirection: Flickable.VerticalFlick
+                  anchors.fill: parent
+                  anchors.margins: 0
+
+                  TextArea.flickable: TextArea {
+                      color: "white"//"#ade6b9"//"#306844"//"#ffffff"//"#003939"
+                      font.pointSize: sbFontSize.value
+                      wrapMode: TextArea.Wrap
+                      readOnly: true
+                      selectByMouse: true
+                      persistentSelection: true
+                      textFormat: TextEdit.RichText
+                       
+                      //bottomInset: 0
+                      anchors.rightMargin: 18//9
+                      
+                      verticalAlignment: TextEdit.AlignVCenter
+                      horizontalAlignment: cbCentered.checked ? TextEdit.AlignHCenter : TextEdit.AlignLeft
+                      
+                      text: hl_model ? hl_model.p_content_md_separators : "..."
+                  }
+                  ScrollBar.vertical: ScrollBar {}
+                }
+                Rectangle {
+                    visible: false // TODO
+                    color: "#24475b"
+                    anchors.right: parent.right; anchors.top: parent.top
+                    anchors.topMargin: 0//-1
+                    anchors.rightMargin: 21
+                    width: myName.implicitWidth + 12 // rightMargin*2
+                    height: 10
+                    Text {
+                        id: myName
+                        color: "white"//"#1d3853"
+                        anchors.right: parent.right; anchors.top: parent.top
+                        anchors.topMargin: -9
+                        anchors.rightMargin: 6
+                        text: "Martin Gamsby"
+                    }
+                }
+                Text {
+                    id: outputLabel
+                    color: "#ade6b9"
+                    anchors.right: parent.right; anchors.bottom: parent.bottom
+                    anchors.topMargin: 3 -contentBg.anchors.topMargin + contentMargin
+                    anchors.rightMargin: 4
+                    anchors.bottomMargin: -contentBg.anchors.bottomMargin + contentMargin
+                    text: outputId+1
+                }
+            }
+        }
+        
+        Rectangle {
+            width: parent.width
+            height: 200//sbHeight.value
+            color: "white"//"#333"
+            Flickable {
+              flickableDirection: Flickable.VerticalFlick
+              anchors.fill: parent
+
+              TextArea.flickable: TextArea {
+                  color: "black"//"#aaa"
+                  font.pointSize: sbFontSize.value
+                  wrapMode: TextArea.Wrap
+                  readOnly: true
+                  selectByMouse: true
+                  persistentSelection: true
+                  textFormat: TextEdit.RichText
+                  
+                  verticalAlignment: TextEdit.AlignVCenter
+                  horizontalAlignment: cbCentered.checked ? TextEdit.AlignHCenter : TextEdit.AlignLeft
+                  
+                  text: hl_model ? hl_model.p_content_md_separators_br : "..."
+              }
+              ScrollBar.vertical: ScrollBar {}
+            }
+        }
 
         Label {
                 Layout.fillHeight: true            
