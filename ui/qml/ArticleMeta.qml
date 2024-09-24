@@ -43,6 +43,12 @@ Flickable {
                     root.backend.translate(menu.hl)
                 }
             }
+            Button {
+                text: "Post"
+                onClicked: { 
+                    hl_model.post_article()
+                }
+            }
         }
         Setting { 
             name: "Image"

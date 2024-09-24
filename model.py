@@ -139,7 +139,7 @@ class ArticleModel(QObject):
     def get_slug(self):
         simple = unidecode(self.title).replace(" ","-").replace("--","-").lower()
         import re
-        return re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', simple)#\W+ is doesn't take spaces and such
+        return re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', simple).replace("--","-")#\W+ is doesn't take spaces and such
         # title\n < éé `kožušček北亰 François
     p_slug = Property(str, get_slug, notify=updated)
            
@@ -187,8 +187,9 @@ class ArticleModel(QObject):
                  
     # ====================================================================================   
     def content_md_separators(self) -> str:        
-        #ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
-        ret = '<img src="' + self.excerpt_image + '" style="float:right; width: 240px; padding-left: 12px;" width=240 />' + self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
+        #ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","╘═══╡</h4>") \
+        #ret = '<img src="' + self.excerpt_image + '" style="float:right; width: 240px; padding-left: 12px;" width=240 />' + self.content_md_rich().replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","╘═══╡</h4>") \
+        ret = '<table cellpadding=6 style="float:right;"><tr><td><img src="' + self.excerpt_image + '" width=240 /></td></tr></table>' + self.content_md_rich().replace("<h4>","<h4 align='center'>") \
             .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
             .replace("<h1","<h1 align='center' style='color: #ade6b9' ") \
@@ -201,7 +202,7 @@ class ArticleModel(QObject):
         
     # ====================================================================================   
     def content_md_separators_br(self) -> str:
-        ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═════╕").replace("</h4>","╘═════╡</h4>") \
+        ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","</h4>") \
             .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
             .replace("</h1>","</h1 align='center'><br />") \
@@ -346,7 +347,13 @@ class ArticleModel(QObject):
             with open(file_name, mode="r", encoding="utf-8") as f:
                 file_contents = f.read()
             self.change_article(file_contents, os.path.basename(file_name)[:10])
-        
+       
+    # ====================================================================================     
+    @Slot(None, result=bool)
+    def post_article(self):
+        print("todo")
+        pass
+    
     def change_article(self, file_contents, old_date, change_ref=True):
         parts = file_contents.split("---")
         nb_parts = len(parts)
@@ -364,7 +371,7 @@ class ArticleModel(QObject):
             
             self.title = header["title"]
             self.content = content.replace("### **%s**"%self.title,"")
-            self.excerpt_image = header["excerpt_image"]
+            self.excerpt_image = header["excerpt_image"] if header["excerpt_image"] else ""
             self.mini = self.get_length_category(mini=True) in cats
             self.tags = ",".join(header["tags"][:-1])
             self.links = []
