@@ -195,7 +195,7 @@ Flickable {
             }
             SpinBox {
                 id: sbFontSize
-                value: 12
+                value: 14
                 from: 8
                 to: 48
                 stepSize: 2
@@ -224,6 +224,22 @@ Flickable {
                     render()
                 }
             }
+            CheckBox {
+                id: cbGreen
+                text: "G"
+                checked: hl_model ? hl_model.p_green : true
+                onToggled: { 
+                    hl_model.set_green(checked)
+                }
+            }
+            CheckBox {
+                id: cbBlack
+                text: "B"
+                checked: hl_model ? hl_model.p_black : true
+                onToggled: { 
+                    hl_model.set_black(checked)
+                }
+            }
         }
         Rectangle {
             width: parent.width
@@ -235,7 +251,7 @@ Flickable {
               anchors.fill: parent
 
               TextArea.flickable: TextArea {
-                  color: "black"//"#aaa"
+                  color: "#000033"//"#aaa"
                   font.pointSize: sbFontSize.value
                   wrapMode: TextArea.Wrap
                   readOnly: true
@@ -255,15 +271,15 @@ Flickable {
             id: richTextArea
             width: parent.width
             height: sbHeight.value
-                color: "#7a9295"//"#455b55"//"#767679"
+            color: cbGreen.checked ? "#24475b" : (cbBlack.checked ? "black":"white")//"#7a9295"//"#455b55"//"#767679"
                 
             Rectangle {
                 id: contentBg
                 anchors.fill: parent
                 anchors.margins: contentMargin
-                radius: 5
+                //radius: 5
                 
-                color: "#24475b"//"#003d2b"//"#182c25"//"#262626"
+                color: cbGreen.checked ? "#24475b" : (cbBlack.checked ? "black":"white")//"#003d2b"//"#182c25"//"#262626"
                 Flickable {
                   id: contentFlickable
                   flickableDirection: Flickable.VerticalFlick
@@ -271,7 +287,8 @@ Flickable {
                   anchors.margins: 0
 
                   TextArea.flickable: TextArea {
-                      color: "white"//"#ade6b9"//"#306844"//"#ffffff"//"#003939"
+                      color: cbGreen.checked ? "white" : (cbBlack.checked ? "white":"#000033")//"#ade6b9"//"#306844"//"#ffffff"//"#003939"
+                      background: null
                       font.pointSize: sbFontSize.value
                       wrapMode: TextArea.Wrap
                       readOnly: true
@@ -304,7 +321,7 @@ Flickable {
                     height: 10
                     Text {
                         id: myName
-                        color: centeredName ? "silver" :"#7a9295"//"#1d3853"
+                        color: centeredName ? "silver" : (cbGreen.checked ? "#7a9295" : "silver")//"#1d3853"
                         anchors.right: parent.right; 
                         anchors.top: nameAtTop ? parent.top : undefined
                         anchors.bottom: nameAtTop ? undefined : parent.bottom
@@ -318,7 +335,7 @@ Flickable {
                 }
                 Text {
                     id: outputLabel
-                    color: "#ade6b9"
+                    color: cbGreen.checked ? "#ade6b9" : (cbBlack.checked ? "#000033":"white")
                     anchors.right: parent.right; anchors.bottom: parent.bottom
                     anchors.topMargin: 3 -contentBg.anchors.topMargin + contentMargin
                     anchors.rightMargin: 4
@@ -338,7 +355,7 @@ Flickable {
               anchors.fill: parent
 
               TextArea.flickable: TextArea {
-                  color: "black"//"#aaa"
+                  color: "#000033"//"#aaa"
                   font.pointSize: sbFontSize.value
                   wrapMode: TextArea.Wrap
                   readOnly: true

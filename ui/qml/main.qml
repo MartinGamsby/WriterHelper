@@ -77,25 +77,25 @@ Window {
             }
             ArticleMeta {
                 Layout.fillWidth: false
-                width: 320
+                width: 220
                 clip: true
                 hl: "fr"
             }
             ArticleContent {
                 Layout.fillWidth: false
-                width: 520
+                width: 640
                 clip: true
                 hl: "fr"
             }
             ArticleContent {
                 Layout.fillWidth: false
-                width: 520
+                width: 640
                 clip: true
                 hl: "en"
             }      
             ArticleMeta {
                 Layout.fillWidth: false
-                width: 320
+                width: 220
                 clip: true
                 hl: "en"
             }      

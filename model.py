@@ -25,20 +25,23 @@ class ArticleModel(QObject):
     hl: str = ""
     title: str = ""
     content: str = ""
-    excerpt_image: str = "/assets/images/default-image.jpeg"
+    excerpt_image: str = ""
     #tags = []
     tags = ""#[]
     mini: bool = False
     ref = None
     delete_last = True
     date: str = filemanager.ContentFile().get_date_str()    
-    links = []
+    links = None
+    green: bool = False
+    black: bool = True
     
     updated = Signal()
     
     # ====================================================================================    
     def __init__(self, hl):
         super().__init__()
+        self.links = []
         self.content_file = filemanager.ContentFile()
         
         self.updated.connect(self.on_updated)
@@ -139,7 +142,7 @@ class ArticleModel(QObject):
     def get_slug(self):
         simple = unidecode(self.title).replace(" ","-").replace("--","-").lower()
         import re
-        return re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', simple).replace("--","-")#\W+ is doesn't take spaces and such
+        return re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', simple).replace("--","-").rstrip("-")#\W+ is doesn't take spaces and such
         # title\n < éé `kožušček北亰 François
     p_slug = Property(str, get_slug, notify=updated)
            
@@ -189,14 +192,19 @@ class ArticleModel(QObject):
     def content_md_separators(self) -> str:        
         #ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","╘═══╡</h4>") \
         #ret = '<img src="' + self.excerpt_image + '" style="float:right; width: 240px; padding-left: 12px;" width=240 />' + self.content_md_rich().replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","╘═══╡</h4>") \
-        ret = '<table cellpadding=6 style="float:right;"><tr><td><img src="' + self.excerpt_image + '" width=240 /></td></tr></table>' + self.content_md_rich().replace("<h4>","<h4 align='center'>") \
+        
+        ret = ""
+        if self.excerpt_image:
+            ret = '<table cellpadding=6 style="float:right;"><tr><td><img src="' + self.excerpt_image + '" width=240 /></td></tr></table>'
+        
+        ret += self.content_md_rich().replace("<h4>","<h4 align='center'>") \
             .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
-            .replace("<h1","<h1 align='center' style='color: #ade6b9' ") \
-            .replace("<h2","<h2 align='center' style='color: #ade6b9' ") \
-            .replace("<h3","<h3 align='center' style='color: #ade6b9' ") \
-            .replace("<h4","<h4 style='color: #ade6b9' ") #ade6b9, 099d02, ade6b9
-        #print(ret)
+            .replace("<h1","<h1 align='center' style='color: %s' " % self.get_title_color()) \
+            .replace("<h2","<h2 align='center' style='color: %s' " % self.get_title_color()) \
+            .replace("<h3","<h3 align='center' style='color: %s' " % self.get_title_color()) \
+            .replace("<h4","<h4 style='color: %s' " % self.get_title_color()) #ade6b9, 099d02, ade6b9
+        #print(ret)#("#ade6b9" if self.green else "black")) \
         return ret
     p_content_md_separators = Property(str, content_md_separators, notify=updated)
         
@@ -236,7 +244,38 @@ class ArticleModel(QObject):
     def get_excerpt_img(self):
         return self.excerpt_image
     p_excerpt_img = Property(str, get_excerpt_img, set_excerpt_img, notify=updated)
-                        
+    
+    # ====================================================================================
+    @Slot(bool, result=bool)
+    def set_green(self, checked):
+        if self.green != checked:
+            self.green = checked
+            self.updated.emit()
+    @Slot(None, result=str)
+    def get_green(self):
+        return self.green
+    p_green = Property(bool, get_green, set_green, notify=updated)
+    
+    # ====================================================================================
+    @Slot(bool, result=bool)
+    def set_black(self, checked):
+        if self.black != checked:
+            self.black = checked
+            self.updated.emit()
+    @Slot(None, result=str)
+    def get_black(self):
+        return self.black
+    p_black = Property(bool, get_black, set_black, notify=updated)
+    
+    # ====================================================================================
+    def get_title_color(self):
+        if self.green:
+            return "#ade6b9"
+        if self.black:
+            return "white"
+        return "black"
+             
+             
     #TODO: set_link is weird since bilingual? mixed them? See footer_md?
     # ====================================================================================    
     @Slot(str, str, result=bool)
@@ -328,7 +367,7 @@ class ArticleModel(QObject):
         self.title = ""
         self.date = filemanager.ContentFile().get_date_str()
         self.content = ""
-        self.excerpt_image = "/assets/images/default-image.jpeg"
+        self.excerpt_image = ""
         self.tags = ""
         self.mini = False
         self.links = []
