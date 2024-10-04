@@ -360,7 +360,7 @@ Flickable {
                         anchors.topMargin: centeredName ? -9 : 0
                         anchors.bottomMargin: centeredName ? -9 : 0
                         anchors.rightMargin: 6
-                        text: menu.hl == "en" ? "@Martin_Gamsby" : "@MartinGamsby"
+                        text: menu.hl == "en" ? "x.com/Martin_Gamsby" : "x.com/MartinGamsby"
                         font.pointSize: 8
                     }
                 }

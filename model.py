@@ -186,7 +186,7 @@ class ArticleModel(QObject):
         #print(markdown.markdown(md))
         # TODO: Better than that ... if I "grabToImage", ... will it include things I put in it? (It can be a component)
         #return '<div align="right" valign="top">test</div>' + markdown.markdown(md)
-        return markdown.markdown(md).replace("<a","<span").replace("</a>","</span")
+        return markdown.markdown(md).replace("<a","<a style='color:%s' " % self.get_title_color())#.replace("</a>","</span")
     p_content_md_rich = Property(str, content_md_rich, notify=updated)
                  
     # ====================================================================================   
