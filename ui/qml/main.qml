@@ -38,6 +38,16 @@ Window {
                     Layout.leftMargin: 12
                     color: "white"
                 }
+                CheckBox {
+                    id: cbFR
+                    text: "<font color=\"white\">French</font>"
+                    checked: true
+                }
+                CheckBox {
+                    id: cbEN
+                    text: "<font color=\"white\">English</font>"
+                    checked: true
+                }
                 Item {
                     Layout.fillWidth: true
                 }
@@ -75,30 +85,63 @@ Window {
                     CheckBox { text: "10. GITHUB: Upload the article!" }
                 }
             }
-            ArticleMeta {
-                Layout.fillWidth: false
-                width: 220
-                clip: true
-                hl: "fr"
+            Row {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                spacing: 3
+                
+                component Separator: Rectangle {
+                    width: 1
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    color: "#3b513c"
+                }
+                
+                Separator{}
+                ArticleMeta {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: cbEN.checked ? 220 : 320
+                    clip: true
+                    
+                    visible: cbFR.checked
+                    
+                    hl: "fr"
+                }
+                Separator{}
+                ArticleContent {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: cbEN.checked ? 640 : 1024            
+                    clip: true
+                    
+                    visible: cbFR.checked
+                    
+                    hl: "fr"
+                }
+                Separator{visible: cbFR.checked && cbEN.checked }
+                ArticleContent {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: cbFR.checked ? 640 : 1024
+                    clip: true
+                    
+                    visible: cbEN.checked
+                    
+                    hl: "en"
+                }    
+                Separator{}  
+                ArticleMeta {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: cbFR.checked ? 220 : 320
+                    clip: true
+                    
+                    visible: cbEN.checked
+                    
+                    hl: "en"
+                }
             }
-            ArticleContent {
-                Layout.fillWidth: false
-                width: 640
-                clip: true
-                hl: "fr"
-            }
-            ArticleContent {
-                Layout.fillWidth: false
-                width: 640
-                clip: true
-                hl: "en"
-            }      
-            ArticleMeta {
-                Layout.fillWidth: false
-                width: 220
-                clip: true
-                hl: "en"
-            }      
         }
         Label {
             id: bottomPart

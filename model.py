@@ -29,11 +29,12 @@ class ArticleModel(QObject):
     #tags = []
     tags = ""#[]
     mini: bool = False
+    medium: bool = False
     ref = None
     delete_last = True
     date: str = filemanager.ContentFile().get_date_str()    
     links = None
-    green: bool = False
+    green: bool = True
     black: bool = True
     
     updated = Signal()
@@ -140,7 +141,7 @@ class ArticleModel(QObject):
     
     # ====================================================================================
     def get_slug(self):
-        simple = unidecode(self.title).replace(" ","-").replace("--","-").lower()
+        simple = unidecode(self.title).replace(" ","-").replace("--","-").replace("--","-").replace("--","-").replace("--","-").lower()
         import re
         return re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', simple).replace("--","-").rstrip("-")#\W+ is doesn't take spaces and such
         # title\n < éé `kožušček北亰 François
@@ -185,7 +186,7 @@ class ArticleModel(QObject):
         #print(markdown.markdown(md))
         # TODO: Better than that ... if I "grabToImage", ... will it include things I put in it? (It can be a component)
         #return '<div align="right" valign="top">test</div>' + markdown.markdown(md)
-        return markdown.markdown(md)
+        return markdown.markdown(md).replace("<a","<span").replace("</a>","</span")
     p_content_md_rich = Property(str, content_md_rich, notify=updated)
                  
     # ====================================================================================   
@@ -210,12 +211,13 @@ class ArticleModel(QObject):
         
     # ====================================================================================   
     def content_md_separators_br(self) -> str:
-        ret = self.content_md_rich().replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","</h4>") \
+        ret = self.content_md_rich() \
+            .replace("<h3>","<h3 align='center'>╞═══╕").replace("</h3>","╘═══╡</h3>") \
+            .replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","╘═══╡</h4>") \
             .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
             .replace("</h1>","</h1 align='center'><br />") \
             .replace("</h2>","</h2 align='center'><br />") \
-            .replace("</h3>","</h3 align='center'><br />") \
             .replace("</p>","<br /></p>") \
             .replace("</blockquote>","</blockquote><br />")
         #print(ret)
@@ -319,11 +321,24 @@ class ArticleModel(QObject):
             
     
     # ====================================================================================    
+    @Slot(None, result=bool)
+    def get_mini(self):
+        return self.mini
     @Slot(bool, result=bool)
     def set_mini(self, mini):
         self.mini = mini
         self.updated.emit()
+    p_mini = Property(bool, get_mini, set_mini, notify=updated)
         
+    # ====================================================================================   
+    @Slot(None, result=bool)
+    def get_medium(self):
+        return self.medium
+    @Slot(bool, result=bool)
+    def set_medium(self, medium):
+        self.medium = medium
+        self.updated.emit()
+    p_medium = Property(bool, get_medium, set_medium, notify=updated)
         
     # ====================================================================================    
     def footer_md(self) -> str:
@@ -335,15 +350,19 @@ class ArticleModel(QObject):
         
         
     # ====================================================================================    
-    def get_length_category(self, mini):
+    def get_length_category(self, mini=False, medium=False):
         # TODO: Use tr() instead...
         if self.hl == "en":
-            if mini:
+            if medium:
+                return "Length: Medium"
+            elif mini:
                 return "Length: Mini"
             else:
                 return "Length: Short"
         else:
-            if mini:
+            if medium:
+                return "Longueur: Moyen"
+            elif mini:
                 return "Longueur: Mini"
             else:
                 return "Longueur: Court"
@@ -352,7 +371,7 @@ class ArticleModel(QObject):
     # ====================================================================================    
     def categories(self):
         categories = ["Gamsblurb"]
-        categories.insert(0, self.get_length_category(mini=self.mini))
+        categories.insert(0, self.get_length_category(mini=self.mini, medium=self.medium))
             
         # double quotes instead of single:
         return "[%s]" % ", ".join(map(lambda e: '"%s"' % e, categories))
@@ -370,6 +389,7 @@ class ArticleModel(QObject):
         self.excerpt_image = ""
         self.tags = ""
         self.mini = False
+        self.medium = False
         self.links = []
         self.updated.emit()        
         
@@ -409,9 +429,10 @@ class ArticleModel(QObject):
             
             
             self.title = header["title"]
-            self.content = content.replace("### **%s**"%self.title,"")
+            self.content = content.replace("### **%s**"%self.title,"").strip()
             self.excerpt_image = header["excerpt_image"] if header["excerpt_image"] else ""
             self.mini = self.get_length_category(mini=True) in cats
+            self.medium = self.get_length_category(medium=True) in cats
             self.tags = ",".join(header["tags"][:-1])
             self.links = []
             

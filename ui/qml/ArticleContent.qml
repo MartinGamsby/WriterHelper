@@ -6,11 +6,11 @@ import QtQuick.Controls.Material 2.12
 
 Flickable {
     id: menu
-    Layout.fillWidth: true
-    Layout.fillHeight: true
+    //Layout.fillWidth: true
+    //Layout.fillHeight: true
     
     boundsBehavior: Flickable.StopAtBounds
-    contentHeight: 2400// I don't have time for this shit columnLayout.height
+    contentHeight: columnLayout.height
     
     required property string hl
     
@@ -72,13 +72,16 @@ Flickable {
         //}
     }
     
-    ColumnLayout
+    Column
     {
         id: columnLayout
-        anchors.fill: parent
+        //anchors.fill: parent
         anchors.margins: 0
+        width: menu.width
             
         RowLayout {
+            anchors.left: parent.left
+            anchors.right: parent.right
             Label {
                 text: menu.hl + " Article"
                 width: parent.width
@@ -91,11 +94,19 @@ Flickable {
         //    name: "Mini (vs Court)"
             
             CheckBox {
-                checked: false
-                text: "Mini (vs Court)"
+                checked: hl_model ? hl_model.p_mini : "..."
+                text: "Mini"
                                     
                 onToggled: {
                     hl_model.set_mini(checked)
+                }            
+            }
+            CheckBox {
+                checked: hl_model ? hl_model.p_medium : "..."
+                text: "Medium"
+                
+                onToggled: {
+                    hl_model.set_medium(checked)
                 }            
             }
         //}
@@ -146,13 +157,16 @@ Flickable {
                         Layout.fillWidth: true
                         enabled: cbDate.checked//TODO: visible instead of enabled
                         text: hl_model ? hl_model.p_date : "..."
+                        onEditingFinished: {
+                            hl_model.set_date(text)
+                        }
                     }
                 }
             }
         }
 
         Rectangle {
-            width: parent.width
+            width: menu.width
             height: 320
             color: cbContent.checked ? "#aaa" : "white"
             Flickable {
@@ -190,27 +204,60 @@ Flickable {
         }        
         
         RowLayout {
+            //ColumnLayout {
+                RowLayout {
+                    Label {
+                        text: "Font:"
+                    }
+                    SpinBox {
+                        id: sbFontSize
+                        value: 14
+                        from: 8
+                        to: 48
+                        stepSize: 2
+                        editable: true
+                    }
+                }
+                RowLayout {
+                    CheckBox {
+                        id: cbGreen
+                        text: "G"
+                        checked: hl_model ? hl_model.p_green : true
+                        onToggled: { 
+                            hl_model.set_green(checked)
+                        }
+                    }
+                    CheckBox {
+                        id: cbBlack
+                        text: "B"
+                        checked: hl_model ? hl_model.p_black : true
+                        onToggled: { 
+                            hl_model.set_black(checked)
+                        }
+                    }
+                }
+            //}
             Label {
-                text: "Font:"
+                text: "W/H:"
             }
-            SpinBox {
-                id: sbFontSize
-                value: 14
-                from: 8
-                to: 48
-                stepSize: 2
-                editable: true
-            }
-            Label {
-                text: "Height:"
-            }
-            SpinBox {
-                id: sbHeight
-                value: 906
-                from: 320
-                to: 12800
-                stepSize: 32
-                editable: true
+            ColumnLayout {
+                SpinBox {
+                    id: sbWidth
+                    visible: false
+                    value: 640
+                    from: 320
+                    to: 1280
+                    stepSize: 32
+                    editable: true
+                }
+                SpinBox {
+                    id: sbHeight
+                    value: 906
+                    from: 320
+                    to: 12800
+                    stepSize: 32
+                    editable: true
+                }
             }
             CheckBox {
                 id: cbCentered
@@ -224,25 +271,9 @@ Flickable {
                     render()
                 }
             }
-            CheckBox {
-                id: cbGreen
-                text: "G"
-                checked: hl_model ? hl_model.p_green : true
-                onToggled: { 
-                    hl_model.set_green(checked)
-                }
-            }
-            CheckBox {
-                id: cbBlack
-                text: "B"
-                checked: hl_model ? hl_model.p_black : true
-                onToggled: { 
-                    hl_model.set_black(checked)
-                }
-            }
         }
         Rectangle {
-            width: parent.width
+            width: sbWidth.visible ? sbWidth.value : menu.width
             height: sbHeight.value
             color: "white"//"#333"
             visible: false
@@ -269,7 +300,7 @@ Flickable {
         }
         Rectangle {
             id: richTextArea
-            width: parent.width
+            width: sbWidth.visible ? sbWidth.value : menu.width
             height: sbHeight.value
             color: cbGreen.checked ? "#24475b" : (cbBlack.checked ? "black":"white")//"#7a9295"//"#455b55"//"#767679"
                 
@@ -329,7 +360,7 @@ Flickable {
                         anchors.topMargin: centeredName ? -9 : 0
                         anchors.bottomMargin: centeredName ? -9 : 0
                         anchors.rightMargin: 6
-                        text: menu.hl == "en" ? "@MartinGamsby_EN" : "@MartinGamsby"
+                        text: menu.hl == "en" ? "@Martin_Gamsby" : "@MartinGamsby"
                         font.pointSize: 8
                     }
                 }
