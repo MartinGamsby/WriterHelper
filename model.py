@@ -186,7 +186,10 @@ class ArticleModel(QObject):
         #print(markdown.markdown(md))
         # TODO: Better than that ... if I "grabToImage", ... will it include things I put in it? (It can be a component)
         #return '<div align="right" valign="top">test</div>' + markdown.markdown(md)
-        return markdown.markdown(md).replace("<a","<a style='color:%s' " % self.get_title_color())#.replace("</a>","</span")
+        
+        ret = markdown.markdown(md).replace("<a","<a style='color:%s' " % self.get_title_color())#.replace("</a>","</span")
+        #return "<div style='text-indent: 12px;' >" + ret + "<div>"
+        return ret.replace("<p>","<p style='text-indent: 50px;'>")
     p_content_md_rich = Property(str, content_md_rich, notify=updated)
                  
     # ====================================================================================   
@@ -214,6 +217,7 @@ class ArticleModel(QObject):
         ret = self.content_md_rich() \
             .replace("<h3>","<h3 align='center'>╞═══╕").replace("</h3>","╘═══╡</h3>") \
             .replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","╘═══╡</h4>") \
+            .replace("<li>","<li>- ") \
             .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
             .replace("</h1>","</h1 align='center'><br />") \
@@ -424,7 +428,7 @@ class ArticleModel(QObject):
             header = parts[1]
             content = parts[2].strip()
             
-            header = yaml.full_load(header)
+            header = yaml.full_load(header.replace("[,Gamsblurb]","[Gamsblurb]"))
             cats = header["categories"]
             
             
