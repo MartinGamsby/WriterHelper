@@ -13,6 +13,8 @@ from deep_translator import GoogleTranslator
 
 import filemanager
 
+DEFAULT_TAGS = "Gamsblurb"
+
 # ====================================================================================    
 @dataclass
 class Link(QObject):    
@@ -27,7 +29,7 @@ class ArticleModel(QObject):
     content: str = ""
     excerpt_image: str = ""
     #tags = []
-    tags = ""#[]
+    tags = DEFAULT_TAGS#[]
     mini: bool = False
     medium: bool = False
     ref = None
@@ -399,7 +401,7 @@ class ArticleModel(QObject):
         self.date = filemanager.ContentFile().get_date_str()
         self.content = ""
         self.excerpt_image = ""
-        self.tags = ""
+        self.tags = DEFAULT_TAGS
         self.mini = False
         self.medium = False
         self.links = []
@@ -445,7 +447,7 @@ class ArticleModel(QObject):
             self.excerpt_image = header["excerpt_image"] if header["excerpt_image"] else ""
             self.mini = self.get_length_category(mini=True) in cats
             self.medium = self.get_length_category(medium=True) in cats
-            self.tags = ",".join(header["tags"][:-1])
+            self.tags = ",".join(header["tags"])#[:-1])
             self.links = []
             
             if nb_parts == 4:
