@@ -50,6 +50,13 @@ Flickable {
                     hl_model.open_next_article()
                 }
             }
+            Button {
+                text: "New both articles"
+                onClicked: { 
+                    hl_model.new_both_articles()
+                }
+                Layout.columnSpan: 2
+            }
         }
         Setting { 
             name: "Image"
@@ -72,7 +79,7 @@ Flickable {
             
             GridLayout {
                 columns: 2
-                Label { text: "Medium"; visible: menu.hl == "fr" }
+                Label { text: "<a href='https://medium.com/new-story'>Medium</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "fr" }
                 TextField {
                     Layout.fillWidth: true; visible: menu.hl == "fr"
                     text: hl_model ? hl_model.p_link_medium : "..."
@@ -80,7 +87,7 @@ Flickable {
                         hl_model.set_link("Medium", text)
                     }
                 }
-                Label { text: "Typeshare"; visible: menu.hl == "en" }
+                Label { text: "<a href='https://typeshare.co/martingamsby'>Typeshare</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "en" }
                 TextField {
                     Layout.fillWidth: true; visible: menu.hl == "en"
                     text: hl_model ? hl_model.p_link_typeshare : "..."
@@ -88,7 +95,7 @@ Flickable {
                         hl_model.set_link("Typeshare", text)
                     }
                 }
-                Label { text: "X/Twitter" }
+                Label { text: "<a href='https://x.com/'>X/Twitter</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
                 TextField {
                     Layout.fillWidth: true
                     text: hl_model ? hl_model.p_link_x : "..."
@@ -96,7 +103,7 @@ Flickable {
                         hl_model.set_link("X/Twitter", text)
                     }
                 }
-                Label { id: lblLinkedin; text: "LinkedIn"; visible: menu.hl == "en" }
+                Label { text: "<a href='https://linkedin.com/'>LinkedIn</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "en" }
                 TextField {
                     Layout.fillWidth: true; visible: menu.hl == "en"
                     text: hl_model ? hl_model.p_link_linkedin : "..."
@@ -104,15 +111,7 @@ Flickable {
                         hl_model.set_link("LinkedIn", text)
                     }
                 }
-                Label { id: lblLinkedin2; text: ""; visible: lblLinkedin.visible }
-                Button {
-                    text: "Post LinkedIn"
-                    visible: lblLinkedin.visible
-                    onClicked: { 
-                        hl_model.post_article()
-                    }
-                }
-                Label { text: "Facebook"; visible: menu.hl == "fr" }
+                Label { text: "<a href='https://facebook.com/'>Facebook</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "fr"     }
                 TextField {
                     Layout.fillWidth: true ; visible: menu.hl == "fr"    
                     text: hl_model ? hl_model.p_link_facebook : "..."                                   
@@ -120,7 +119,7 @@ Flickable {
                         hl_model.set_link("Facebook", text)
                     }
                 }
-                Label { text: "Bluesky" }
+                Label { text: "<a href='https://bsky.app/profile/martin-gamsby.bsky.social'>Bluesky</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
                 TextField {
                     Layout.fillWidth: true
                     text: hl_model ? hl_model.p_link_bluesky : "..."                                   

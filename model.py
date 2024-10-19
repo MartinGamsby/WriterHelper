@@ -59,6 +59,24 @@ class ArticleModel(QObject):
         
         self.load_templates()
         #self.translator = Translator()
+        
+        
+    # ====================================================================================     
+    @Slot(None, result=bool)
+    def open_last_article(self):
+        print("open last article", self.hl)
+        
+        last_filename = ""
+        for f in os.listdir(self.get_posts_folder()):
+            if f.endswith(".md") and os.path.isfile(os.path.join(self.get_posts_folder(), f)):
+                last_filename = f
+            
+        if last_filename:
+            print("Last", last_filename)            
+            with open(os.path.join(self.get_posts_folder(), last_filename), mode="r", encoding="utf-8") as f:
+                file_contents = f.read()
+            self.change_article(file_contents, os.path.basename(last_filename)[:10])
+    
     
     # ====================================================================================    
     def set_ref(self, ref):
@@ -421,7 +439,16 @@ class ArticleModel(QObject):
         self.updated.emit()        
         
         self.delete_last = True
-        
+    
+    # ====================================================================================     
+    @Slot(None, result=bool)
+    def new_both_articles(self):
+        self.delete_last = False
+        self.ref.new_article()
+        self.new_article()
+        self.delete_last = True
+    
+   
     # ====================================================================================     
     @Slot(None, result=bool)
     def open_article(self):
@@ -543,6 +570,7 @@ class ArticlesModel(QObject):
         super().__init__()
         self.french.set_ref(self.english)
         self.english.set_ref(self.french)
+        self.french.open_last_article()
         
     # ====================================================================================
     @Slot(None, result=ArticleModel)
