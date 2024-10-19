@@ -153,9 +153,13 @@ class ArticleModel(QObject):
     # ====================================================================================    
     @Slot(str, result=bool)
     def set_content(self, text):
-        if self.content != text:
+        last_mini = self.mini
+        last_medium = self.medium
+        self.determine_length_category()        
+            
+        if self.content != text or self.mini != last_mini or self.medium != last_medium:
             self.content = text
-            self.updated.emit()            
+            self.updated.emit()
     @Slot(None, result=str)
     def get_content(self):
         return self.content
@@ -364,19 +368,28 @@ class ArticleModel(QObject):
         
         
     # ====================================================================================    
-    def get_length_category(self, mini=False, medium=False):
+    def determine_length_category(self):
+        self.mini = False
+        self.medium = False
+        if len(self.content)<280:
+            self.mini = True
+        elif len(self.content)>2000:
+            self.medium = True
+        
+    # ====================================================================================    
+    def get_length_category(self):
         # TODO: Use tr() instead...
         if self.hl == "en":
-            if medium:
+            if self.medium:
                 return "Length: Medium"
-            elif mini:
+            elif self.mini:
                 return "Length: Mini"
             else:
                 return "Length: Short"
         else:
-            if medium:
+            if self.medium:
                 return "Longueur: Moyen"
-            elif mini:
+            elif self.mini:
                 return "Longueur: Mini"
             else:
                 return "Longueur: Court"
@@ -385,7 +398,7 @@ class ArticleModel(QObject):
     # ====================================================================================    
     def categories(self):
         categories = ["Gamsblurb"]
-        categories.insert(0, self.get_length_category(mini=self.mini, medium=self.medium))
+        categories.insert(0, self.get_length_category())
             
         # double quotes instead of single:
         return "[%s]" % ", ".join(map(lambda e: '"%s"' % e, categories))
@@ -423,6 +436,33 @@ class ArticleModel(QObject):
        
     # ====================================================================================     
     @Slot(None, result=bool)
+    def open_next_article(self):
+        print("open next article", self.hl)
+        last_filename = self.content_file.get_date_slug(self.get_slug(), self.date) + ".md"
+        print(last_filename)
+        
+        found_last_filename = False
+        next_filename = ""
+        if os.path.isfile(os.path.join(self.get_posts_folder(), last_filename)):
+            if last_filename:
+                #os.path.join(self.get_posts_folder(), last_filename )#, 
+                for f in os.listdir(self.get_posts_folder()):
+                    if found_last_filename:
+                        next_filename = f
+                        break
+                    if f == last_filename:
+                        found_last_filename = True
+        else:
+            print("Current file not found")
+            
+        if next_filename:
+            print("Next", next_filename)            
+            with open(os.path.join(self.get_posts_folder(), next_filename), mode="r", encoding="utf-8") as f:
+                file_contents = f.read()
+            self.change_article(file_contents, os.path.basename(next_filename)[:10])
+    
+    # ====================================================================================     
+    @Slot(None, result=bool)
     def post_article(self):
         print("todo")
         pass        
@@ -445,8 +485,7 @@ class ArticleModel(QObject):
             self.title = header["title"]
             self.content = content.replace("### **%s**"%self.title,"").strip()
             self.excerpt_image = header["excerpt_image"] if header["excerpt_image"] else ""
-            self.mini = self.get_length_category(mini=True) in cats
-            self.medium = self.get_length_category(medium=True) in cats
+            self.determine_length_category()
             self.tags = ",".join(header["tags"])#[:-1])
             self.links = []
             

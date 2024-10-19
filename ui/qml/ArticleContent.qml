@@ -96,40 +96,22 @@ Flickable {
             anchors.left: parent.left
             anchors.right: parent.right
             Label {
+                text: hl_model ? hl_model.p_mini ? "Mini" : hl_model.p_medium ? "Medium" : "Short" : "..."
+            }
+            Label {
                 text: menu.hl + " Article"
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
                 font.pointSize: 15
                 padding: 5
             }
-        
-        //Setting { 
-        //    name: "Mini (vs Court)"
-            
-            CheckBox {
-                checked: hl_model ? hl_model.p_mini : "..."
-                text: "Mini"
-                                    
-                onToggled: {
-                    hl_model.set_mini(checked)
-                }            
+            Label {
+                text: contentEdit.text.length + " characters, " + contentEdit.text.trim().split(/\s+/).length + " words"
             }
-            CheckBox {
-                checked: hl_model ? hl_model.p_medium : "..."
-                text: "Medium"
-                
-                onToggled: {
-                    hl_model.set_medium(checked)
-                }            
-            }
-        //}
         
-            //Setting { 
-            //    name: "Posts path"
-            //    Layout.fillWidth: true
-                
                 TextField {
                     id: postsPathEdit
+                    Layout.fillWidth: true
                     text: hl_model ? hl_model.p_posts_folder : "..."
                            
                     onEditingFinished: {
@@ -137,6 +119,7 @@ Flickable {
                     }
                 }
                 TextField {
+                    Layout.fillWidth: true
                     text: hl_model ? hl_model.p_website_url : "..."                           
                     onEditingFinished: {
                         hl_model.set_website_url(text)

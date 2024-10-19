@@ -23,11 +23,19 @@ Flickable {
         anchors.fill: parent
         anchors.margins: 0
             
-        RowLayout {
+        GridLayout {
+            columns: 2
             Button {
                 text: "New"
                 onClicked: { 
                     hl_model.new_article()
+                }
+            }
+            Button {
+                text: "Translate"
+                //enabled: !cbTranslate.checked
+                onClicked: { 
+                    root.backend.translate(menu.hl)
                 }
             }
             Button {
@@ -37,10 +45,9 @@ Flickable {
                 }
             }
             Button {
-                text: "Translate"
-                //enabled: !cbTranslate.checked
+                text: "Open Next"
                 onClicked: { 
-                    root.backend.translate(menu.hl)
+                    hl_model.open_next_article()
                 }
             }
         }
