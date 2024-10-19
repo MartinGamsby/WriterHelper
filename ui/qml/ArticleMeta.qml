@@ -38,15 +38,9 @@ Flickable {
             }
             Button {
                 text: "Translate"
-                enabled: !cbTranslate.checked
+                //enabled: !cbTranslate.checked
                 onClicked: { 
                     root.backend.translate(menu.hl)
-                }
-            }
-            Button {
-                text: "Post"
-                onClicked: { 
-                    hl_model.post_article()
                 }
             }
         }
@@ -79,14 +73,6 @@ Flickable {
                         hl_model.set_link("Medium", text)
                     }
                 }
-                Label { text: "X/Twitter" }
-                TextField {
-                    Layout.fillWidth: true
-                    text: hl_model ? hl_model.p_link_x : "..."
-                    onEditingFinished: {
-                        hl_model.set_link("X/Twitter", text)
-                    }
-                }
                 Label { text: "Typeshare"; visible: menu.hl == "en" }
                 TextField {
                     Layout.fillWidth: true; visible: menu.hl == "en"
@@ -95,12 +81,28 @@ Flickable {
                         hl_model.set_link("Typeshare", text)
                     }
                 }
-                Label { text: "LinkedIn"; visible: menu.hl == "en" }
+                Label { text: "X/Twitter" }
+                TextField {
+                    Layout.fillWidth: true
+                    text: hl_model ? hl_model.p_link_x : "..."
+                    onEditingFinished: {
+                        hl_model.set_link("X/Twitter", text)
+                    }
+                }
+                Label { id: lblLinkedin; text: "LinkedIn"; visible: menu.hl == "en" }
                 TextField {
                     Layout.fillWidth: true; visible: menu.hl == "en"
                     text: hl_model ? hl_model.p_link_linkedin : "..."
                     onEditingFinished: {
                         hl_model.set_link("LinkedIn", text)
+                    }
+                }
+                Label { id: lblLinkedin2; text: ""; visible: lblLinkedin.visible }
+                Button {
+                    text: "Post LinkedIn"
+                    visible: lblLinkedin.visible
+                    onClicked: { 
+                        hl_model.post_article()
                     }
                 }
                 Label { text: "Facebook"; visible: menu.hl == "fr" }
@@ -109,6 +111,22 @@ Flickable {
                     text: hl_model ? hl_model.p_link_facebook : "..."                                   
                     onEditingFinished: {
                         hl_model.set_link("Facebook", text)
+                    }
+                }
+                Label { text: "Bluesky" }
+                TextField {
+                    Layout.fillWidth: true
+                    text: hl_model ? hl_model.p_link_bluesky : "..."                                   
+                    onEditingFinished: {
+                        hl_model.set_link("Bluesky", text)
+                    }
+                }
+                Label { text: "Source" }
+                TextField {
+                    Layout.fillWidth: true
+                    text: hl_model ? hl_model.p_link_source : "..."                                   
+                    onEditingFinished: {
+                        hl_model.set_link("Source", text)
                     }
                 }
             }

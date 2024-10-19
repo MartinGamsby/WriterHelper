@@ -71,6 +71,19 @@ Flickable {
         //    console.warn("No item called " + what)
         //}
     }
+    function adjust() {
+        
+        contentFlickable.contentY = 0
+        while( contentFlickable.atYEnd && sbHeight.value > sbHeight.from )
+        {
+            sbHeight.value -= sbHeight.stepSize
+        }
+        while( !contentFlickable.atYEnd && sbHeight.value < sbHeight.to )
+        {
+            sbHeight.value += sbHeight.stepSize
+        }
+        sbHeight.value += sbHeight.stepSize
+    }
     
     Column
     {
@@ -135,7 +148,7 @@ Flickable {
         Setting { 
             //name: "Title"
             desc: hl_model ? hl_model.p_slug : "..."
-            enabled: !cbTitle.checked
+            //enabled: !cbTitle.checked
             
             ColumnLayout {
                 TextField {
@@ -168,7 +181,7 @@ Flickable {
         Rectangle {
             width: menu.width
             height: 320
-            color: cbContent.checked ? "#aaa" : "white"
+            color: "white"//cbContent.checked ? "#aaa" : "white"
             Flickable {
               id: flickable
               flickableDirection: Flickable.VerticalFlick
@@ -253,7 +266,7 @@ Flickable {
                 SpinBox {
                     id: sbHeight
                     value: 906
-                    from: 320
+                    from: 32
                     to: 12800
                     stepSize: 32
                     editable: true
@@ -269,6 +282,12 @@ Flickable {
                 text: "Grab"
                 onClicked: { 
                     render()
+                }
+            }
+            Button {
+                text: "Adjust"
+                onClicked: { 
+                    adjust()
                 }
             }
         }
@@ -360,7 +379,7 @@ Flickable {
                         anchors.topMargin: centeredName ? -9 : 0
                         anchors.bottomMargin: centeredName ? -9 : 0
                         anchors.rightMargin: 6
-                        text: menu.hl == "en" ? "x.com/Martin_Gamsby" : "x.com/MartinGamsby"
+                        text: menu.hl == "en" ? "linktr.ee/Gamsby" : "linktr.ee/MGamsby"
                         font.pointSize: 8
                     }
                 }

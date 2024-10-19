@@ -4,7 +4,6 @@ import sys
 import os
 import subprocess
 
-
 # ========================================================================================
 from PySide6.QtWidgets import QApplication
 from PySide6.QtQml import QQmlApplicationEngine

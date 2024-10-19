@@ -56,34 +56,9 @@ Window {
         RowLayout {
             Layout.fillHeight: true
             Layout.fillWidth: true
-            Rectangle {
-                width: 120
-                Layout.fillHeight: true
-                clip: true
-                ColumnLayout {
-                    CheckBox { text: "1. Choose content (Asana?)" }
-                    CheckBox { text: "2. Find a title"; id: cbTitle }
-                    CheckBox { text: "3. Write the content"; id: cbContent  }
-                    CheckBox { text: "4. Start an image generation (or find it)" }
-                    CheckBox { text: "5. Proofread" }
-                    CheckBox { text: "6. Translate (And proofread\nin french if the translation is bad)"; id: cbTranslate }
-                    CheckBox { text: "7. Find/write tags" }
-                    
-                    Label { text: "<a href='https://medium.com/new-story'>Medium</a>"; onLinkActivated: Qt.openUrlExternally(link) }
-                    CheckBox { text: "8.1. Publish to Medium" }
-                    CheckBox { text: "8.2. Paste the link MEDIUM here" }
-                    CheckBox { text: "8.3. Share to X (EVENTUALLY/IF APPLICABLE: Adapt it for X)" }
-                    CheckBox { text: "8.3.2. COPY LINK of X here" }
-                    CheckBox { text: "8.4. Share in facebook if relevant?" }
-                    CheckBox { text: "8.4.2. COPY LINK of Facebook here" }
-                    
-                    Label { text: "<a href='https://typeshare.co/martingamsby'>Typeshare</a>"; onLinkActivated: Qt.openUrlExternally(link) }
-                    CheckBox { text: "9.1. Publish to Typeshare" }
-                    CheckBox { text: "9.2. COPY LINK of Typeshare here" }
-                    CheckBox { text: "9.3. COPY IMAGE URL of Typeshare here" }
-                    
-                    CheckBox { text: "10. GITHUB: Upload the article!" }
-                }
+            CheckList {
+                width: 160
+                Layout.fillHeight: true            
             }
             Row {
                 Layout.fillHeight: true

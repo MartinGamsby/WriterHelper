@@ -141,7 +141,7 @@ class ArticleModel(QObject):
     
     # ====================================================================================
     def get_slug(self):
-        simple = unidecode(self.title).replace(" ","-").replace("--","-").replace("--","-").replace("--","-").replace("--","-").lower()
+        simple = unidecode(self.title).replace(".","-").replace(" ","-").replace("--","-").replace("--","-").replace("--","-").replace("--","-").lower()
         import re
         return re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', simple).replace("--","-").rstrip("-")#\W+ is doesn't take spaces and such
         # title\n < éé `kožušček北亰 François
@@ -215,8 +215,8 @@ class ArticleModel(QObject):
     # ====================================================================================   
     def content_md_separators_br(self) -> str:
         ret = self.content_md_rich() \
-            .replace("<h3>","<h3 align='center'>╞═══╕").replace("</h3>","╘═══╡</h3>") \
-            .replace("<h4>","<h4 align='center'>╞═══╕").replace("</h4>","╘═══╡</h4>") \
+            .replace("<h3>","<h3 align='center'>╞══╕").replace("</h3>","╘══╡</h3>") \
+            .replace("<h4>","<h4 align='center'>╞══╕").replace("</h4>","╘══╡</h4>") \
             .replace("<li>","<li>- ") \
             .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
@@ -315,12 +315,20 @@ class ArticleModel(QObject):
     @Slot(None, result=str)
     def get_link_Facebook(self):
         return self.get_link("Facebook")
+    @Slot(None, result=str)
+    def get_link_Source(self):
+        return self.get_link("Source")
+    @Slot(None, result=str)
+    def get_link_Bluesky(self):
+        return self.get_link("Bluesky")
 
     p_link_medium = Property(str, get_link_medium, notify=updated)
     p_link_x = Property(str, get_link_x, notify=updated)
     p_link_typeshare = Property(str, get_link_Typeshare, notify=updated)
     p_link_linkedin = Property(str, get_link_LinkedIn, notify=updated)
     p_link_facebook = Property(str, get_link_Facebook, notify=updated)
+    p_link_source = Property(str, get_link_Source, notify=updated)
+    p_link_bluesky = Property(str, get_link_Bluesky, notify=updated)
     
             
     
@@ -415,7 +423,7 @@ class ArticleModel(QObject):
     @Slot(None, result=bool)
     def post_article(self):
         print("todo")
-        pass
+        pass        
     
     def change_article(self, file_contents, old_date, change_ref=True):
         parts = file_contents.split("---")
@@ -517,6 +525,11 @@ class ArticlesModel(QObject):
             dst = self.en()
             dst_hl = "en"
                     
+        if dst.content:
+            print("SOURCE ALREADY HAS CONTENT!!")
+            return
+        
+        
         if src.title:
             dst.set_title(GoogleTranslator(source=hl, target=dst_hl).translate(src.title))
             
