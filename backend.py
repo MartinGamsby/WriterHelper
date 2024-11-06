@@ -16,7 +16,16 @@ class Backend(QObject):
 
     # ====================================================================================
     def __init__(self):
-        self.articles = model.ArticlesModel()
+    
+        french=model.ArticleModel(hl="fr")
+        english=model.ArticleModel(hl="en")
+        french.set_ref(english)
+        english.set_ref(french)
+        
+        self.articles = model.ArticlesModel(french, english)
+        
+        french.open_last_article()
+        
         super().__init__()
 
     # ====================================================================================
@@ -53,7 +62,7 @@ class Backend(QObject):
         
     # ====================================================================================
     @Slot(str, result=str)
-    def get_used_tags(self, hl):
+    def get_used_tags(self, hl): # TODO: Better than that...
         tags = {}
         
         folder = self.article(hl).get_posts_folder()

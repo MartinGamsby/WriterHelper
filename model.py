@@ -225,13 +225,15 @@ class ArticleModel(QObject):
         if self.excerpt_image:
             ret = '<table cellpadding=6 style="float:right;"><tr><td><img src="' + self.excerpt_image + '" width=240 /></td></tr></table>'
         
+        # That doesn't work for blockquote?? border-left: 5px solid #1371b8;
         ret += self.content_md_rich().replace("<h4>","<h4 align='center'>") \
-            .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
-            .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
+            .replace("<blockquote>\n<p style='text-indent: 50px;'>","<blockquote>\n<p style='text-indent: -7px;'><i><b>&quot;") \
+            .replace("</p>\n</blockquote>","&quot;</b></i></p>\n</blockquote>") \
             .replace("<h1","<h1 align='center' style='color: %s' " % self.get_title_color()) \
             .replace("<h2","<h2 align='center' style='color: %s' " % self.get_title_color()) \
             .replace("<h3","<h3 align='center' style='color: %s' " % self.get_title_color()) \
             .replace("<h4","<h4 style='color: %s' " % self.get_title_color()) #ade6b9, 099d02, ade6b9
+            
         #print(ret)#("#ade6b9" if self.green else "black")) \
         return ret
     p_content_md_separators = Property(str, content_md_separators, notify=updated)
@@ -242,12 +244,16 @@ class ArticleModel(QObject):
             .replace("<h3>","<h3 align='center'>╞══╕").replace("</h3>","╘══╡</h3>") \
             .replace("<h4>","<h4 align='center'>╞══╕").replace("</h4>","╘══╡</h4>") \
             .replace("<li>","<li>- ") \
-            .replace("<blockquote>\n<p>","<blockquote>\n<p>&quot;") \
-            .replace("</p>\n</blockquote>","&quot;</p>\n</blockquote>") \
+            .replace("<blockquote>\n<p style='text-indent: 50px;'>","<blockquote>\n<p style='text-indent: -7px;'><i><b>&quot;") \
+            .replace("</p>\n</blockquote>","&quot;</b></i></p>\n</blockquote>") \
             .replace("</h1>","</h1 align='center'><br />") \
             .replace("</h2>","</h2 align='center'><br />") \
             .replace("</p>","<br /></p>") \
             .replace("</blockquote>","</blockquote><br />")
+            
+        for t in self.get_tags().split(","):
+            if t != "Gamsblurb":
+                ret += "\n#"+t
         #print(ret)
         return ret
     p_content_md_separators_br = Property(str, content_md_separators_br, notify=updated)
@@ -521,8 +527,8 @@ class ArticleModel(QObject):
 
                 # https://stackoverflow.com/questions/67940820/how-to-extract-markdown-links-with-a-regex
                 # Extract []() style links
-                link_name = "[^\[]+"
-                link_url = "http[s]?://.+"
+                link_name = f'[^\[]+'
+                link_url = f'http[s]?://.+'
                 markup_regex = f'\[({link_name})]\(\s*({link_url})\s*\)'
 
                 for match in re.findall(markup_regex, footer):
@@ -562,16 +568,9 @@ class ArticleModel(QObject):
 # ========================================================================================
 @dataclass
 class ArticlesModel(QObject):
-    french: ArticleModel = ArticleModel(hl="fr")
-    english: ArticleModel = ArticleModel(hl="en")
-    
-    # ====================================================================================    
-    def __init__(self):
-        super().__init__()
-        self.french.set_ref(self.english)
-        self.english.set_ref(self.french)
-        self.french.open_last_article()
-        
+    french: ArticleModel
+    english: ArticleModel
+            
     # ====================================================================================
     @Slot(None, result=ArticleModel)
     def fr(self):
