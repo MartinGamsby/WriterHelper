@@ -253,7 +253,7 @@ class ArticleModel(QObject):
             
         for t in self.get_tags().split(","):
             if t != "Gamsblurb":
-                ret += "\n#"+t
+                ret += "\n#"+t.lower()
         #print(ret)
         return ret
     p_content_md_separators_br = Property(str, content_md_separators_br, notify=updated)
@@ -315,14 +315,15 @@ class ArticleModel(QObject):
     #TODO: set_link is weird since bilingual? mixed them? See footer_md?
     # ====================================================================================    
     @Slot(str, str, result=bool)
-    def set_link(self, text, url):
+    def set_link(self, text, url, emit_update=True):
         for l in self.links:
             if l.text == text:
                 l.url = url
                 self.updated.emit()
                 return True
         self.links.append(Link(url=url, text=text))
-        self.updated.emit()
+        if emit_update:
+            self.updated.emit()
         return True  
         
     def get_link(self, name):
@@ -351,7 +352,22 @@ class ArticleModel(QObject):
     @Slot(None, result=str)
     def get_link_Bluesky(self):
         return self.get_link("Bluesky")
+    @Slot(None, result=str)
+    def get_link_YouTube(self):
+        return self.get_link("YouTube")
+    @Slot(None, result=str)
+    def get_link_YouTubeShorts(self):
+        return self.get_link("YouTube Shorts")
+    @Slot(None, result=str)
+    def get_link_based_on(self):
+        return self.get_link(self.get_based_on_text())
 
+    @Slot(None, result=str)
+    def get_based_on_text(self):
+        if self.hl == "fr":
+            return "Basé sur"
+        return "Based on"
+        
     p_link_medium = Property(str, get_link_medium, notify=updated)
     p_link_x = Property(str, get_link_x, notify=updated)
     p_link_typeshare = Property(str, get_link_Typeshare, notify=updated)
@@ -359,6 +375,9 @@ class ArticleModel(QObject):
     p_link_facebook = Property(str, get_link_Facebook, notify=updated)
     p_link_source = Property(str, get_link_Source, notify=updated)
     p_link_bluesky = Property(str, get_link_Bluesky, notify=updated)
+    p_link_YouTube = Property(str, get_link_YouTube, notify=updated)
+    p_link_YouTubeShorts = Property(str, get_link_YouTubeShorts, notify=updated)
+    p_link_based_on = Property(str, get_link_based_on, notify=updated)
     
             
     
@@ -430,28 +449,44 @@ class ArticleModel(QObject):
     
     # ====================================================================================     
     @Slot(None, result=bool)
-    def new_article(self):
-        self.delete_last = False
+    def new_article(self, copy_current=False):
+    
+        # I guess I would need an ID to be able to change the last article.
+        # Or maybe just add "V2" to the name?
+        # The ID doesn't need to be visible ... add in the metadata of the article in yaml??
+        # For now: Only change the next article
         
-        print("new article", self.hl)
-        self.title = ""
+        self.delete_last = False
+
+        self.links = []
+        if copy_current:
+            print("copy  article", self.hl)
+            # First, because we want the proper url
+            self.set_link(self.get_based_on_text(), self.get_website_url() + self.get_slug(), emit_update=False)
+            
+            self.title += " V2"
+        else:
+            print("new article", self.hl)
+            self.title = ""
+            self.content = ""
+            self.tags = DEFAULT_TAGS
+            self.excerpt_image = ""# Last, because it updates, otherwise we need to change it to not emit update signal
+            
         self.date = filemanager.ContentFile().get_date_str()
-        self.content = ""
-        self.excerpt_image = ""
-        self.tags = DEFAULT_TAGS
         self.mini = False
         self.medium = False
-        self.links = []
+        
+        
         self.updated.emit()        
         
         self.delete_last = True
     
     # ====================================================================================     
-    @Slot(None, result=bool)
-    def new_both_articles(self):
+    @Slot(bool, result=bool)
+    def new_both_articles(self, copy_current: bool):
         self.delete_last = False
-        self.ref.new_article()
-        self.new_article()
+        self.ref.new_article(copy_current=copy_current)
+        self.new_article(copy_current=copy_current)
         self.delete_last = True
     
    

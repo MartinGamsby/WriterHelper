@@ -51,11 +51,18 @@ Flickable {
                 }
             }
             Button {
+                text: "Make V2"
+                onClicked: { 
+                    hl_model.new_both_articles(true)
+                }
+                Layout.columnSpan: 1
+            }
+            Button {
                 text: "New both articles"
                 onClicked: { 
-                    hl_model.new_both_articles()
+                    hl_model.new_both_articles(false)
                 }
-                Layout.columnSpan: 2
+                Layout.columnSpan: 1
             }
         }
         Setting { 
@@ -127,12 +134,36 @@ Flickable {
                         hl_model.set_link("Bluesky", text)
                     }
                 }
+                Label { text: "<a href='https://studio.youtube.com'>YouTube</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
+                TextField {
+                    Layout.fillWidth: true
+                    text: hl_model ? hl_model.p_link_YouTube : "..."                                   
+                    onEditingFinished: {
+                        hl_model.set_link("YouTube", text)
+                    }
+                }
+                Label { text: "<a href='https://studio.youtube.com'>YouTube Shorts</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
+                TextField {
+                    Layout.fillWidth: true
+                    text: hl_model ? hl_model.p_link_YouTubeShorts : "..."                                   
+                    onEditingFinished: {
+                        hl_model.set_link("YouTube Shorts", text)
+                    }
+                }
                 Label { text: "Source" }
                 TextField {
                     Layout.fillWidth: true
                     text: hl_model ? hl_model.p_link_source : "..."                                   
                     onEditingFinished: {
                         hl_model.set_link("Source", text)
+                    }
+                }
+                Label { text: hl_model ? hl_model.get_based_on_text() : "..." } // TODO: real translate with Qt...
+                TextField {
+                    Layout.fillWidth: true
+                    text: hl_model ? hl_model.p_link_based_on : "..."                                   
+                    onEditingFinished: {
+                        hl_model.set_link(basedOnTxt.text, text)
                     }
                 }
             }
