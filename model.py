@@ -253,7 +253,7 @@ class ArticleModel(QObject):
             
         for t in self.get_tags().split(","):
             if t != "Gamsblurb":
-                ret += "\n#"+t.lower()
+                ret += "\n#"+t.lower().replace(" ","")
         #print(ret)
         return ret
     p_content_md_separators_br = Property(str, content_md_separators_br, notify=updated)
@@ -480,7 +480,7 @@ class ArticleModel(QObject):
         self.updated.emit()        
         
         self.delete_last = True
-    
+        
     # ====================================================================================     
     @Slot(bool, result=bool)
     def new_both_articles(self, copy_current: bool):
@@ -502,9 +502,18 @@ class ArticleModel(QObject):
                 file_contents = f.read()
             self.change_article(file_contents, os.path.basename(file_name)[:10])
        
-    # ====================================================================================     
+    # ====================================================================================
     @Slot(None, result=bool)
     def open_next_article(self):
+        self.open_adjacent_article(to_previous=False)
+            
+    # ====================================================================================
+    @Slot(None, result=bool)
+    def open_prev_article(self):
+        self.open_adjacent_article(to_previous=True)
+    
+    # ==================================================================================== 
+    def open_adjacent_article(self, to_previous):
         print("open next article", self.hl)
         last_filename = self.content_file.get_date_slug(self.get_slug(), self.date) + ".md"
         print(last_filename)
@@ -514,7 +523,10 @@ class ArticleModel(QObject):
         if os.path.isfile(os.path.join(self.get_posts_folder(), last_filename)):
             if last_filename:
                 #os.path.join(self.get_posts_folder(), last_filename )#, 
-                for f in os.listdir(self.get_posts_folder()):
+                files = os.listdir(self.get_posts_folder())
+                if to_previous:
+                    files.reverse()
+                for f in files:
                     if found_last_filename:
                         next_filename = f
                         break
@@ -547,14 +559,21 @@ class ArticleModel(QObject):
             content = parts[2].strip()
             
             header = yaml.full_load(header.replace("[,Gamsblurb]","[Gamsblurb]"))
-            cats = header["categories"]
+            
+            #cats = []
+            #if "categories" in header:
+            #    cats = header["categories"]
             
             
             self.title = header["title"]
             self.content = content.replace("### **%s**"%self.title,"").strip()
-            self.excerpt_image = header["excerpt_image"] if header["excerpt_image"] else ""
+            self.excerpt_image = header["excerpt_image"] if ("excerpt_image" in header and header["excerpt_image"]) else ""
             self.determine_length_category()
-            self.tags = ",".join(header["tags"])#[:-1])
+            if "tags" in header:
+                self.tags = ",".join(header["tags"])#[:-1])
+            else:
+                self.tags = DEFAULT_TAGS
+                
             self.links = []
             
             if nb_parts == 4:
@@ -573,13 +592,18 @@ class ArticleModel(QObject):
                     print(url, name)
         
             if change_ref:
-                potential_ref_file = self.date + "-" + header["ref"].replace(self.ref.get_website_url(),"") + ".md"
+                reference = ""
+                if "ref" in header:
+                    reference = header["ref"]
+                potential_ref_file = self.date + "-" + reference.replace(self.ref.get_website_url(),"") + ".md"
                 potential_ref_file_full = os.path.join( self.ref.get_posts_folder(), potential_ref_file )
                 if os.path.isfile(potential_ref_file_full):
                     print( "REF:", potential_ref_file_full )
                     with open(potential_ref_file_full, mode="r", encoding="utf-8") as f:
                         file_contents = f.read()
                         self.ref.change_article(file_contents, os.path.basename(potential_ref_file_full)[:10], change_ref=False)
+                else:
+                    self.ref.new_article()
                 
             self.updated.emit()
             self.delete_last = True
@@ -587,13 +611,10 @@ class ArticleModel(QObject):
         print("Couldn't parse the md file", nb_parts)
         
         
-    #@Slot(None, result=str)
-    #def excerpt_img_local(self):
-    #    # TODO: Add another path, next to "posts", but for "images", and paste it there. Use local here.
-    #    return "C:\\Users\\Martin\\Documents\\GitHub\\martingamsby.github.io" + self.excerpt_image.replace("/","\\")
-    #excerpt_img_local = Property(str, excerpt_img_local, notify=updated)
-        
-    
+    # ====================================================================================     
+    @Slot(None, result=bool)
+    def generate_tags(self):
+        print("generate_tags")
         
     # ====================================================================================
     # We probably need notifications per property ... (all p_..)

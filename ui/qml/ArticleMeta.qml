@@ -45,17 +45,23 @@ Flickable {
                 }
             }
             Button {
-                text: "Open Next"
-                onClicked: { 
-                    hl_model.open_next_article()
-                }
-            }
-            Button {
                 text: "Make V2"
                 onClicked: { 
                     hl_model.new_both_articles(true)
                 }
                 Layout.columnSpan: 1
+            }
+            Button {
+                text: "Open Prev"
+                onClicked: { 
+                    hl_model.open_prev_article()
+                }
+            }
+            Button {
+                text: "Open Next"
+                onClicked: { 
+                    hl_model.open_next_article()
+                }
             }
             Button {
                 text: "New both articles"
@@ -178,6 +184,12 @@ Flickable {
                 onEditingFinished: {
                     hl_model.set_tags(text)
                 }
+            }
+        }
+        Button {
+            text: "Generate Tags"
+            onClicked: { 
+                hl_model.generate_tags()
             }
         }
 

@@ -26,6 +26,8 @@ class Backend(QObject):
         
         french.open_last_article()
         
+        #print(self.get_all_articles("en"))
+        
         super().__init__()
 
     # ====================================================================================
@@ -63,6 +65,7 @@ class Backend(QObject):
     # ====================================================================================
     @Slot(str, result=str)
     def get_used_tags(self, hl): # TODO: Better than that...
+        return "" # It was becoming slow... and was not super helpful. Need to add links to add them in the list.
         tags = {}
         
         folder = self.article(hl).get_posts_folder()
@@ -98,4 +101,43 @@ class Backend(QObject):
             tags_str += t[0] + ", "
         return tags_str
         #return ",".join(tags)
+        
+
+    # ====================================================================================
+    @Slot(str, result=str)
+    def get_all_articles(self, hl): # TODO: Better than that...
+        text = ""
+        
+        folder = self.article(hl).get_posts_folder()
+                
+        if os.path.isdir(folder):
+            files = os.listdir(folder)
+            files.reverse()
+            for f in files:
+                full_f = os.path.join(folder,f)
+                if f.endswith("md"):
+                    
+                    text += "\n"
+                    #with open(full_f, mode="r", encoding="utf-8") as f:
+                    #    text += f.read()
+                    
+                    with open(full_f, mode="r", encoding="utf-8") as file:
+                        for i, line in enumerate(file.readlines()):
+                            if i == 1:                                
+                                text += "date: " + f[:10] + "\n"
+                                text += "name: " + f[11:-3] + "\n"
+                                
+                            skip = False
+                            for prefix in ["layout: ", "title: ", "categories: ", "excerpt_image: ", "ref: ", "- [Typeshare]", "- [X/Twitter]", "- [Medium]", "- [LinkedIn]", "- [Facebook]", "- [Source]", "- [Bluesky]", "- [YouTube", "- [Based on]"]:
+                                if line.startswith(prefix):
+                                    skip = True
+                                    break
+                                    
+                            if not skip:
+                                text += line + "\n"
+                                        
+                    text += "\n"
+                                        
+        
+        return text
         
