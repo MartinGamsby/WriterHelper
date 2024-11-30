@@ -6,7 +6,6 @@ from unidecode import unidecode
 import re
 import configparser
 import os
-import re
 import yaml
 import markdown
 from deep_translator import GoogleTranslator
@@ -101,6 +100,8 @@ class ArticleModel(QObject):
             self.template_post_content_md = f.read()
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates', 'post_content_only.md'), mode="r", encoding="utf-8") as f:
             self.template_post_content_only_md = f.read()
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates', 'post_title_only.md'), mode="r", encoding="utf-8") as f:
+            self.template_post_title_only_md = f.read()
         
     def config_filename(self):
         return 'settings_%s.ini' % self.hl
@@ -162,7 +163,6 @@ class ArticleModel(QObject):
     # ====================================================================================
     def get_slug(self):
         simple = unidecode(self.title).replace(".","-").replace(" ","-").replace("--","-").replace("--","-").replace("--","-").replace("--","-").lower()
-        import re
         return re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', simple).replace("--","-").rstrip("-")#\W+ is doesn't take spaces and such
         # title\n < éé `kožušček北亰 François
     p_slug = Property(str, get_slug, notify=updated)
@@ -241,8 +241,8 @@ class ArticleModel(QObject):
     # ====================================================================================   
     def content_md_separators_br(self) -> str:
         ret = self.content_md_rich() \
-            .replace("<h3>","<h3 align='center'>╞══╕").replace("</h3>","╘══╡</h3>") \
-            .replace("<h4>","<h4 align='center'>╞══╕").replace("</h4>","╘══╡</h4>") \
+            .replace("<h3>","<h3 align='center'>╞═╕").replace("</h3>","╘═╡</h3>") \
+            .replace("<h4>","<h4 align='center'>╞═╕").replace("</h4>","╘═╡</h4>") \
             .replace("<li>","<li>- ") \
             .replace("<blockquote>\n<p style='text-indent: 50px;'>","<blockquote>\n<p style='text-indent: -7px;'><i><b>&quot;") \
             .replace("</p>\n</blockquote>","&quot;</b></i></p>\n</blockquote>") \
@@ -253,11 +253,21 @@ class ArticleModel(QObject):
             
         for t in self.get_tags().split(","):
             if t != "Gamsblurb":
-                ret += "\n#"+t.lower().replace(" ","")
+                ret += "\n#"+re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', unidecode(t).lower()).replace(" ","")
         #print(ret)
         return ret
     p_content_md_separators_br = Property(str, content_md_separators_br, notify=updated)
             
+    # ====================================================================================   
+    def content_short(self) -> str:
+        ret = self.templated(self.template_post_title_only_md)        
+        ret = markdown.markdown(ret) + "<br />"
+        for t in self.get_tags().split(","):
+            if t != "Gamsblurb":
+                ret += "\n#"+re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', unidecode(t).lower()).replace(" ","")
+        #print(ret)
+        return ret
+    p_content_short = Property(str, content_short, notify=updated)
     # ====================================================================================    
     @Slot(None, result=str)
     def get_tags(self):

@@ -84,7 +84,36 @@ Flickable {
         }
         sbHeight.value += sbHeight.stepSize
     }
-    
+    function adjustFontSize() {
+        
+        contentFlickable.contentY = 0
+        while( contentFlickable.atYEnd && sbFontSize.value < sbFontSize.to )
+        {
+            sbFontSize.value += sbFontSize.stepSize
+        }
+        while( !contentFlickable.atYEnd && sbFontSize.value > sbFontSize.from )
+        {
+            sbFontSize.value -= sbFontSize.stepSize
+        }
+        if( contentEdit.text.length < 1000 )
+            sbFontSize.value -= sbFontSize.stepSize    
+        if( contentEdit.text.length < 300 )
+            sbFontSize.value -= sbFontSize.stepSize
+    }
+    function square() {        
+        sbHeight.value = richTextArea.width
+        adjustFontSize()
+    }
+    function portrait() {        
+        sbHeight.value = richTextArea.width*5/4
+        adjustFontSize()
+    }
+    function landscape() {        
+        sbHeight.value = richTextArea.width*9/16
+        adjustFontSize()
+        if( contentEdit.text.length < 300 )
+            sbFontSize.value -= sbFontSize.stepSize
+    }
     Column
     {
         id: columnLayout
@@ -208,9 +237,9 @@ Flickable {
                     SpinBox {
                         id: sbFontSize
                         value: 14
-                        from: 8
-                        to: 48
-                        stepSize: 2
+                        from: 4
+                        to: 64
+                        stepSize: 1//2
                         editable: true
                     }
                 }
@@ -261,6 +290,8 @@ Flickable {
                 text: "Center"
             }
             // TODO: Add "add image"
+        }
+        RowLayout {
             Button {
                 text: "Grab"
                 onClicked: { 
@@ -271,6 +302,24 @@ Flickable {
                 text: "Adjust"
                 onClicked: { 
                     adjust()
+                }
+            }
+            Button {
+                text: "Square"
+                onClicked: { 
+                    square()
+                }
+            }
+            Button {
+                text: "Portrait"
+                onClicked: { 
+                    portrait()
+                }
+            }
+            Button {
+                text: "Landscape"
+                onClicked: { 
+                    landscape()
                 }
             }
         }
@@ -299,6 +348,13 @@ Flickable {
               }
               ScrollBar.vertical: ScrollBar {}
             }
+        }
+        TextArea {
+            textFormat: TextEdit.RichText
+            width: sbWidth.visible ? sbWidth.value : menu.width
+            height: 100
+            
+            text: hl_model ? hl_model.p_content_short : "..."
         }
         Rectangle {
             id: richTextArea
