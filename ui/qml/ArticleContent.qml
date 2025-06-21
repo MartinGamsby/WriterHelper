@@ -104,6 +104,10 @@ Flickable {
         sbHeight.value = richTextArea.width
         adjustFontSize()
     }
+    function adjust500_400() {        
+        sbHeight.value = richTextArea.width*4/5
+        adjustFontSize()
+    }
     function portrait() {        
         sbHeight.value = richTextArea.width*5/4
         adjustFontSize()
@@ -322,6 +326,12 @@ Flickable {
                     landscape()
                 }
             }
+            Button {
+                text: "500x400"
+                onClicked: { 
+                    adjust500_400()
+                }
+            }
         }
         Rectangle {
             width: sbWidth.visible ? sbWidth.value : menu.width
@@ -419,7 +429,7 @@ Flickable {
                         anchors.bottomMargin: centeredName ? -9 : 0
                         anchors.rightMargin: 6
                         text: menu.hl == "en" ? "linktr.ee/Gamsby" : "linktr.ee/MGamsby"
-                        font.pointSize: sbFontSize.value - 1
+                        font.pointSize: sbFontSize.value *0.8
                     }
                 }
                 Text {

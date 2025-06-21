@@ -227,8 +227,8 @@ class ArticleModel(QObject):
         
         # That doesn't work for blockquote?? border-left: 5px solid #1371b8;
         ret += self.content_md_rich().replace("<h4>","<h4 align='center'>") \
-            .replace("<blockquote>\n<p style='text-indent: 50px;'>","<blockquote>\n<p style='text-indent: -7px;'><i><b>&quot;") \
-            .replace("</p>\n</blockquote>","&quot;</b></i></p>\n</blockquote>") \
+            .replace("<blockquote>\n<p style='text-indent: 50px;'>","<blockquote>\n<p style='text-indent: -7px;'><i><b>") \
+            .replace("</p>\n</blockquote>","</b></i></p>\n</blockquote>") \
             .replace("<h1","<h1 align='center' style='color: %s' " % self.get_title_color()) \
             .replace("<h2","<h2 align='center' style='color: %s' " % self.get_title_color()) \
             .replace("<h3","<h3 align='center' style='color: %s' " % self.get_title_color()) \
@@ -244,8 +244,8 @@ class ArticleModel(QObject):
             .replace("<h3>","<h3 align='center'>╞═╕").replace("</h3>","╘═╡</h3>") \
             .replace("<h4>","<h4 align='center'>╞═╕").replace("</h4>","╘═╡</h4>") \
             .replace("<li>","<li>- ") \
-            .replace("<blockquote>\n<p style='text-indent: 50px;'>","<blockquote>\n<p style='text-indent: -7px;'><i><b>&quot;") \
-            .replace("</p>\n</blockquote>","&quot;</b></i></p>\n</blockquote>") \
+            .replace("<blockquote>\n<p style='text-indent: 50px;'>","<blockquote>\n<p style='text-indent: -7px;'><i><b>") \
+            .replace("</p>\n</blockquote>","</b></i></p>\n</blockquote>") \
             .replace("</h1>","</h1 align='center'><br />") \
             .replace("</h2>","</h2 align='center'><br />") \
             .replace("</p>","<br /></p>") \
@@ -625,6 +625,14 @@ class ArticleModel(QObject):
     @Slot(None, result=bool)
     def generate_tags(self):
         print("generate_tags")
+        
+    #@Slot(None, result=str)
+    #def excerpt_img_local(self):
+    #    # TODO: Add another path, next to "posts", but for "images", and paste it there. Use local here.
+    #    return "C:\\Users\\Martin\\Documents\\GitHub\\martingamsby.github.io" + self.excerpt_image.replace("/","\\")
+    #excerpt_img_local = Property(str, excerpt_img_local, notify=updated)
+        
+    
         
     # ====================================================================================
     # We probably need notifications per property ... (all p_..)
