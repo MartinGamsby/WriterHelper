@@ -8,9 +8,11 @@ import configparser
 import os
 import yaml
 import markdown
+from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
 
 import filemanager
+from post_bsky import PostBsky
 
 DEFAULT_TAGS = "Gamsblurb"
 
@@ -239,7 +241,7 @@ class ArticleModel(QObject):
     p_content_md_separators = Property(str, content_md_separators, notify=updated)
         
     # ====================================================================================   
-    def content_md_separators_br(self) -> str:
+    def content_md_separators_br(self, add_tags=True) -> str:
         ret = self.content_md_rich() \
             .replace("<h3>","<h3 align='center'>╞═╕").replace("</h3>","╘═╡</h3>") \
             .replace("<h4>","<h4 align='center'>╞═╕").replace("</h4>","╘═╡</h4>") \
@@ -250,10 +252,11 @@ class ArticleModel(QObject):
             .replace("</h2>","</h2 align='center'><br />") \
             .replace("</p>","<br /></p>") \
             .replace("</blockquote>","</blockquote><br />")
-            
-        for t in self.get_tags().split(","):
-            if t != "Gamsblurb":
-                ret += "\n#"+re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', unidecode(t).lower()).replace(" ","")
+        
+        if add_tags:
+            for t in self.get_tags().split(","):
+                if t != "Gamsblurb":
+                    ret += "\n#"+re.sub(r'[^a-zA-Z0-9_ \r\n\t\f\v-]+', '', unidecode(t).lower()).replace(" ","")
         #print(ret)
         return ret
     p_content_md_separators_br = Property(str, content_md_separators_br, notify=updated)
@@ -553,9 +556,29 @@ class ArticleModel(QObject):
     
     # ====================================================================================     
     @Slot(None, result=bool)
-    def post_article(self):
-        print("todo")
-        pass        
+    def post_bluesky(self):
+        if self.get_link("Bluesky"):
+            print("Link already exists!")
+            return
+        soup = BeautifulSoup(self.content_md_separators_br(add_tags=False), features="html.parser")
+        
+        bsky = PostBsky(self.hl)
+        res = bsky.post(msg=soup.get_text(), image_local_url=f"richTextArea_{self.hl}1.png")
+        print(res)
+        uri = res.uri
+        handle = bsky.get_handle()
+                
+        # e.g.
+        # at://did:plc:56ydoq55hhqiyon2kbvt7gd6/app.bsky.feed.post/3ls52v3vmiy2p
+        # https://bsky.app/profile/martin-gamsby.bsky.social/post/
+        #uri = "at://did:plc:56ydoq55hhqiyon2kbvt7gd6/app.bsky.feed.post/3ls52v3vmiy2p"
+        #handle = "martin-gamsby.bsky.social"        
+        id = uri[uri.rfind("/")+1:]
+        url = f"https://bsky.app/profile/{handle}/post/{id}"
+        
+        self.set_link("Bluesky", url)
+        
+            
     
     def change_article(self, file_contents, old_date, change_ref=True):
         parts = file_contents.split("---")

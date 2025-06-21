@@ -132,7 +132,7 @@ Flickable {
                         hl_model.set_link("Facebook", text)
                     }
                 }
-                Label { text: "<a href='https://bsky.app/profile/martin-gamsby.bsky.social'>Bluesky</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
+                Label { text: "<a href='https://bsky.app/profile/martin-gamsby.bsky.social'>Bluesky</a>"; onLinkActivated: function(link) { hl_model.post_bluesky() } }
                 TextField {
                     Layout.fillWidth: true
                     text: hl_model ? hl_model.p_link_bluesky : "..."                                   
