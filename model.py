@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from PySide6.QtCore import QObject, Signal, Slot, Property
+from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl
 from PySide6.QtWidgets import QFileDialog
+from PySide6.QtGui import QDesktopServices
 
 from unidecode import unidecode
 import re
@@ -13,6 +14,7 @@ from deep_translator import GoogleTranslator
 
 import filemanager
 from post_bsky import PostBsky
+from post_x import PostX
 
 DEFAULT_TAGS = "Gamsblurb"
 
@@ -554,30 +556,29 @@ class ArticleModel(QObject):
                 file_contents = f.read()
             self.change_article(file_contents, os.path.basename(next_filename)[:10])
     
+    # ====================================================================================
+    def post(self, name, poster):
+        if self.get_link(name):
+            print("Link already exists!")
+            return
+        #soup = BeautifulSoup(self.content_md_separators_br(add_tags=False), features="html.parser")
+        #url = poster.post(msg=soup.get_text(), image_local_url=f"richTextArea_{self.hl}1.png")
+        
+        # TODO: Do we want only the title, or a "short" version of the content too?
+        url = poster.post(msg=self.title, image_local_url=f"richTextArea_{self.hl}1.png")
+        self.set_link(name, url)
+        QDesktopServices.openUrl(QUrl(url, QUrl.TolerantMode))
+        return url
+    
     # ====================================================================================     
     @Slot(None, result=bool)
     def post_bluesky(self):
-        if self.get_link("Bluesky"):
-            print("Link already exists!")
-            return
-        soup = BeautifulSoup(self.content_md_separators_br(add_tags=False), features="html.parser")
+        return self.post("Bluesky", PostBsky(self.hl))        
         
-        bsky = PostBsky(self.hl)
-        res = bsky.post(msg=soup.get_text(), image_local_url=f"richTextArea_{self.hl}1.png")
-        print(res)
-        uri = res.uri
-        handle = bsky.get_handle()
-                
-        # e.g.
-        # at://did:plc:56ydoq55hhqiyon2kbvt7gd6/app.bsky.feed.post/3ls52v3vmiy2p
-        # https://bsky.app/profile/martin-gamsby.bsky.social/post/
-        #uri = "at://did:plc:56ydoq55hhqiyon2kbvt7gd6/app.bsky.feed.post/3ls52v3vmiy2p"
-        #handle = "martin-gamsby.bsky.social"        
-        id = uri[uri.rfind("/")+1:]
-        url = f"https://bsky.app/profile/{handle}/post/{id}"
-        
-        self.set_link("Bluesky", url)
-        
+    # ====================================================================================     
+    @Slot(None, result=bool)
+    def post_x(self):
+        return self.post("X/Twitter", PostX(self.hl))        
             
     
     def change_article(self, file_contents, old_date, change_ref=True):

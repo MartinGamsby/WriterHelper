@@ -92,7 +92,8 @@ Flickable {
             
             GridLayout {
                 columns: 2
-                Label { text: "<a href='https://medium.com/new-story'>Medium</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "fr" }
+                //Label { text: "<a href='https://medium.com/new-story'>Medium</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "fr" }
+                Label { text: "Medium"; visible: menu.hl == "fr" }
                 TextField {
                     Layout.fillWidth: true; visible: menu.hl == "fr"
                     text: hl_model ? hl_model.p_link_medium : "..."
@@ -100,7 +101,8 @@ Flickable {
                         hl_model.set_link("Medium", text)
                     }
                 }
-                Label { text: "<a href='https://typeshare.co/martingamsby'>Typeshare</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "en" }
+                //Label { text: "<a href='https://typeshare.co/martingamsby'>Typeshare</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "en" }
+                Label { text: "Typeshare"; visible: menu.hl == "en" }
                 TextField {
                     Layout.fillWidth: true; visible: menu.hl == "en"
                     text: hl_model ? hl_model.p_link_typeshare : "..."
@@ -108,7 +110,7 @@ Flickable {
                         hl_model.set_link("Typeshare", text)
                     }
                 }
-                Label { text: "<a href='https://x.com/'>X/Twitter</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
+                Label { text: "<a href='https://x.com/'>X/Twitter</a>"; onLinkActivated: function(link) { hl_model.post_x() } }
                 TextField {
                     Layout.fillWidth: true
                     text: hl_model ? hl_model.p_link_x : "..."
@@ -116,7 +118,8 @@ Flickable {
                         hl_model.set_link("X/Twitter", text)
                     }
                 }
-                Label { text: "<a href='https://linkedin.com/'>LinkedIn</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "en" }
+                //Label { text: "<a href='https://linkedin.com/'>LinkedIn</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "en" }
+                Label { text: "LinkedIn"; visible: menu.hl == "en" }
                 TextField {
                     Layout.fillWidth: true; visible: menu.hl == "en"
                     text: hl_model ? hl_model.p_link_linkedin : "..."
@@ -124,7 +127,8 @@ Flickable {
                         hl_model.set_link("LinkedIn", text)
                     }
                 }
-                Label { text: "<a href='https://facebook.com/'>Facebook</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "fr"     }
+                //Label { text: "<a href='https://facebook.com/'>Facebook</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) }; visible: menu.hl == "fr"     }
+                Label { text: "Facebook"; visible: menu.hl == "fr" }
                 TextField {
                     Layout.fillWidth: true ; visible: menu.hl == "fr"    
                     text: hl_model ? hl_model.p_link_facebook : "..."                                   
@@ -140,7 +144,8 @@ Flickable {
                         hl_model.set_link("Bluesky", text)
                     }
                 }
-                Label { text: "<a href='https://studio.youtube.com'>YouTube</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
+                //Label { text: "<a href='https://studio.youtube.com'>YouTube</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
+                Label { text: "YouTube" }
                 TextField {
                     Layout.fillWidth: true
                     text: hl_model ? hl_model.p_link_YouTube : "..."                                   
@@ -148,7 +153,8 @@ Flickable {
                         hl_model.set_link("YouTube", text)
                     }
                 }
-                Label { text: "<a href='https://studio.youtube.com'>YouTube Shorts</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
+                //Label { text: "<a href='https://studio.youtube.com'>YouTube Shorts</a>"; onLinkActivated: function(link) { Qt.openUrlExternally(link) } }
+                Label { text: "YouTube Shorts" }
                 TextField {
                     Layout.fillWidth: true
                     text: hl_model ? hl_model.p_link_YouTubeShorts : "..."                                   
