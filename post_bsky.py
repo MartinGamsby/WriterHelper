@@ -10,7 +10,7 @@ class PostBsky(Post):
         Post.__init__(self, hl, access={'Handle': '<TODO>', 'AppPassword': '<TODO>'})
     
     # ====================================================================================    
-    def post(self, msg, image_local_url):
+    def post(self, msg, image_local_url, alt_text):
         client = Client()
         
         client.login(self.get_handle(), self.get_app_password())
@@ -18,7 +18,7 @@ class PostBsky(Post):
         if image_local_url and os.path.isfile(image_local_url):
             with open(image_local_url, 'rb') as f:
                 img_data = f.read()
-                post = client.send_image(text=msg, image=img_data, image_alt=msg, langs=[self.hl])
+                post = client.send_image(text=msg, image=img_data, image_alt=alt_text, langs=[self.hl])
         else:
             post = client.send_post(msg, langs=[self.hl])
             

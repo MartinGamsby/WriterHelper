@@ -11,6 +11,7 @@ import yaml
 import markdown
 from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
+from pathlib import Path
 
 import filemanager
 from post_bsky import PostBsky
@@ -227,7 +228,7 @@ class ArticleModel(QObject):
         
         ret = ""
         if self.excerpt_image:
-            ret = '<table cellpadding=6 style="float:right;"><tr><td><img src="' + self.excerpt_image + '" width=240 /></td></tr></table>'
+            ret = '<table cellpadding=6 style="float:right;"><tr><td><img src="' + self.excerpt_image_local() + '" width=240 /></td></tr></table>'
         
         # That doesn't work for blockquote?? border-left: 5px solid #1371b8;
         ret += self.content_md_rich().replace("<h4>","<h4 align='center'>") \
@@ -557,15 +558,18 @@ class ArticleModel(QObject):
             self.change_article(file_contents, os.path.basename(next_filename)[:10])
     
     # ====================================================================================
-    def post(self, name, poster):
+    def post(self, name, poster, max_length):
         if self.get_link(name):
             print("Link already exists!")
             return
-        #soup = BeautifulSoup(self.content_md_separators_br(add_tags=False), features="html.parser")
-        #url = poster.post(msg=soup.get_text(), image_local_url=f"richTextArea_{self.hl}1.png")
-        
-        # TODO: Do we want only the title, or a "short" version of the content too?
-        url = poster.post(msg=self.title, image_local_url=f"richTextArea_{self.hl}1.png")
+        soup = BeautifulSoup(self.content_md_separators_br(add_tags=False), features="html.parser")
+        text = soup.get_text()
+        if len(text) <= max_length:
+            # TODO: Have the local image (if any)
+            url = poster.post(msg=text, image_local_url=None, alt_text=text)
+        else:        
+            # TODO: Do we want only the title, or a "short" version of the content too?
+            url = poster.post(msg=self.title, image_local_url=f"richTextArea_{self.hl}1.png", alt_text=text)
         self.set_link(name, url)
         QDesktopServices.openUrl(QUrl(url, QUrl.TolerantMode))
         return url
@@ -573,12 +577,12 @@ class ArticleModel(QObject):
     # ====================================================================================     
     @Slot(None, result=bool)
     def post_bluesky(self):
-        return self.post("Bluesky", PostBsky(self.hl))        
+        return self.post("Bluesky", PostBsky(self.hl), max_length=300)        
         
     # ====================================================================================     
     @Slot(None, result=bool)
     def post_x(self):
-        return self.post("X/Twitter", PostX(self.hl))        
+        return self.post("X/Twitter", PostX(self.hl), max_length=280)        
             
     
     def change_article(self, file_contents, old_date, change_ref=True):
@@ -651,9 +655,15 @@ class ArticleModel(QObject):
         print("generate_tags")
         
     #@Slot(None, result=str)
-    #def excerpt_img_local(self):
-    #    # TODO: Add another path, next to "posts", but for "images", and paste it there. Use local here.
-    #    return "C:\\Users\\Martin\\Documents\\GitHub\\martingamsby.github.io" + self.excerpt_image.replace("/","\\")
+    def excerpt_image_local(self):
+        # TODO: Add another path, next to "posts", but for "images", and paste it there. Use local here.
+        path = Path(self.get_posts_folder()).parent
+        
+        local_file = str(path) + "\\" + self.excerpt_image.replace("/","\\")
+        if os.path.isfile(local_file):
+            return "file:///" + local_file
+        else:
+            return self.excerpt_image # TODO: Copy locally if it's from a url?
     #excerpt_img_local = Property(str, excerpt_img_local, notify=updated)
         
     

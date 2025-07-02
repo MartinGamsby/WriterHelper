@@ -19,7 +19,7 @@ class Post():
         return self.config["Access"]["AppPassword"]
                 
     # ====================================================================================    
-    def post(self, msg, image_local_url):
+    def post(self, msg, image_local_url, alt_text):
         print("To implement")
             
     # ====================================================================================    

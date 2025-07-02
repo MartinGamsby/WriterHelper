@@ -17,7 +17,7 @@ class PostX(Post):
             'ClientSecret': '<TODO>'})
             
     # ====================================================================================    
-    def post(self, msg, image_local_url):
+    def post(self, msg, image_local_url, alt_text):
     
         consumer_key=self.config["Access"]["APIKey"]
         consumer_secret=self.config["Access"]["APISecret"]
