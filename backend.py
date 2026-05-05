@@ -26,7 +26,8 @@ class Backend(QObject):
         
         french.open_last_article()
         
-        #print(self.get_all_articles("en"))
+        with open('all_content_fr.txt', "w", encoding="utf-8") as the_file:
+            the_file.write(self.get_all_articles("fr"))
         
         super().__init__()
 

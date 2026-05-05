@@ -1,6 +1,6 @@
 ---
 layout: post
-title: <TITLE>
+title: "<TITLE>"
 categories: <CATEGORIES>
 tags: [<TAGS>]
 excerpt_image: <EXCERPT_IMAGE>

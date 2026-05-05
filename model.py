@@ -245,9 +245,11 @@ class ArticleModel(QObject):
         
     # ====================================================================================   
     def content_md_separators_br(self, add_tags=True) -> str:
+            #.replace("<h3>","<h3 align='center'>╞═╕").replace("</h3>","╘═╡</h3>")
+            #.replace("<h4>","<h4 align='center'>╞═╕").replace("</h4>","╘═╡</h4>")
         ret = self.content_md_rich() \
-            .replace("<h3>","<h3 align='center'>╞═╕").replace("</h3>","╘═╡</h3>") \
-            .replace("<h4>","<h4 align='center'>╞═╕").replace("</h4>","╘═╡</h4>") \
+            .replace("<h3>","<h3 align='center'> ").replace("</h3>",":</h3>") \
+            .replace("<h4>","<h4 align='center'> ").replace("</h4>",":</h4>") \
             .replace("<li>","<li>- ") \
             .replace("<blockquote>\n<p style='text-indent: 50px;'>","<blockquote>\n<p style='text-indent: -7px;'><i><b>") \
             .replace("</p>\n</blockquote>","</b></i></p>\n</blockquote>") \
