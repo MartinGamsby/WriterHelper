@@ -6,3 +6,4 @@ richTextArea*.png
 settings*.ini
 /build
 /dist
+memory/tmp/
