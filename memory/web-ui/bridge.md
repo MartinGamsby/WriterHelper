@@ -2,6 +2,8 @@
 
 `webapi.py` defines `Api`, passed to `webview.create_window(..., js_api=api)`. After window creation `writerhelper.py` calls `api.set_window(window)` so methods can open native dialogs.
 
+**INVARIANT — no public data attributes on `Api`.** Its state is held as `self._articles` and `self._window` (underscored). pywebview's bridge injection walks `dir(api)` and recurses into every *public* non-callable attribute; a public `window` reference leads it into `window.native` (.NET Form) → infinite recursion → startup crash. Underscored names are skipped. Methods are safe (recorded, not recursed). See [startup-freeze.md](startup-freeze.md).
+
 JS calls `await window.pywebview.api.<method>(...)` (wrapped as `API.<method>(...)` in `api.js`). All return JSON-serializable values.
 
 ## Methods

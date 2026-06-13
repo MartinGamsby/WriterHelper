@@ -27,15 +27,22 @@ LINK_SLOTS = [
 class Api:
 
     # ====================================================================================
+    # NOTE: these MUST stay underscore-prefixed. When pywebview injects the JS bridge it
+    # walks dir(api) and recurses into every PUBLIC non-callable attribute to expose it
+    # (webview/util.py get_functions). A public `self.window` would lead it into
+    # window.native (the .NET WinForms Form) → AccessibilityObject.Bounds →
+    # Rectangle.Empty.Empty… → infinite recursion / UI-thread COM errors at startup;
+    # a public `self.articles` would make it crawl the whole model graph. Names starting
+    # with `_` are skipped, so keep these private. Do NOT add public data attributes here.
     def __init__(self, articles: ArticlesModel):
-        self.articles = articles
-        self.window = None  # set after webview.create_window
+        self._articles = articles
+        self._window = None  # set after webview.create_window
 
     def set_window(self, window):
-        self.window = window
+        self._window = window
 
     def _article(self, hl):
-        return self.articles.get(hl)
+        return self._articles.get(hl)
 
     # ====================================================================================
     def get_state(self, hl):
@@ -111,7 +118,7 @@ class Api:
     def open_article(self, hl):
         a = self._article(hl)
         import webview
-        result = self.window.create_file_dialog(
+        result = self._window.create_file_dialog(
             webview.OPEN_DIALOG, directory=a.get_posts_folder(),
             file_types=("Markdown (*.md)",))
         if result:
@@ -129,7 +136,7 @@ class Api:
         return True
 
     def translate(self, hl):
-        return self.articles.translate(hl)
+        return self._articles.translate(hl)
 
     # ====================================================================================
     # Publishing: popup data, then explicit user-confirmed send.

@@ -120,19 +120,27 @@ renders). Idempotent — a local value is skipped.
 
 ## Astro twin resolution
 
-`_resolve_astro_twin` → `_find_twin_file(folder, key)`, loading the match into `ref`
-(`change_ref=False`); if none, `ref.new_article()`. Two-tier lookup:
+**Convention (holds for ~all back-catalog):** a pair's `translationKey` == the **EN
+file's stem** (`<date>-<en-slug>`), written into BOTH languages' frontmatter.
 
-- **Fast path (O(1)):** a post's file stem is `<date>-<slug>` and an EN-derived key
-  is `<date>-<en-slug>`, so the twin is usually stored as exactly `<key>.md`. Try that
-  filename directly (verify its `translationKey` matches) before touching the folder.
-- **Fallback scan:** only when the filename ≠ key (a title renamed *after* the key
-  froze, or an FR-derived key). `_scan_for_key` reads just each post's YAML **header**
-  (`_header_has_key` stops at the closing `---`), so large bodies are never read.
+`_resolve_astro_twin` → `_find_twin_file(folder, key)`, loading the match into `ref`
+(`change_ref=False`); if none, `ref.new_article()`. Lookup:
+
+- **Fast path (O(1)):** trust the convention — a file literally named `<key>.md` IS
+  the twin, returned without re-reading its key. (Loading the most-recent FR post at
+  startup hits this.)
+- **Fallback scan:** only when filename ≠ key (title renamed *after* the key froze, or
+  an FR-derived key). `_scan_for_key` reads just each post's YAML **header**
+  (`_header_has_key` stops at the closing `---`), never the body.
 
 This replaced a scan that read every sibling `.md` *in full* on each resolution
-(seconds on the real blog → the "startup freeze"). Jekyll's ref-URL filename
-derivation is unchanged.
+(seconds on the real blog → the "startup freeze").
+
+**Self-heal:** after loading the twin, if `ref.translation_key != key` the pair's keys
+drifted (legacy/corrupt data where FR & EN were keyed to *each other's* slug —
+"swapped" — so the site couldn't link them either). `_resolve_astro_twin` rewrites the
+ref's key to `key` and re-saves, re-linking both files on disk. No-op once they agree.
+Jekyll's ref-URL filename derivation is unchanged.
 
 `ArticleModel.updated()` skips the write entirely when `get_slug()` is empty, so a
 title-less model never litters a stray `<date>-.md`.

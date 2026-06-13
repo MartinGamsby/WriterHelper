@@ -306,6 +306,29 @@ def test_blank_new_article_writes_no_file(fr):
     assert f"{today}-.md" not in os.listdir(fr.get_posts_folder())
 
 
+def test_loading_heals_swapped_twin_keys(pair):
+    """Legacy/corrupted data: FR keyed to the EN slug, EN keyed to the FR slug (each
+    points at the other's filename). Loading FR must still find EN — by filename — and
+    REWRITE EN's drifted key so both files share it (so the live site links them too)."""
+    fr, en = pair.fr(), pair.en()
+    en_stem, fr_stem = "2026-06-13-hello", "2026-06-13-bonjour"
+    def post(title, key):
+        return (f'---\ntitle: "{title}"\ndate: 2026-06-13\n'
+                f'translationKey: {key}\nfacets: []\ntags: [Gamsblurb]\n---\n\nbody\n')
+    # Write the swapped pair straight to disk.
+    with open(os.path.join(fr.get_posts_folder(), fr_stem + ".md"), "w", encoding="utf-8") as f:
+        f.write(post("Bonjour", en_stem))      # FR carries the EN slug
+    with open(os.path.join(en.get_posts_folder(), en_stem + ".md"), "w", encoding="utf-8") as f:
+        f.write(post("Hello", fr_stem))         # EN carries the FR slug (drifted)
+
+    fresh = ArticlesModel.create(config_dir=pair.cfg_dir)
+    fresh.fr().load_file(os.path.join(fr.get_posts_folder(), fr_stem + ".md"))
+    assert fresh.en().title == "Hello"                       # twin found by filename
+    assert fresh.en().translation_key == en_stem             # in-memory healed
+    with open(os.path.join(en.get_posts_folder(), en_stem + ".md"), encoding="utf-8") as f:
+        assert ("translationKey: " + en_stem) in f.read()    # on-disk healed
+
+
 def test_twin_resolves_after_title_rename(pair):
     """When a title is renamed AFTER the key froze, the twin file's name no longer
     equals the key, so resolution must fall back to the frontmatter scan."""

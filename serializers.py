@@ -163,34 +163,40 @@ def _astro_body_footer(text):
 
 
 def _resolve_astro_twin(article):
-    """Load the paired-language file (matching translationKey) into `ref`.
-    Replaces Jekyll's ref-URL filename derivation."""
+    """Load the paired-language file (matching translationKey) into `ref`, and
+    self-heal a drifted key so the pair re-links. Replaces Jekyll's ref-URL
+    derivation."""
     ref = article.ref
     key = article.translation_key
     found = _find_twin_file(ref.get_posts_folder(), key) if key else None
-    if found:
-        path, txt = found
-        ref.change_article(txt, os.path.basename(path)[:10], change_ref=False)
-    else:
+    if not found:
         ref.new_article()
+        return
+    path, txt = found
+    ref.change_article(txt, os.path.basename(path)[:10], change_ref=False)
+    # Heal: if the twin's own translationKey drifted from the shared key (legacy data
+    # where FR/EN were keyed to each other's slug), rewrite it to match so both files
+    # — and the live site — link. No-op once the pair already agrees.
+    if ref.translation_key != key:
+        ref.translation_key = key
+        ref.updated()
 
 
 def _find_twin_file(folder, key):
-    """Locate the post whose frontmatter carries `translationKey: <key>`.
+    """Locate the twin post for `key`.
 
-    Fast path: a post's file stem is `<date>-<slug>` and an EN-derived key is
-    `<date>-<en-slug>`, so the twin is usually stored as exactly `<key>.md` — try
-    that name directly (O(1)) before touching the rest of the folder. Only a title
-    renamed AFTER the key froze (filename ≠ key) falls through to the scan, which
-    reads just each post's YAML header rather than the whole file."""
+    By the Astro convention a pair's translationKey IS the EN file's stem, carried in
+    BOTH languages' frontmatter, so a file literally named `<key>.md` is the twin —
+    trust the filename (O(1)) even if its own translationKey line has drifted (the
+    caller heals it after load). Fall back to a header-only scan for the rarer cases
+    where the filename ≠ key (a title renamed after the key froze, or an FR-derived
+    key), reading just each post's YAML header rather than the whole file."""
     if not os.path.isdir(folder):
         return None
     direct = os.path.join(folder, key + ".md")
     if os.path.isfile(direct):
         with open(direct, mode="r", encoding="utf-8") as fh:
-            txt = fh.read()
-        if _has_translation_key(txt, key):
-            return direct, txt
+            return direct, fh.read()
     return _scan_for_key(folder, key)
 
 
@@ -204,11 +210,6 @@ def _scan_for_key(folder, key):
             with open(path, mode="r", encoding="utf-8") as fh:
                 return path, fh.read()
     return None
-
-
-def _has_translation_key(text, key):
-    needle = "translationKey: %s" % key
-    return any(line.strip() == needle for line in text.splitlines())
 
 
 def _header_has_key(path, key):

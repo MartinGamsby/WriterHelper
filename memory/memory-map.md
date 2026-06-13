@@ -22,6 +22,7 @@ Index of all Memory files. Read this first when seeding a session.
   - [web-ui/bridge.md](web-ui/bridge.md) — `webapi.Api` methods, pull-based refresh
   - [web-ui/frontend.md](web-ui/frontend.md) — columns, editors, debounced save
   - [web-ui/capture.md](web-ui/capture.md) — html2canvas pagination + sizing helpers
+  - [web-ui/startup-freeze.md](web-ui/startup-freeze.md) — twin-scan slowness + bridge-introspection recursion (both fixed)
 - **posting/** — social platform adapters + publish flow
   - [posting/summary.md](posting/summary.md)
   - [posting/popup-flow.md](posting/popup-flow.md) — `publishing.py` prepare/publish + confirmation popup
