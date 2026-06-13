@@ -16,9 +16,9 @@
 - **`model.py` (727 lines) is now LEGACY.** The Qt-free split is the live code: `article.py` (ArticleModel), `rendering.py` (content_md flavors + image embedding), `articles.py` (ArticlesModel + translate), `publishing.py` (post flow). `model.py` + `backend.py` are imported only by `writerhelper_qt.py`. Edit the new modules, not `model.py`.
 - **Two entry points**: `writerhelper.py` = pywebview/web (primary); `writerhelper_qt.py` = old QML (legacy fallback). Don't confuse them.
 - **`dev.html` + `js/dev-mock.js`** are browser-only dev aids (fake `window.pywebview`). Never loaded by the real app. `dev.html` must be written as UTF-8 — PowerShell `Get-Content`/`Out-File` mangles non-ASCII (the `→` chars); use the Write tool or HTML entities.
-- **`post_linkedin.py` is broken dead code**. No class definition, just unindented snippet at module top level. Hardcoded credentials live in committed source: `client_id` (line 25), commented `client_secret` (line 39), commented `auth_code` (line 38), and an uncommented `access_token` (line 76). Do not import; do not wire to UI. Token rotation/scrub is a separate task.
+- **`post_linkedin.py` is broken dead code**. No class definition, just unindented snippet at module top level. It is untracked (never committed). Its `client_id`, `client_secret`, `auth_code`, and `access_token` values are now redacted to `REDACTED_ROTATE_THIS` in the working file. Do not import; do not wire to UI. The exposed LinkedIn `client_secret` and `access_token` must still be **rotated** in the LinkedIn developer console — redaction removes the copy, not the validity.
 - **`post_fb.PostFB` does NOT inherit `Post`** and uses a different INI key shape (`Token`, `PageId` not `Handle`, `AppPassword`). It is also not wired into the QML UI; FB posting is currently manual via the CheckList. See [posting/facebook.md](posting/facebook.md).
-- **`settings_en.ini` has a typo path**: `martingamsby.gitbub.io_en` (should be `github`). Real folder on disk uses the typo too — do not "fix" the INI without first renaming the folder.
+- **`settings_<hl>.ini` now point at the Astro repo** (`martingamsby.com/src/content/blog/<hl>`) with the Astro base URL (`https://martingamsby.com/<hl>/blog/`) — the hard switch to the Astro write format. They are git-ignored (user-private). The old Jekyll paths (incl. the historical `martingamsby.gitbub.io_en` typo folder) are no longer used. ⚠️ The legacy Qt path (`model.py`) still emits Jekyll into whatever `posts` points at — do not run it now (see [ui/summary.md](ui/summary.md)).
 - **Cruft files — ignore, do not pattern-match from**:
   - `model - Copy.py`, `model - Copy (2).py`, `model - Copy (3).py` — old backups
   - `qtquickcontrols2.conf_NOPE` — deactivated config
@@ -28,7 +28,7 @@
 ## Secrets
 
 - Local secrets live in `settings*.ini` (covered by `.gitignore`). Real BlueSky AppPassword and X API credentials are in `settings_bsky_<hl>.ini` and `settings_x_<hl>.ini` on the dev machine — never commit, never paste into chat.
-- The exception is `post_linkedin.py` (see Traps above), which has tokens in committed source.
+- LinkedIn creds: the values once duplicated into `memory/posting/linkedin.md` were scrubbed from git history (commits rewritten), and `post_linkedin.py`'s values are redacted in the working tree. Never reproduce secret values in Memory files — describe location/kind only. See [posting/linkedin.md](posting/linkedin.md).
 
 ## Tests
 
