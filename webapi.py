@@ -73,7 +73,7 @@ class Api:
             "content_md_separators": a.content_md_separators(),
             "content_md_separators_br": a.content_md_separators_br(),
             "content_short": a.content_short(),
-            "watermark": "linktr.ee/Gamsby" if hl == "en" else "linktr.ee/MGamsby",
+            "watermark": "MartinGamsby.com/en" if hl == "en" else "MartinGamsby.com/fr",
         }
 
     # ====================================================================================

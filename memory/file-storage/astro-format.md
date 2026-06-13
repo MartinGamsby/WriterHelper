@@ -53,16 +53,28 @@ survives as a tag).
 
 ## translationKey (sticky pairing key)
 
-Replaces Jekyll's `ref:`. Same literal value in both languages' files; the site's
-language toggle resolves the twin through it.
+Replaces Jekyll's `ref:`. The **identical** literal value in both languages' files;
+the site's language toggle resolves the twin through it. `get_translation_key()`
+resolves in this order:
 
-- Generated once as `<date>-<EN-slug>` (the English title drives it, matching the
-  back-catalog convention). Both FR and EN derive the same value.
-- **Frozen** after first generation (`ArticleModel.translation_key`): later title
-  or date edits move the filename/URL but never the key. Round-tripped from disk on
-  load; cleared by `new_article` (a fresh post gets a fresh key).
-- Freeze only happens once a real EN slug exists; while EN is untitled the key is
-  computed transiently from the current language's own slug.
+1. this side already has a key → return it (frozen);
+2. the **ref** has a key → adopt it (keeps the pair in lock-step — this is what makes
+   re-translating one side via `new_article` re-link instead of forking);
+3. neither does → mint `<date>-<EN-slug>` (falls back to the current language's slug
+   while EN is untitled) and **stamp it onto BOTH `self` AND `ref`** in memory.
+
+Because the mint writes the key onto both models, the two files **cannot diverge**
+no matter the authoring order: whichever side first needs a key mints it for the
+pair; the other adopts it on its next save. (The earlier design froze each side
+independently, so authoring FR before EN left FR keyed `<date>-<fr-slug>` and EN
+`<date>-<en-slug>` → unlinked.) The minted value is arbitrary — only *matching*
+matters; an FR-first pair is keyed off the FR slug and still links fine.
+
+- **Frozen** once set (`ArticleModel.translation_key`): later title/date edits move
+  the filename/URL but never the key. The getter does **not** touch disk; the shared
+  key reaches the twin's file through the normal save flow.
+- Round-tripped from disk on load; cleared by `new_article` (a fresh post gets a
+  fresh key, but re-adopts the ref's key via rule 2 if the pair still has one).
 
 ## Filename & URL
 
@@ -108,9 +120,22 @@ renders). Idempotent — a local value is skipped.
 
 ## Astro twin resolution
 
-`_resolve_astro_twin`: scan the other language's folder for a file whose frontmatter
-has the same `translationKey:` line, then load it into `ref` (`change_ref=False`).
-If none found, `ref.new_article()`. Replaces Jekyll's ref-URL filename derivation.
+`_resolve_astro_twin` → `_find_twin_file(folder, key)`, loading the match into `ref`
+(`change_ref=False`); if none, `ref.new_article()`. Two-tier lookup:
+
+- **Fast path (O(1)):** a post's file stem is `<date>-<slug>` and an EN-derived key
+  is `<date>-<en-slug>`, so the twin is usually stored as exactly `<key>.md`. Try that
+  filename directly (verify its `translationKey` matches) before touching the folder.
+- **Fallback scan:** only when the filename ≠ key (a title renamed *after* the key
+  froze, or an FR-derived key). `_scan_for_key` reads just each post's YAML **header**
+  (`_header_has_key` stops at the closing `---`), so large bodies are never read.
+
+This replaced a scan that read every sibling `.md` *in full* on each resolution
+(seconds on the real blog → the "startup freeze"). Jekyll's ref-URL filename
+derivation is unchanged.
+
+`ArticleModel.updated()` skips the write entirely when `get_slug()` is empty, so a
+title-less model never litters a stray `<date>-.md`.
 
 ## See also
 - [jekyll-format.md](jekyll-format.md) — legacy, load-only

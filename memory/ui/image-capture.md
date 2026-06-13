@@ -52,7 +52,7 @@ The `richTextArea` background color depends on the green/black checkboxes:
 - Black (`cbBlack.checked`, green off) → black background, white text.
 - Neither → white background, `#000033` text.
 
-Plus per-`hl` watermark text (`linktr.ee/Gamsby` for EN, `linktr.ee/MGamsby` for FR) and a page-number indicator visible only when content overflows one page.
+Plus per-`hl` watermark text (`MartinGamsby.com/en` for EN, `MartinGamsby.com/fr` for FR) and a page-number indicator visible only when content overflows one page.
 
 ## See also
 - [qml-tree.md](qml-tree.md)

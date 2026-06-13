@@ -26,7 +26,7 @@ The main per-language editor + image-capture surface. `Flickable` containing:
 5. Buttons row: `Grab` / `Adjust` / `Square` / `Portrait` / `Landscape` / `500x400`. See [image-capture.md](image-capture.md).
 6. Hidden `Rectangle` (`visible: false`) with another rich-text preview.
 7. `TextArea` showing `p_content_short` (title + hashtags).
-8. The capturable `Rectangle` (`id: richTextArea`) — colored by green/black checkboxes; contains an inner `contentBg` with the rich-text body (`p_content_md_separators`), a "linktr.ee/..." watermark (per `hl`), and a page-number label visible when content overflows.
+8. The capturable `Rectangle` (`id: richTextArea`) — colored by green/black checkboxes; contains an inner `contentBg` with the rich-text body (`p_content_md_separators`), a "MartinGamsby.com/..." watermark (per `hl`), and a page-number label visible when content overflows.
 9. Tail `TextArea` showing `p_content_md_separators_br` (the social-post preview).
 10. Tail `Flickable` showing `p_content_md` (the raw Jekyll file).
 11. Periodic 2-second `Timer` that flushes focus into `set_title` / `set_content` if the field has focus. This is a fallback to `onEditingFinished` — captures unsaved typing if the user does not blur the field.

@@ -29,9 +29,11 @@ one side also loads its twin (see twin resolution below).
 `ArticleModel.set_ref(other)` stores `self.ref = other`. Twins now pair by
 `translationKey`, not by URL:
 
-- **Astro (current):** loading a file reads its `translationKey` and scans the other
-  language's folder for a file with the same `translationKey:` line, then loads it via
-  `ref.change_article(..., change_ref=False)`; else `ref.new_article()`.
+- **Astro (current):** loading a file reads its `translationKey`, then `_find_twin_file`
+  tries `<key>.md` in the other folder directly (O(1)) and falls back to a
+  header-only scan; loads the match via `ref.change_article(..., change_ref=False)`,
+  else `ref.new_article()`. The key itself is stamped onto both models at mint, so the
+  two files share it regardless of which language was authored first.
 - **Jekyll (legacy load):** the old behavior survives — strip `ref.website_url` from
   the frontmatter `ref:` URL to get the slug, prepend `<date>-`, find that file in
   `ref.posts_folder`.

@@ -24,8 +24,10 @@ One instance per language (`hl="fr"` or `hl="en"`). The legacy Qt twin lives in
 
 Not a Qt signal anymore: a plain method every setter calls on a real change. It
 writes the file via `content_file.create_file(folder, slug, content_md(), delete_last,
-date)`. `content_md()` now returns the **Astro** file (`serializers.serialize`). The
-JS layer drives re-render separately by re-fetching `get_state` (pull-based).
+date)` — but **returns early when `get_slug()` is empty** (a title-less model has no
+filename, so it must not write a stray `<date>-.md`). `content_md()` returns the
+**Astro** file (`serializers.serialize`). The JS layer drives re-render separately by
+re-fetching `get_state` (pull-based).
 
 ## Setters
 
@@ -38,9 +40,11 @@ Pair-shared setters mirror the value onto `ref` (like `date`) and save both:
 
 ## Astro pairing + URLs
 
-- `get_translation_key()` — sticky `<date>-<EN-slug>`, generated once and frozen;
-  see [../file-storage/astro-format.md](../file-storage/astro-format.md). English
-  drives it so FR and EN agree.
+- `get_translation_key()` — sticky pairing key. If unset, adopts the ref's key, else
+  mints `<date>-<EN-slug>` (falls back to own slug while EN untitled) and **stamps it
+  on BOTH self and ref** so the pair can't diverge across authoring orders. Frozen
+  once set; no disk write in the getter. See
+  [../file-storage/astro-format.md](../file-storage/astro-format.md).
 - `get_post_url()` — public Astro URL `<website><date>-<slug>/`. Used for the
   "Based on"/"Basé sur" seed link (and the URL social posts share).
 - `get_ref()` — `ref.website_url + ref.slug` (the old Jekyll `ref:` URL). Retained

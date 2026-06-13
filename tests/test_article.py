@@ -263,6 +263,65 @@ def test_astro_twin_resolved_by_key(pair):
     assert fresh.en().title == "Hello"   # twin found via translationKey scan
 
 
+def test_key_shared_when_french_authored_first(pair):
+    """Regression: authoring FR fully BEFORE EN must still leave BOTH files with the
+    same translationKey (the old code froze each side independently → no link)."""
+    fr, en = pair.fr(), pair.en()
+    fr.set_date("2026-06-13")
+    en.set_date("2026-06-13")
+    fr.set_title("Bonjour Le Monde")     # FR first, EN still untitled
+    fr.set_content("Corps.")
+    en.set_title("Hello World")          # EN authored afterwards
+    en.set_content("Body.")
+    assert fr.get_translation_key() == en.get_translation_key()
+
+    # And a fresh pair must re-link them from disk.
+    fresh = ArticlesModel.create(config_dir=pair.cfg_dir)
+    fresh.fr().load_file(os.path.join(fr.get_posts_folder(),
+                                      "2026-06-13-bonjour-le-monde.md"))
+    assert fresh.en().title == "Hello World"
+
+
+def test_retranslate_adopts_existing_pair_key(pair):
+    """Clearing one side with new_article() and re-authoring it must re-adopt the
+    pair's existing key (so re-translating never breaks an existing link)."""
+    fr, en = pair.fr(), pair.en()
+    fr.set_date("2026-06-13")
+    en.set_date("2026-06-13")
+    fr.set_title("Bonjour")
+    en.set_title("Hello")
+    key = fr.get_translation_key()
+
+    en.new_article()                     # wipe EN to re-translate it
+    assert en.translation_key == ""
+    en.set_title("Hello Again")
+    assert en.get_translation_key() == key
+    assert fr.get_translation_key() == key
+
+
+def test_blank_new_article_writes_no_file(fr):
+    """Regression: a title-less article must not litter a stray `<date>-.md`."""
+    fr.new_article()
+    today = filemanager.ContentFile.get_date_str()
+    assert f"{today}-.md" not in os.listdir(fr.get_posts_folder())
+
+
+def test_twin_resolves_after_title_rename(pair):
+    """When a title is renamed AFTER the key froze, the twin file's name no longer
+    equals the key, so resolution must fall back to the frontmatter scan."""
+    fr, en = pair.fr(), pair.en()
+    fr.set_date("2026-06-13")
+    en.set_date("2026-06-13")
+    en.set_title("Hello")
+    fr.set_title("Bonjour")
+    en.set_title("Hello Renamed")        # EN file now 2026-06-13-hello-renamed.md,
+    fr.set_content("corps")              #   but key stays 2026-06-13-hello
+
+    fresh = ArticlesModel.create(config_dir=pair.cfg_dir)
+    fresh.fr().load_file(os.path.join(fr.get_posts_folder(), "2026-06-13-bonjour.md"))
+    assert fresh.en().title == "Hello Renamed"
+
+
 # ========================================================================================
 def test_hashtags_skip_gamsblurb_and_accents(fr):
     assert rendering.hashtags("Gamsblurb,Vie en société") == "\n#vieensociete"

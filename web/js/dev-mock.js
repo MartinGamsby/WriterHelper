@@ -27,7 +27,7 @@
         content_md_separators: "<h3 align='center' style='color: #ade6b9'>My demo article</h3><p>A paragraph of demo content.</p>",
         content_md_separators_br: "<h3>My demo article:</h3><p>A paragraph of demo content.<br /></p>",
         content_short: "<h3><strong>My demo article</strong></h3><br />\n#demo",
-        watermark: hl === 'en' ? "linktr.ee/Gamsby" : "linktr.ee/MGamsby",
+        watermark: hl === 'en' ? "MartinGamsby.com/en" : "MartinGamsby.com/fr",
     });
 
     window.pywebview = {

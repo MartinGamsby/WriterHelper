@@ -59,6 +59,9 @@ class ArticleModel:
     def updated(self):
         """Persist the article (Astro format) every time anything changes (same
         contract as the old Qt `updated` signal's on_updated slot)."""
+        if not self.get_slug():
+            # A title-less article has no filename — don't write a stray `<date>-.md`.
+            return
         self.content_file.create_file(self.get_posts_folder(), self.get_slug(),
                                       content=self.content_md(),
                                       delete_last=self.delete_last,
@@ -87,17 +90,37 @@ class ArticleModel:
     # ====================================================================================
     # Astro pairing + URLs
     def get_translation_key(self):
-        """Sticky key shared by both languages of a pair. Generated once from the
-        ENGLISH slug (`<date>-<en-slug>`), then frozen — title/date edits change the
-        filename/URL but never the pairing key. Round-tripped from disk on load."""
+        """Sticky pairing key, IDENTICAL in both languages' files — this is what the
+        Astro site uses to link FR↔EN. Resolution order:
+
+          1. this side already has a key  → return it (frozen: survives title/date
+             edits, so the filename/URL can move without breaking published links);
+          2. the ref already has a key     → adopt it (keeps the pair in lock-step,
+             e.g. after re-translating one side into a fresh `new_article`);
+          3. neither does                  → mint `<date>-<EN-slug>` (falling back to
+             this language's slug while EN is still untitled) and stamp it onto BOTH
+             self AND ref so the two files can NEVER diverge.
+
+        Whichever side first needs a key mints it for the whole pair; the other side
+        adopts it on its next save. The minted value is arbitrary — all that matters
+        is that both files carry the same `translationKey`. No file is written here
+        (pure w.r.t. disk); the shared key lands on disk through the normal save flow.
+        Round-tripped from disk on load; cleared by `new_article` for a fresh post."""
         if self.translation_key:
             return self.translation_key
+        if self.ref is not None and self.ref.translation_key:
+            self.translation_key = self.ref.translation_key
+            return self.translation_key
+
         en = self if self.hl == "en" else self.ref
-        en_slug = en.get_slug() if en else self.get_slug()
-        key = self.date + "-" + (en_slug or self.get_slug())
-        if en_slug:                       # freeze only once a real EN slug exists
-            self.translation_key = key
-        return key
+        base_slug = (en.get_slug() if en else "") or self.get_slug()
+        if not base_slug:                 # both sides untitled — nothing to key on yet
+            return ""
+        date = en.date if (en and en.date) else self.date
+        self.translation_key = date + "-" + base_slug
+        if self.ref is not None:
+            self.ref.translation_key = self.translation_key
+        return self.translation_key
 
     def get_post_url(self):
         """Public Astro URL of this article: `<website>/<date>-<slug>/`."""

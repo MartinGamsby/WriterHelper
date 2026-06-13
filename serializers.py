@@ -163,11 +163,11 @@ def _astro_body_footer(text):
 
 
 def _resolve_astro_twin(article):
-    """Find the paired-language file by scanning the other folder for the same
-    translationKey (replaces Jekyll's ref-URL filename derivation)."""
+    """Load the paired-language file (matching translationKey) into `ref`.
+    Replaces Jekyll's ref-URL filename derivation."""
     ref = article.ref
     key = article.translation_key
-    found = _find_by_key(ref.get_posts_folder(), key) if key else None
+    found = _find_twin_file(ref.get_posts_folder(), key) if key else None
     if found:
         path, txt = found
         ref.change_article(txt, os.path.basename(path)[:10], change_ref=False)
@@ -175,16 +175,60 @@ def _resolve_astro_twin(article):
         ref.new_article()
 
 
-def _find_by_key(folder, key):
+def _find_twin_file(folder, key):
+    """Locate the post whose frontmatter carries `translationKey: <key>`.
+
+    Fast path: a post's file stem is `<date>-<slug>` and an EN-derived key is
+    `<date>-<en-slug>`, so the twin is usually stored as exactly `<key>.md` — try
+    that name directly (O(1)) before touching the rest of the folder. Only a title
+    renamed AFTER the key froze (filename ≠ key) falls through to the scan, which
+    reads just each post's YAML header rather than the whole file."""
     if not os.path.isdir(folder):
         return None
-    needle = "translationKey: %s" % key
+    direct = os.path.join(folder, key + ".md")
+    if os.path.isfile(direct):
+        with open(direct, mode="r", encoding="utf-8") as fh:
+            txt = fh.read()
+        if _has_translation_key(txt, key):
+            return direct, txt
+    return _scan_for_key(folder, key)
+
+
+def _scan_for_key(folder, key):
+    """Fallback: frontmatter-only scan of the folder for a matching translationKey."""
     for f in sorted(os.listdir(folder)):
         if not f.endswith(".md"):
             continue
         path = os.path.join(folder, f)
-        with open(path, mode="r", encoding="utf-8") as fh:
-            txt = fh.read()
-        if any(line.strip() == needle for line in txt.splitlines()):
-            return path, txt
+        if _header_has_key(path, key):
+            with open(path, mode="r", encoding="utf-8") as fh:
+                return path, fh.read()
     return None
+
+
+def _has_translation_key(text, key):
+    needle = "translationKey: %s" % key
+    return any(line.strip() == needle for line in text.splitlines())
+
+
+def _header_has_key(path, key):
+    """True if the post's frontmatter has `translationKey: <key>`. Reads ONLY the
+    YAML header (stops at the closing `---`) so large post bodies are never read
+    during a folder scan."""
+    needle = "translationKey: %s" % key
+    seen_open = False
+    try:
+        with open(path, mode="r", encoding="utf-8") as fh:
+            for line in fh:
+                stripped = line.strip()
+                if stripped == needle:
+                    return True
+                if stripped == "---":
+                    if seen_open:
+                        return False        # closed frontmatter, no match
+                    seen_open = True
+                elif stripped and not seen_open:
+                    return False            # content before any frontmatter
+    except OSError:
+        return False
+    return False

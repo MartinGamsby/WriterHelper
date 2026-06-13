@@ -3,7 +3,7 @@
 The branded post-image generation, ported from QML `grabToImage` to `js/capture.js` using vendored **html2canvas** (`web/vendor/html2canvas.min.js`, v1.4.1).
 
 ## The surface
-`.card-frame` (id `card-<hl>`) holds an absolutely-positioned `.card-inner` (9px margin = old `contentMargin`) containing `.card-scroll` → `.card-content` (the `content_md_separators` HTML), a `.card-watermark` (`linktr.ee/Gamsby` EN, `linktr.ee/MGamsby` FR), and a `.card-page` badge. Frame width/height come from the W/H number inputs; colors from green/black checkboxes via `Editor.restyleCard`.
+`.card-frame` (id `card-<hl>`) holds an absolutely-positioned `.card-inner` (9px margin = old `contentMargin`) containing `.card-scroll` → `.card-content` (the `content_md_separators` HTML), a `.card-watermark` (`MartinGamsby.com/en` EN, `MartinGamsby.com/fr` FR), and a `.card-page` badge. Frame width/height come from the W/H number inputs; colors from green/black checkboxes via `Editor.restyleCard`.
 
 ## Output naming (unchanged contract)
 `richTextArea_<hl><N>.png`, `<N>` 1-indexed. `capture.js` paginates by translating `.card-content` up one viewport (`marginTop`) per page and re-capturing; each page is sent to `webapi.save_capture(hl, page, dataURL)`. Page 1 (`richTextArea_<hl>1.png`) is what the publish image mode attaches.
