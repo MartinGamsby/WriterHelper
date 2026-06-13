@@ -1,14 +1,16 @@
 # Content Rendering — the Five Flavors
 
-`ArticleModel` exposes the same article data in five shapes. All are Qt `Property`s (notify=updated), so each rendered flavor refreshes whenever any input changes.
+The same article data in five shapes. The functions now live in `rendering.py` as pure functions taking an `article`; `ArticleModel` exposes thin `content_md*()` methods that delegate. The web UI injects each as `innerHTML`.
 
 | Flavor | Template | HTML? | Used by |
 |---|---|---|---|
 | `content_md` | `templates/post.md` | No | What gets written to disk (Jekyll post). Always. |
-| `content_md_rich` | `post_content_only.md` then `markdown.markdown(...)` | Yes | The Qt rich-text preview (`TextArea` with `textFormat: TextEdit.RichText`) |
-| `content_md_separators` | `post_content_only.md` + extra HTML decoration | Yes | The image surface — the `richTextArea` Rectangle that's captured to PNG |
-| `content_md_separators_br` | `post_content_only.md` + `<br/>` decoration + hashtags | Yes | The social-post text body (when it fits the platform character limit) |
+| `content_md_rich` | `post_content_only.md` then `markdown.markdown(...)` | Yes | Base for the other HTML flavors; rich preview |
+| `content_md_separators` | `post_content_only.md` + extra HTML decoration | Yes | The image card (`.card-frame`) captured to PNG via html2canvas |
+| `content_md_separators_br` | `post_content_only.md` + `<br/>` decoration + hashtags | Yes | Source of the social-post text (`rendering.plain_text` strips it for the char count) |
 | `content_short` | `post_title_only.md` + hashtags | Yes | A title-only fallback rendering |
+
+`rendering.py` also provides `plain_text(article)` (BeautifulSoup-stripped, no hashtags — the exact post text), `footer_md`, `categories`, `hashtags`, and `excerpt_image_local` (embeds a local image as a `data:` URL so the webview/html2canvas can use it).
 
 ## What each one does (specifics)
 

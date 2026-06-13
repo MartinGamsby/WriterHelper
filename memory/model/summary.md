@@ -1,35 +1,40 @@
-# model.py — Summary
+# Model layer — Summary
 
-`model.py` (727 lines, OVER 350-line limit — see [../practices.md](../practices.md)) holds article data + rendering + persistence + posting glue.
+The Qt-free data + rendering layer. Split out of the old monolithic `model.py` (now legacy) into focused modules:
 
-Three classes:
-- `Link` (dataclass) — `(url, text)` pair.
-- `ArticleModel(QObject)` — one per language. State + every `set_*` slot + the `updated` Signal that drives auto-save and UI re-render. See [article-model.md](article-model.md).
-- `ArticlesModel(QObject)` — pairs FR + EN, owns `translate`. See [articles-model.md](articles-model.md).
+- `article.py` — `ArticleModel` (one per language) + `Link`. State, setters (each calls `self.updated()` → auto-save), slug, length category, links, navigation (`open_*`/`new_*`), and the `change_article` parser. See [article-model.md](article-model.md).
+- `rendering.py` — pure functions producing the five `content_md_*` flavors, footer, categories, hashtags, plain-text extraction, and local-image embedding as data URLs. No state of its own; takes an `article`. See [rendering.md](rendering.md).
+- `articles.py` — `ArticlesModel` pairs FR + EN (`create(config_dir)` factory wires `set_ref` both ways) and owns `translate`. See [articles-model.md](articles-model.md) and [translation.md](translation.md).
+- `publishing.py` — the two-phase social-post flow (`prepare_post`/`publish`) + `PLATFORMS` registry. See [post-routing.md](post-routing.md) and [../posting/popup-flow.md](../posting/popup-flow.md).
 
 ```mermaid
 graph LR
-    ASM[ArticlesModel] --> FR[ArticleModel fr]
-    ASM --> EN[ArticleModel en]
+    ASM[articles.ArticlesModel] --> FR[article.ArticleModel fr]
+    ASM --> EN[article.ArticleModel en]
     FR <-->|set_ref| EN
-    FR -- updated --> SAVE1[on_updated → ContentFile.create_file]
-    EN -- updated --> SAVE2[on_updated → ContentFile.create_file]
+    FR -- updated() --> SAVE[ContentFile.create_file]
+    FR -- delegates --> REND[rendering.py]
     ASM -- translate --> GT[GoogleTranslator]
-    FR -- post --> POSTERS[PostBsky / PostX]
-    EN -- post --> POSTERS
+    PUB[publishing.py] -- reads/sets links --> FR
+    PUB --> POSTERS[PostBsky / PostX]
 ```
 
-## Module-level
-- `DEFAULT_TAGS = "Gamsblurb"` — seed tag value, also kept in the rendered hashtag list.
+## Key contracts
+- `ArticleModel.__init__(hl, config_dir=".")` — `config_dir` locates `settings_<hl>.ini` (tests point it at a temp dir).
+- `DEFAULT_TAGS = "Gamsblurb"` lives in `article.py` — seed tag, always-present category.
+- Rendering functions live in `rendering.py` but `ArticleModel` exposes thin `content_md*()` methods that delegate, so callers can use either.
+
+## No Qt
+None of these import PySide6. They are unit-tested directly (see `tests/`). The legacy `model.py`/`backend.py` keep the Qt versions for `writerhelper_qt.py`.
 
 ## Files in this folder
-- [article-model.md](article-model.md) — props, signals, slots, lifecycle, `change_article` parser
+- [article-model.md](article-model.md) — fields, setters, lifecycle, `change_article` parser
 - [articles-model.md](articles-model.md) — FR/EN pairing + reciprocal `ref` file lookup
 - [translation.md](translation.md) — Google Translator src→empty-dst mirroring
 - [rendering.md](rendering.md) — the five `content_md_*` flavors
-- [post-routing.md](post-routing.md) — text-vs-image fallback, length thresholds
+- [post-routing.md](post-routing.md) — text-vs-image decision
 - [links.md](links.md) — named link slots, footer rendering
 
 ## See also
 - [../file-storage/jekyll-format.md](../file-storage/jekyll-format.md) — the file `content_md` produces
-- [../posting/summary.md](../posting/summary.md) — what `ArticleModel.post` invokes
+- [../web-ui/bridge.md](../web-ui/bridge.md) — how the UI reaches these

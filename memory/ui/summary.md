@@ -1,6 +1,8 @@
-# UI — Summary
+# UI — Summary (LEGACY)
 
-QML-based UI under `ui/qml/`. PySide6 loads `main.qml` via `QQmlApplicationEngine` in `writerhelper.py`, exposes the `Backend` QObject as the root `backend` property, and the QML accesses everything via `root.backend`.
+> **LEGACY.** This QML UI is superseded by the web UI ([../web-ui/summary.md](../web-ui/summary.md)). It still exists and runs via `writerhelper_qt.py` → `backend.py` → `model.py` → `ui/qml/`, kept as a fallback. New UI work goes in `web/`. The docs below describe the QML path as-is.
+
+QML-based UI under `ui/qml/`. PySide6 loads `main.qml` via `QQmlApplicationEngine` in `writerhelper_qt.py`, exposes the `Backend` QObject as the root `backend` property, and the QML accesses everything via `root.backend`.
 
 ```mermaid
 graph TD

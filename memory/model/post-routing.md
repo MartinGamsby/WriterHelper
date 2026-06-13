@@ -1,6 +1,8 @@
 # Social-Post Routing
 
-`ArticleModel.post(name, poster, max_length)` in `model.py`. The shared helper that decides what to push to a social platform and what URL to record.
+> **Updated:** routing now lives in `publishing.py` as the two-phase `prepare_post` / `publish` pair, behind a confirmation popup. See [../posting/popup-flow.md](../posting/popup-flow.md) for the live design. The text-vs-image logic below still describes the *decision*, which is preserved (`prepare_post` computes `suggested_mode`; the user may override it in the popup). The old single-shot `ArticleModel.post` remains only in legacy `model.py`.
+
+The decision: what to push to a social platform and what URL to record.
 
 ## Signature & flow
 

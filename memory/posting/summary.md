@@ -21,19 +21,23 @@ graph TD
 
 | File | Class | Inherits Post? | Wired into UI? | Notes |
 |---|---|---|---|---|
-| `post_bsky.py` | `PostBsky` | ✅ | ✅ | Click Bluesky link label → `post_bluesky()` |
-| `post_x.py` | `PostX` | ✅ | ✅ | Click X/Twitter link label → `post_x()` |
+| `post_bsky.py` | `PostBsky` | ✅ | ✅ | Bluesky publish button → popup → `publishing.publish` |
+| `post_x.py` | `PostX` | ✅ | ✅ | X/Twitter publish button → popup → `publishing.publish` |
 | `post_fb.py` | `PostFB` | ❌ | ❌ | Older API; no UI hook |
 | `post_linkedin.py` | none (broken) | n/a | ❌ | Unindented snippet; do NOT import |
 
+The adapters (`post.py`, `post_bsky.py`, `post_x.py`) are unchanged; they are now invoked through `publishing.py` rather than `ArticleModel.post`.
+
 ## Routing
 
-Triggered from `ArticleModel.post(name, poster, max_length)` (see [../model/post-routing.md](../model/post-routing.md)). The helper picks text-vs-image based on rendered plain-text length vs the platform `max_length`, then:
-1. Calls `poster.post(msg, image_local_url, alt_text)` and gets a URL back.
-2. Saves the URL as a `Link` under `name` — which re-saves the `.md` file's footer.
-3. Opens the URL in the system browser via `QDesktopServices.openUrl`.
+Now via the two-phase `publishing.py` flow behind a confirmation popup (see [popup-flow.md](popup-flow.md)). `prepare_post` computes the preview (no side effects); on confirm `publish`:
+1. Guards against an existing link for the slot.
+2. Calls `poster.post(msg, image_local_url, alt_text)` and gets a URL back.
+3. Saves the URL as a `Link` under the slot name — which re-saves the `.md` file's footer.
+4. Opens the URL in the system browser via `webbrowser.open`.
 
 ## Files in this folder
+- [popup-flow.md](popup-flow.md) — `publishing.py` prepare/publish + the confirmation popup
 - [post-base.md](post-base.md) — `Post` base class, INI shape, override pattern
 - [bluesky.md](bluesky.md) — atproto.Client; text or send_image
 - [x.md](x.md) — tweepy v1+v2 (v1 needed for media upload)

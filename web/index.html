@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Writer Helper</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="topbar">
+    <span class="brand">Writer Helper</span>
+    <label class="check"><input type="checkbox" id="cb-fr" checked> FR</label>
+    <label class="check"><input type="checkbox" id="cb-en" checked> EN</label>
+    <span id="clock"></span>
+</header>
+
+<main id="columns">
+
+    <aside id="checklist">
+        <label class="check"><input type="checkbox"> Write the content</label>
+        <label class="check"><input type="checkbox"> Start an image generation (or find it)</label>
+        <label class="check"><input type="checkbox"> Proofread</label>
+        <label class="check"><input type="checkbox"> Translate (and proofread in french if the translation is bad)</label>
+        <label class="check"><input type="checkbox"> Find/write tags</label>
+        <div class="check-title">Share to <a href="https://typeshare.co/martingamsby">Typeshare</a></div>
+        <label class="check"><input type="checkbox"> - COPY LINK of Typeshare here</label>
+        <label class="check"><input type="checkbox"> - COPY IMAGE URL of Typeshare here</label>
+        <div class="check-title">Share to <a href="https://x.com/">X/Twitter</a> (eventually: adapt it for X)</div>
+        <label class="check"><input type="checkbox"> &#8594; COPY LINK of X here</label>
+        <div class="check-title">Share to <a href="https://bsky.app/profile/martin-gamsby.bsky.social">Bluesky</a></div>
+        <label class="check"><input type="checkbox"> &#8594; COPY LINK of Bluesky here</label>
+        <div class="check-title">Share to <a href="https://facebook.com/">Facebook</a></div>
+        <label class="check"><input type="checkbox"> - Share in facebook if relevant?</label>
+        <label class="check"><input type="checkbox"> &#8594; COPY LINK of Facebook here</label>
+        <label class="check"><input type="checkbox"> GITHUB: Upload the article!</label>
+    </aside>
+
+    <section class="col col-meta" id="meta-fr"></section>
+    <section class="col col-content" id="content-fr"></section>
+    <section class="col col-content" id="content-en"></section>
+    <section class="col col-meta" id="meta-en"></section>
+
+</main>
+
+<div id="modal-overlay" class="hidden">
+    <div id="modal"></div>
+</div>
+<div id="toast" class="hidden"></div>
+
+<script src="vendor/html2canvas.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/capture.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/meta.js"></script>
+<script src="js/publish.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
