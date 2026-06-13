@@ -1,6 +1,7 @@
 import os
 
 import filemanager
+import localize
 import rendering
 import serializers
 from articles import ArticlesModel
@@ -148,6 +149,61 @@ def test_legacy_jekyll_load(fr):
     assert fr.facets == []
     assert fr.draft is False
     assert fr.get_link("X/Twitter") == "https://x.com/old"
+
+
+# ========================================================================================
+def test_remote_image_is_localized(fr, monkeypatch):
+    # The site hook runs out-of-process; stub it so the test stays offline.
+    calls = []
+
+    def fake(md_path, **kwargs):
+        calls.append(md_path)
+        return "/assets/posts/abc123.header.webp", "/assets/posts/abc123.thumb.webp"
+
+    monkeypatch.setattr(localize, "localize_file", fake)
+
+    fr.set_date("2026-06-13")
+    fr.set_title("Un Titre")
+    fr.set_excerpt_img("https://blob.example/preview.jpg")
+
+    assert len(calls) == 1                                   # hook fired once
+    assert fr.excerpt_image == "/assets/posts/abc123.header.webp"
+    assert fr.image_thumb == "/assets/posts/abc123.thumb.webp"
+    md = fr.content_md()
+    assert "image: /assets/posts/abc123.header.webp\n" in md
+    assert "imageThumb: /assets/posts/abc123.thumb.webp\n" in md
+
+
+def test_local_image_skips_hook(fr, monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("hook must not run for local paths")
+
+    monkeypatch.setattr(localize, "localize_file", boom)
+    fr.set_excerpt_img("assets/img/test.png")               # already local
+    assert fr.excerpt_image == "assets/img/test.png"
+    assert fr.image_thumb == ""
+    assert "imageThumb:" not in fr.content_md()
+
+
+def test_image_thumb_round_trips(fr):
+    astro = (
+        '---\n'
+        'title: "Avec Image"\n'
+        'date: 2026-06-13\n'
+        'translationKey: 2026-06-13-with-image\n'
+        'facets: [ideas]\n'
+        'tags: [Gamsblurb]\n'
+        'image: /assets/posts/abc123.header.webp\n'
+        'imageThumb: /assets/posts/abc123.thumb.webp\n'
+        '---\n'
+        '\n'
+        'Corps.\n'
+    )
+    assert fr.change_article(astro, "2026-06-13", change_ref=False)
+    assert fr.excerpt_image == "/assets/posts/abc123.header.webp"
+    assert fr.image_thumb == "/assets/posts/abc123.thumb.webp"
+    # Re-serializing must keep the thumbnail line (no strip on edit).
+    assert "imageThumb: /assets/posts/abc123.thumb.webp\n" in fr.content_md()
 
 
 # ========================================================================================

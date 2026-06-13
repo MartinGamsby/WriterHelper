@@ -20,7 +20,8 @@ translationKey: 2026-06-13-sample-title
 facets: [dev, ideas]
 tags: [Gamsblurb]
 draft: true
-image: assets/img/foo.jpg
+image: /assets/posts/2026-06-13-sample-title.header.webp
+imageThumb: /assets/posts/2026-06-13-sample-title.thumb.webp
 ---
 
 Body markdown — NO `### **<TITLE>**` heading (the site layout renders the title).
@@ -42,7 +43,8 @@ Enforced site-side by `src/content.config.ts` zod schema.
 | `facets` | `facets` | bare flow list `[dev, ideas]`; `[]` when empty |
 | `tags` | `get_tags()` | bare `[Gamsblurb,Vie]` (raw comma string) |
 | `draft` | `draft` | emitted as `draft: true` ONLY when True; omitted to publish |
-| `image` | `excerpt_image` | emitted only when non-empty (maps to Jekyll `excerpt_image`) |
+| `image` | `excerpt_image` | header/OG image; emitted only when non-empty. A local `/assets/posts/<slug>.header.webp` once self-hosted (see below) |
+| `imageThumb` | `image_thumb` | small list thumbnail; emitted only alongside a self-hosted `image`. Set by the localize hook, round-tripped on load so edits never strip it |
 | body | `content` | no title heading |
 | footer | `footer_md()` | `- [text](url)` lines; whole `---` + footer block omitted when no links |
 
@@ -83,6 +85,26 @@ so a markdown horizontal rule inside the body is not mistaken for the footer.
 
 `delete_last` is forced False during load and restored after; the model is re-saved
 in Astro format at the end (same contract as the old `change_article`).
+
+## Image self-hosting (localize hook)
+
+Preview images are **self-hosted, never hot-linked**. `set_excerpt_img(text)` may
+receive any URL (a Vercel-blob preview, xkcd, bsky…). After the normal `updated()`
+save, `ArticleModel._localize_excerpt_image()` runs — and ONLY when the value is a
+remote URL (`localize.is_remote`: http/https, protocol-relative, `data:`; local
+paths are left alone, which keeps the tests offline).
+
+`localize.py` shells out to the site's hook
+`node tools/localize-images.mjs --file <that post.md>` (finding the
+`martingamsby.com` checkout by walking up from the posts folder until
+`tools/localize-images.mjs` is found). That tool downloads the image, writes a
+large `…header.webp` + a 160² `…thumb.webp` under `public/assets/posts/`, and
+rewrites the file's frontmatter. The bridge then reads the new `image:`/`imageThumb:`
+back and stores them on the model, so subsequent `updated()` saves re-emit the local
+paths instead of re-hot-linking. It is **naming-scheme-agnostic** (the tool names by
+post slug today; the bridge just reads whatever it wrote) and best-effort: if node /
+the tool / the network is unavailable it logs and leaves the remote URL (still
+renders). Idempotent — a local value is skipped.
 
 ## Astro twin resolution
 

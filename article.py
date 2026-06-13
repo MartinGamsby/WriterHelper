@@ -7,6 +7,7 @@ import re
 from unidecode import unidecode
 
 import filemanager
+import localize
 import rendering
 import serializers
 
@@ -28,7 +29,8 @@ class ArticleModel:
         self.hl = hl
         self.title = ""
         self.content = ""
-        self.excerpt_image = ""
+        self.excerpt_image = ""   # header/OG image — a local path once localized
+        self.image_thumb = ""     # small list thumbnail, set by the localize hook
         self.tags = DEFAULT_TAGS
         self.facets = []          # pair-shared: dev|physics|fiction|music|ideas
         self.draft = False        # pair-shared: hides the post from the site build
@@ -181,7 +183,21 @@ class ArticleModel:
     def set_excerpt_img(self, text):
         if self.excerpt_image != text:
             self.excerpt_image = text
+            self.image_thumb = ""   # old thumbnail no longer matches the new image
             self.updated()
+            self._localize_excerpt_image()
+
+    def _localize_excerpt_image(self):
+        """If the image is a remote URL, self-host it via the site hook and store
+        the returned local image/thumbnail paths (the file is already rewritten;
+        we just keep the model in sync so later edits don't re-hot-link)."""
+        if not localize.is_remote(self.excerpt_image):
+            return
+        md_name = self.content_file.get_date_slug(self.get_slug(), self.date) + ".md"
+        image, thumb = localize.localize_file(os.path.join(self.get_posts_folder(), md_name))
+        if image:
+            self.excerpt_image = image
+            self.image_thumb = thumb
 
     def set_green(self, checked):
         if self.green != checked:
@@ -270,6 +286,7 @@ class ArticleModel:
             self.content = ""
             self.tags = DEFAULT_TAGS
             self.excerpt_image = ""
+            self.image_thumb = ""
             self.facets = []
             self.draft = False
         self.date = filemanager.ContentFile.get_date_str()

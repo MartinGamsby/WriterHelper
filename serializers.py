@@ -32,6 +32,10 @@ def serialize(article) -> str:
         fm.append("draft: true")          # omitted when publishing
     if article.excerpt_image:
         fm.append("image: %s" % article.excerpt_image)
+        # Self-hosted images carry a small list-thumbnail alongside the header
+        # (see localize.py); keep it so editing a post never strips it.
+        if getattr(article, "image_thumb", ""):
+            fm.append("imageThumb: %s" % article.image_thumb)
     fm.append("---")
 
     out = "\n".join(fm) + "\n\n" + article.content.strip() + "\n"
@@ -97,6 +101,7 @@ def _load_jekyll(article, text, header, change_ref):
     article.content = content.replace("### **%s**" % article.title, "").strip()
     article.excerpt_image = header["excerpt_image"] \
         if ("excerpt_image" in header and header["excerpt_image"]) else ""
+    article.image_thumb = ""   # Jekyll posts have no self-hosted thumbnail
     article.determine_length_category()
     article.tags = ",".join(map(str, header["tags"])) if "tags" in header else DEFAULT_TAGS
     article.facets = []
@@ -130,6 +135,8 @@ def _load_astro(article, text, header, change_ref):
     article.content = body.replace("### **%s**" % article.title, "").strip()
     article.excerpt_image = header["image"] \
         if ("image" in header and header["image"]) else ""
+    article.image_thumb = header["imageThumb"] \
+        if ("imageThumb" in header and header["imageThumb"]) else ""
     article.determine_length_category()
     tags = header.get("tags") or []
     article.tags = ",".join(map(str, tags)) if tags else DEFAULT_TAGS

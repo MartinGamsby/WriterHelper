@@ -32,7 +32,7 @@ Index of all Memory files. Read this first when seeding a session.
   - [posting/linkedin.md](posting/linkedin.md) — BROKEN, do not import
 - **file-storage/** — disk layout + the format seam (`serializers.py`)
   - [file-storage/summary.md](file-storage/summary.md)
-  - [file-storage/astro-format.md](file-storage/astro-format.md) — **written format**: frontmatter, sticky `translationKey`, twin-by-key scan, format auto-detection
+  - [file-storage/astro-format.md](file-storage/astro-format.md) — **written format**: frontmatter (incl. self-hosted `image`/`imageThumb` + the `localize.py` hook), sticky `translationKey`, twin-by-key scan, format auto-detection
   - [file-storage/jekyll-format.md](file-storage/jekyll-format.md) — legacy, load-only
 - **templates/** — markdown placeholders
   - [templates/summary.md](templates/summary.md) — the four files + placeholder vocabulary
