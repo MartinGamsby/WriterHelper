@@ -3,6 +3,14 @@
 "use strict";
 
 (function () {
+    // Tiny mutable per-language store so facet/draft toggles persist across the
+    // pull-based refresh (facets are pair-shared, so writes mirror to the twin).
+    const ALL_FACETS = ['dev', 'physics', 'fiction', 'music', 'ideas'];
+    const store = {
+        fr: { facets: [], draft: false },   // start with NO facet to show the required state
+        en: { facets: [], draft: false },
+    };
+
     const sample = (hl) => ({
         hl,
         title: hl === 'fr' ? "Mon article de démo" : "My demo article",
@@ -14,6 +22,11 @@
         posts_folder: "C:/demo/_posts",
         website_url: "https://example.com/",
         slug: "my-demo-article",
+        post_url: "https://example.com/2026-06-11-my-demo-article/",
+        translation_key: "2026-06-11-my-demo-article",
+        facets: store[hl].facets.slice(),
+        all_facets: ALL_FACETS,
+        draft: store[hl].draft,
         green: true,
         black: true,
         title_color: "#ade6b9",
@@ -33,7 +46,13 @@
     window.pywebview = {
         api: {
             get_state: async (hl) => sample(hl),
-            set_field: async () => true,
+            set_field: async (hl, field, value) => {
+                if (field === 'facets' || field === 'draft') {   // pair-shared
+                    store.fr[field] = value;
+                    store.en[field] = value;
+                }
+                return true;
+            },
             set_link: async () => true,
             new_article: async () => true,
             new_both_articles: async () => true,
@@ -57,6 +76,7 @@
                 image_file: `richTextArea_${hl}1.png`,
                 image_exists: false,
                 image_data_url: "",
+                facets_ok: store[hl].facets.length > 0,
             }),
             publish: async () => ({ ok: true, url: "https://bsky.app/profile/demo/post/123", error: "" }),
         },

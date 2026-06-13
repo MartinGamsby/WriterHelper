@@ -28,12 +28,10 @@ const Meta = {
             <div class="setting-name">Tags</div>
             <input id="tags-${hl}" data-field="tags">
         </div>
-        <div class="setting">
-            <div class="setting-name">Facets</div>
-            <div class="facets-grid" id="facets-${hl}">
-                ${['dev', 'physics', 'fiction', 'music', 'ideas'].map(f =>
-                    `<label><input type="checkbox" data-facet="${f}"> ${f}</label>`).join('')}
-            </div>
+        <div class="setting" id="facet-setting-${hl}">
+            <div class="setting-name">Facets <span class="req" title="At least one is required">*</span></div>
+            <div class="facets-grid" id="facets-${hl}"></div>
+            <div class="facet-hint">Pick at least one facet — it sets which “door” the post appears under.</div>
         </div>
         <div class="setting">
             <label class="draft-toggle"><input type="checkbox" id="draft-${hl}"> Draft</label>
@@ -70,14 +68,14 @@ const Meta = {
         }
 
         // Facets and draft are shared across the FR/EN pair: persist, then refresh
-        // BOTH columns so the twin reflects the change.
-        for (const cb of document.querySelectorAll(`#facets-${hl} [data-facet]`)) {
-            cb.addEventListener('change', () => {
-                const facets = [...document.querySelectorAll(`#facets-${hl} [data-facet]:checked`)]
-                    .map(c => c.dataset.facet);
-                refreshBoth(() => API.set_field(hl, 'facets', facets));
-            });
-        }
+        // BOTH columns so the twin reflects the change. Delegated so it survives the
+        // checkboxes being (re)rendered from the backend facet list in apply().
+        document.getElementById(`facets-${hl}`).addEventListener('change', (e) => {
+            if (!e.target.matches('[data-facet]')) { return; }
+            const facets = [...document.querySelectorAll(`#facets-${hl} [data-facet]:checked`)]
+                .map(c => c.dataset.facet);
+            refreshBoth(() => API.set_field(hl, 'facets', facets));
+        });
         document.getElementById(`draft-${hl}`).addEventListener('change', (e) =>
             refreshBoth(() => API.set_field(hl, 'draft', e.target.checked)));
     },
@@ -87,10 +85,7 @@ const Meta = {
         App.setValue(`img-${hl}`, s.excerpt_image);
         App.setValue(`tags-${hl}`, s.tags);
 
-        const facets = s.facets || [];
-        for (const cb of document.querySelectorAll(`#facets-${hl} [data-facet]`)) {
-            cb.checked = facets.includes(cb.dataset.facet);
-        }
+        this.renderFacets(hl, s.all_facets || [], s.facets || []);
         const draft = document.getElementById(`draft-${hl}`);
         if (draft) { draft.checked = !!s.draft; }
 
@@ -99,6 +94,26 @@ const Meta = {
         if (s.excerpt_image_local) { preview.src = s.excerpt_image_local; }
 
         this.applyLinks(hl, s.links);
+    },
+
+    // ====================================================================================
+    // Render the facet checkboxes from the backend's facet list (serializers.FACETS,
+    // kept in lock-step with martingamsby.com's content.config.ts enum) so the choices
+    // can never drift from the site. At least one facet is required: flag the section
+    // when none is selected.
+    renderFacets(hl, all, selected) {
+        const grid = document.getElementById(`facets-${hl}`);
+        const want = all.join(',');
+        if (grid.dataset.built !== want) {          // (re)build only when the list changes
+            grid.innerHTML = all.map(f =>
+                `<label><input type="checkbox" data-facet="${f}"> ${f}</label>`).join('');
+            grid.dataset.built = want;
+        }
+        for (const cb of grid.querySelectorAll('[data-facet]')) {
+            cb.checked = selected.includes(cb.dataset.facet);
+        }
+        document.getElementById(`facet-setting-${hl}`)
+            .classList.toggle('required-missing', selected.length === 0);
     },
 
     // ====================================================================================

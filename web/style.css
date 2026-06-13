@@ -175,6 +175,12 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 
 .facets-grid { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .facets-grid label { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.req { color: #c22; }
+.facet-hint { display: none; font-size: 12px; color: #c22; margin-top: 3px; }
+/* At least one facet is required — flag the section while none is selected. */
+.setting.required-missing { border-left: 3px solid #c22; padding-left: 8px; margin-left: -11px; }
+.setting.required-missing .setting-name { color: #c22; }
+.setting.required-missing .facet-hint { display: block; }
 .draft-toggle { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--green-dark); }
 
 /* ---------- modal (publish confirmation) ---------- */

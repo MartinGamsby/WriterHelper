@@ -18,7 +18,7 @@ JS calls `await window.pywebview.api.<method>(...)` (wrapped as `API.<method>(..
 | `open_article(hl)` | bool | Native file dialog via `window.create_file_dialog`. |
 | `open_prev_article(hl)` / `open_next_article(hl)` | True | |
 | `translate(hl)` | bool | Delegates to `ArticlesModel.translate`. |
-| `prepare_post(hl, platform)` | dict | No side effects — popup data. |
+| `prepare_post(hl, platform)` | dict | No side effects — popup data. Includes `facets_ok` (≥1 facet). |
 | `publish(hl, platform, mode, message)` | dict `{ok,url,error}` | Sends. |
 | `clear_link(hl, platform)` | True | Clears the platform's link slot to allow re-post. |
 | `save_capture(hl, page, data_url)` | filename | Writes `richTextArea_<hl><page>.png` (CWD). |

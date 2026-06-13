@@ -27,6 +27,17 @@ const Publish = {
         const overlay = document.getElementById('modal-overlay');
         overlay.classList.remove('hidden');
 
+        if (!i.facets_ok) {
+            modal.innerHTML = `
+            <h3>Publish to ${i.label} — ${this.hl.toUpperCase()}</h3>
+            <p class="warn">This article has no facet.</p>
+            <p>Pick at least one facet (it sets which “door” the post appears under on
+               the site) before publishing.</p>
+            <div class="modal-buttons"><button id="pub-cancel">Close</button></div>`;
+            document.getElementById('pub-cancel').addEventListener('click', () => this.close());
+            return;
+        }
+
         if (i.existing_url) {
             modal.innerHTML = `
             <h3>Publish to ${i.label} — ${this.hl.toUpperCase()}</h3>

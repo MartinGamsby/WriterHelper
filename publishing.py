@@ -61,6 +61,9 @@ def prepare_post(article, platform_key) -> dict:
         "image_file": img,
         "image_exists": img_exists,
         "image_data_url": rendering.data_url(img) if img_exists else "",
+        # An article must carry at least one facet (it drives which site "door" the
+        # post appears under). Pair-shared, so either language reflects the pair.
+        "facets_ok": bool(article.facets),
     }
 
 
@@ -69,6 +72,11 @@ def publish(article, platform_key, mode, message) -> dict:
     """Actually post. `mode` is "text" (message only) or "image" (message +
     page-1 PNG). `message` is the user-confirmed text from the popup."""
     p = PLATFORMS[platform_key]
+
+    if not article.facets:
+        return {"ok": False, "url": "",
+                "error": "Add at least one facet before publishing "
+                         "(facets drive the site's doors)."}
 
     existing = article.get_link(p.link_name)
     if existing:
