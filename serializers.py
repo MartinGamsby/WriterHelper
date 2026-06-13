@@ -1,0 +1,183 @@
+# Post-file serializers. Astro is the WRITTEN format (martingamsby.com); Jekyll
+# is kept on the LOAD path only, so legacy .md posts stay openable forever.
+# The written layout mirrors templates/post_astro.md.
+import os
+import re
+
+import yaml
+
+import rendering
+
+DEFAULT_TAGS = "Gamsblurb"
+FACETS = ["dev", "physics", "fiction", "music", "ideas"]
+
+_LINK_RE = r'\[([^\[]+)]\(\s*(http[s]?://.+)\s*\)'
+
+
+# ========================================================================================
+# Write (Astro only)
+# ========================================================================================
+def serialize(article) -> str:
+    """The Astro markdown file: frontmatter + body (NO title heading — the site
+    layout renders the title) + optional footer links block."""
+    fm = [
+        "---",
+        'title: "%s"' % article.title,
+        "date: %s" % article.date,
+        "translationKey: %s" % article.get_translation_key(),
+        "facets: [%s]" % ", ".join(article.facets),
+        "tags: [%s]" % article.get_tags(),
+    ]
+    if article.draft:
+        fm.append("draft: true")          # omitted when publishing
+    if article.excerpt_image:
+        fm.append("image: %s" % article.excerpt_image)
+    fm.append("---")
+
+    out = "\n".join(fm) + "\n\n" + article.content.strip() + "\n"
+    footer = rendering.footer_md(article)
+    if footer.strip():
+        out += "\n---\n\n" + footer
+    return out
+
+
+# ========================================================================================
+# Load (format auto-detected)
+# ========================================================================================
+def parse(article, text, old_date, change_ref=True) -> bool:
+    """Load `text` into `article`. Detects Jekyll vs Astro frontmatter and routes
+    accordingly. Same mutation contract as the old change_article: delete_last is
+    forced off during the load and the model is re-saved (in the Astro format) at
+    the end."""
+    header = _frontmatter(text)
+    if header is None:
+        print("Couldn't parse the md file")
+        return False
+
+    article.delete_last = False
+    article.date = old_date
+
+    if header.get("layout") == "post" or "ref" in header:
+        _load_jekyll(article, text, header, change_ref)
+    else:
+        _load_astro(article, text, header, change_ref)
+
+    article.updated()
+    article.delete_last = True
+    return True
+
+
+def _frontmatter(text):
+    """Parse just the YAML frontmatter block (first `---` … `---`). Returns a dict
+    or None when the file has no parseable frontmatter."""
+    m = re.match(r'^\s*---\s*\n(.*?)\n---\s*\n', text, re.S)
+    if not m:
+        return None
+    raw = m.group(1).replace("[,Gamsblurb]", "[Gamsblurb]")
+    try:
+        data = yaml.full_load(raw)
+    except yaml.YAMLError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _load_footer(article, footer_text):
+    article.links = []
+    if footer_text:
+        for name, url in re.findall(_LINK_RE, footer_text):
+            article.set_link(name, url)
+
+
+# ---- Jekyll (legacy posts; behavior preserved verbatim) --------------------------------
+def _load_jekyll(article, text, header, change_ref):
+    parts = text.split("---")
+    content = parts[2].strip()
+
+    article.title = header["title"]
+    article.content = content.replace("### **%s**" % article.title, "").strip()
+    article.excerpt_image = header["excerpt_image"] \
+        if ("excerpt_image" in header and header["excerpt_image"]) else ""
+    article.determine_length_category()
+    article.tags = ",".join(map(str, header["tags"])) if "tags" in header else DEFAULT_TAGS
+    article.facets = []
+    article.draft = False
+    article.translation_key = ""   # Jekyll has none; a key is generated on first save
+
+    _load_footer(article, parts[3] if len(parts) == 4 else "")
+
+    if change_ref:
+        _resolve_jekyll_ref(article, header)
+
+
+def _resolve_jekyll_ref(article, header):
+    ref = article.ref
+    reference = header.get("ref", "")
+    potential = article.date + "-" + reference.replace(ref.get_website_url(), "") + ".md"
+    full = os.path.join(ref.get_posts_folder(), potential)
+    if os.path.isfile(full):
+        with open(full, mode="r", encoding="utf-8") as f:
+            ref.change_article(f.read(), os.path.basename(full)[:10], change_ref=False)
+    else:
+        ref.new_article()
+
+
+# ---- Astro -----------------------------------------------------------------------------
+def _load_astro(article, text, header, change_ref):
+    body, footer = _astro_body_footer(text)
+
+    article.title = header["title"]
+    # No title heading expected in Astro bodies; strip defensively just in case.
+    article.content = body.replace("### **%s**" % article.title, "").strip()
+    article.excerpt_image = header["image"] \
+        if ("image" in header and header["image"]) else ""
+    article.determine_length_category()
+    tags = header.get("tags") or []
+    article.tags = ",".join(map(str, tags)) if tags else DEFAULT_TAGS
+    article.facets = [str(f) for f in (header.get("facets") or [])]
+    article.draft = bool(header.get("draft", False))
+    article.translation_key = str(header.get("translationKey") or "")
+
+    _load_footer(article, footer)
+
+    if change_ref:
+        _resolve_astro_twin(article)
+
+
+def _astro_body_footer(text):
+    """Split an Astro file into (body, footer) after the frontmatter. The footer is
+    whatever follows the LAST `\\n---\\n` separator, so a horizontal rule inside the
+    body does not get mistaken for the footer boundary."""
+    m = re.match(r'^\s*---\s*\n.*?\n---\s*\n(.*)$', text, re.S)
+    rest = m.group(1) if m else ""
+    idx = rest.rfind("\n---\n")
+    if idx != -1:
+        return rest[:idx], rest[idx + 5:]
+    return rest, ""
+
+
+def _resolve_astro_twin(article):
+    """Find the paired-language file by scanning the other folder for the same
+    translationKey (replaces Jekyll's ref-URL filename derivation)."""
+    ref = article.ref
+    key = article.translation_key
+    found = _find_by_key(ref.get_posts_folder(), key) if key else None
+    if found:
+        path, txt = found
+        ref.change_article(txt, os.path.basename(path)[:10], change_ref=False)
+    else:
+        ref.new_article()
+
+
+def _find_by_key(folder, key):
+    if not os.path.isdir(folder):
+        return None
+    needle = "translationKey: %s" % key
+    for f in sorted(os.listdir(folder)):
+        if not f.endswith(".md"):
+            continue
+        path = os.path.join(folder, f)
+        with open(path, mode="r", encoding="utf-8") as fh:
+            txt = fh.read()
+        if any(line.strip() == needle for line in txt.splitlines()):
+            return path, txt
+    return None

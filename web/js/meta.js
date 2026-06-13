@@ -27,6 +27,16 @@ const Meta = {
         <div class="setting">
             <div class="setting-name">Tags</div>
             <input id="tags-${hl}" data-field="tags">
+        </div>
+        <div class="setting">
+            <div class="setting-name">Facets</div>
+            <div class="facets-grid" id="facets-${hl}">
+                ${['dev', 'physics', 'fiction', 'music', 'ideas'].map(f =>
+                    `<label><input type="checkbox" data-facet="${f}"> ${f}</label>`).join('')}
+            </div>
+        </div>
+        <div class="setting">
+            <label class="draft-toggle"><input type="checkbox" id="draft-${hl}"> Draft</label>
         </div>`;
 
         this.wire(hl);
@@ -58,12 +68,31 @@ const Meta = {
             input.addEventListener('change', () =>
                 App.setField(hl, input.dataset.field, input.value));
         }
+
+        // Facets and draft are shared across the FR/EN pair: persist, then refresh
+        // BOTH columns so the twin reflects the change.
+        for (const cb of document.querySelectorAll(`#facets-${hl} [data-facet]`)) {
+            cb.addEventListener('change', () => {
+                const facets = [...document.querySelectorAll(`#facets-${hl} [data-facet]:checked`)]
+                    .map(c => c.dataset.facet);
+                refreshBoth(() => API.set_field(hl, 'facets', facets));
+            });
+        }
+        document.getElementById(`draft-${hl}`).addEventListener('change', (e) =>
+            refreshBoth(() => API.set_field(hl, 'draft', e.target.checked)));
     },
 
     // ====================================================================================
     apply(hl, s) {
         App.setValue(`img-${hl}`, s.excerpt_image);
         App.setValue(`tags-${hl}`, s.tags);
+
+        const facets = s.facets || [];
+        for (const cb of document.querySelectorAll(`#facets-${hl} [data-facet]`)) {
+            cb.checked = facets.includes(cb.dataset.facet);
+        }
+        const draft = document.getElementById(`draft-${hl}`);
+        if (draft) { draft.checked = !!s.draft; }
 
         const preview = document.getElementById(`img-preview-${hl}`);
         preview.classList.toggle('hidden', !s.excerpt_image_local);

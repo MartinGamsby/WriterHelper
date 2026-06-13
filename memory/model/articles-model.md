@@ -1,32 +1,43 @@
 # ArticlesModel
 
-`ArticlesModel(QObject)` in `model.py`. Pairs the FR and EN `ArticleModel` instances and owns translation.
+Pure-Python `ArticlesModel` in `articles.py` (active web stack). Pairs the FR and EN
+`ArticleModel` instances and owns translation. (A legacy Qt twin exists in `model.py`.)
 
 ## Construction
 
-`Backend.__init__` does:
+`ArticlesModel.create(config_dir=".")`:
 
 ```python
-french  = model.ArticleModel(hl="fr")
-english = model.ArticleModel(hl="en")
+french  = ArticleModel(hl="fr", config_dir=config_dir)
+english = ArticleModel(hl="en", config_dir=config_dir)
 french.set_ref(english)
 english.set_ref(french)
-self.articles = model.ArticlesModel(french, english)
-french.open_last_article()
+return ArticlesModel(french, english)
 ```
 
-So at startup: both models exist, are mutually `set_ref`d, and the FR side eagerly loads the most-recent `.md` in its `posts_folder`. Loading FR also loads EN via `change_article`'s reciprocal-ref lookup (see [article-model.md](article-model.md)).
+Both models exist for the whole session, mutually `set_ref`d. The entry point
+(`writerhelper.py`) builds them and may eagerly load the most-recent `.md`. Loading
+one side also loads its twin (see twin resolution below).
 
-## Slots
+## Methods
 
-- `fr() -> ArticleModel` and `en() -> ArticleModel` — accessors used by QML and by `Backend.article(hl)`.
-- `translate(hl: str) -> bool` — see [translation.md](translation.md).
+- `fr()`, `en()`, `get(hl)` — accessors used by `webapi.Api`.
+- `translate(hl)` — see [translation.md](translation.md).
 
-## Reciprocal ref resolution
+## Pairing / twin resolution
 
-`ArticleModel.set_ref(other)` stores `self.ref = other`. The `<REF>` placeholder in the Jekyll frontmatter resolves to `ref.website_url + ref.slug` — the URL of the other-language version of this article.
+`ArticleModel.set_ref(other)` stores `self.ref = other`. Twins now pair by
+`translationKey`, not by URL:
 
-`change_article` uses the same pairing for *loading*: when an existing post has `ref: https://martingamsby.github.io/foo` in frontmatter, the model strips the `ref.website_url` prefix to get the slug, prepends `<date>-`, and looks for the matching file in `ref.posts_folder`. If found, loads it via `ref.change_article(..., change_ref=False)`; otherwise calls `ref.new_article()`. The `change_ref=False` guard prevents infinite recursion.
+- **Astro (current):** loading a file reads its `translationKey` and scans the other
+  language's folder for a file with the same `translationKey:` line, then loads it via
+  `ref.change_article(..., change_ref=False)`; else `ref.new_article()`.
+- **Jekyll (legacy load):** the old behavior survives — strip `ref.website_url` from
+  the frontmatter `ref:` URL to get the slug, prepend `<date>-`, find that file in
+  `ref.posts_folder`.
+
+Both live in `serializers.py`; the `change_ref=False` guard prevents infinite
+recursion. See [../file-storage/astro-format.md](../file-storage/astro-format.md).
 
 ## See also
 - [article-model.md](article-model.md)

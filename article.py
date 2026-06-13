@@ -1,14 +1,14 @@
 # Pure-Python ArticleModel: one article in one language (hl). No Qt.
-# Every mutation calls updated(), which re-saves the Jekyll .md file.
+# Every mutation calls updated(), which re-saves the .md file in the Astro format.
 import configparser
 import os
 import re
 
-import yaml
 from unidecode import unidecode
 
 import filemanager
 import rendering
+import serializers
 
 DEFAULT_TAGS = "Gamsblurb"
 
@@ -30,6 +30,9 @@ class ArticleModel:
         self.content = ""
         self.excerpt_image = ""
         self.tags = DEFAULT_TAGS
+        self.facets = []          # pair-shared: dev|physics|fiction|music|ideas
+        self.draft = False        # pair-shared: hides the post from the site build
+        self.translation_key = ""  # sticky pairing key; see get_translation_key
         self.mini = False
         self.medium = False
         self.ref = None
@@ -52,8 +55,8 @@ class ArticleModel:
 
     # ====================================================================================
     def updated(self):
-        """Persist the article every time anything changes (same contract as the
-        old Qt `updated` signal's on_updated slot)."""
+        """Persist the article (Astro format) every time anything changes (same
+        contract as the old Qt `updated` signal's on_updated slot)."""
         self.content_file.create_file(self.get_posts_folder(), self.get_slug(),
                                       content=self.content_md(),
                                       delete_last=self.delete_last,
@@ -78,6 +81,46 @@ class ArticleModel:
         if self.ref:
             return self.ref.get_website_url() + self.ref.get_slug()
         return ""
+
+    # ====================================================================================
+    # Astro pairing + URLs
+    def get_translation_key(self):
+        """Sticky key shared by both languages of a pair. Generated once from the
+        ENGLISH slug (`<date>-<en-slug>`), then frozen — title/date edits change the
+        filename/URL but never the pairing key. Round-tripped from disk on load."""
+        if self.translation_key:
+            return self.translation_key
+        en = self if self.hl == "en" else self.ref
+        en_slug = en.get_slug() if en else self.get_slug()
+        key = self.date + "-" + (en_slug or self.get_slug())
+        if en_slug:                       # freeze only once a real EN slug exists
+            self.translation_key = key
+        return key
+
+    def get_post_url(self):
+        """Public Astro URL of this article: `<website>/<date>-<slug>/`."""
+        stem = self.content_file.get_date_slug(self.get_slug(), self.date)
+        return self.get_website_url() + stem + "/"
+
+    # facets and draft are shared across the FR/EN pair (like `date`): setting one
+    # mirrors the value onto the ref and persists both.
+    def set_facets(self, facets):
+        facets = [str(f) for f in facets if f]
+        if self.facets != facets:
+            self.facets = facets
+            if self.ref is not None and self.ref.facets != facets:
+                self.ref.facets = list(facets)
+                self.ref.updated()
+            self.updated()
+
+    def set_draft(self, draft):
+        draft = bool(draft)
+        if self.draft != draft:
+            self.draft = draft
+            if self.ref is not None and self.ref.draft != draft:
+                self.ref.draft = draft
+                self.ref.updated()
+            self.updated()
 
     # ====================================================================================
     # Simple fields: each setter persists via updated() only on real change.
@@ -159,7 +202,8 @@ class ArticleModel:
     # ====================================================================================
     # Rendering flavors (delegates — see rendering.py)
     def content_md(self):
-        return rendering.content_md(self)
+        """The saved file: Astro markdown (see serializers.serialize)."""
+        return serializers.serialize(self)
 
     def content_md_rich(self):
         return rendering.content_md_rich(self)
@@ -213,11 +257,12 @@ class ArticleModel:
     def new_article(self, copy_current=False):
         self.delete_last = False
         self.links = []
+        self.translation_key = ""     # a fresh post gets a fresh pairing key
         if copy_current:
             print("copy article", self.hl)
             # First, because we want the proper url
             self.set_link(self.get_based_on_text(),
-                          self.get_website_url() + self.get_slug(), emit_update=False)
+                          self.get_post_url(), emit_update=False)
             self.title += " V2"
         else:
             print("new article", self.hl)
@@ -225,6 +270,8 @@ class ArticleModel:
             self.content = ""
             self.tags = DEFAULT_TAGS
             self.excerpt_image = ""
+            self.facets = []
+            self.draft = False
         self.date = filemanager.ContentFile.get_date_str()
         self.mini = False
         self.medium = False
@@ -284,47 +331,6 @@ class ArticleModel:
 
     # ====================================================================================
     def change_article(self, file_contents, old_date, change_ref=True):
-        parts = file_contents.split("---")
-        nb_parts = len(parts)
-        if nb_parts < 3:
-            print("Couldn't parse the md file", nb_parts)
-            return False
-
-        self.delete_last = False
-        self.date = old_date
-        header = yaml.full_load(parts[1].replace("[,Gamsblurb]", "[Gamsblurb]"))
-        content = parts[2].strip()
-
-        self.title = header["title"]
-        self.content = content.replace("### **%s**" % self.title, "").strip()
-        self.excerpt_image = header["excerpt_image"] \
-            if ("excerpt_image" in header and header["excerpt_image"]) else ""
-        self.determine_length_category()
-        self.tags = ",".join(header["tags"]) if "tags" in header else DEFAULT_TAGS
-
-        self.links = []
-        if nb_parts == 4:
-            # Extract []() style links from the footer
-            markup_regex = r'\[([^\[]+)]\(\s*(http[s]?://.+)\s*\)'
-            for name, url in re.findall(markup_regex, parts[3]):
-                self.set_link(name, url)
-                print(url, name)
-
-        if change_ref:
-            reference = header.get("ref", "")
-            potential_ref_file = self.date + "-" \
-                + reference.replace(self.ref.get_website_url(), "") + ".md"
-            potential_ref_file_full = os.path.join(self.ref.get_posts_folder(),
-                                                   potential_ref_file)
-            if os.path.isfile(potential_ref_file_full):
-                print("REF:", potential_ref_file_full)
-                with open(potential_ref_file_full, mode="r", encoding="utf-8") as f:
-                    self.ref.change_article(f.read(),
-                                            os.path.basename(potential_ref_file_full)[:10],
-                                            change_ref=False)
-            else:
-                self.ref.new_article()
-
-        self.updated()
-        self.delete_last = True
-        return True
+        """Load a saved post into this model. Format (Jekyll vs Astro) is
+        auto-detected; see serializers.parse."""
+        return serializers.parse(self, file_contents, old_date, change_ref)

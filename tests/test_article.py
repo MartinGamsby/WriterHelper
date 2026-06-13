@@ -2,6 +2,8 @@ import os
 
 import filemanager
 import rendering
+import serializers
+from articles import ArticlesModel
 
 
 # ========================================================================================
@@ -36,7 +38,7 @@ def test_length_category_english(pair):
 
 
 # ========================================================================================
-def test_save_creates_jekyll_file(fr):
+def test_save_creates_post_file(fr):
     fr.set_title("Mon article")
     today = filemanager.ContentFile.get_date_str()
     path = os.path.join(fr.get_posts_folder(), f"{today}-mon-article.md")
@@ -65,12 +67,16 @@ def test_links_upsert_and_footer(fr):
 
 # ========================================================================================
 def test_change_article_round_trip(fr):
+    fr.set_date("2026-06-10")
     fr.set_title("Un titre accentué")
     fr.set_content("Premier paragraphe.\n\nDeuxième **gras**.")
     fr.set_tags("Gamsblurb,Vie")
-    fr.set_excerpt_img("assets/images/test.png")
+    fr.set_excerpt_img("assets/img/test.png")
+    fr.set_facets(["dev", "ideas"])
+    fr.set_draft(True)
     fr.set_link("Source", "https://src.example")
     saved = fr.content_md()
+    key = fr.get_translation_key()
 
     fr.new_article()
     assert fr.title == ""
@@ -79,30 +85,126 @@ def test_change_article_round_trip(fr):
     assert fr.title == "Un titre accentué"
     assert fr.content == "Premier paragraphe.\n\nDeuxième **gras**."
     assert fr.tags == "Gamsblurb,Vie"
-    assert fr.excerpt_image == "assets/images/test.png"
+    assert fr.excerpt_image == "assets/img/test.png"   # image: round-trips
+    assert fr.facets == ["dev", "ideas"]
+    assert fr.draft is True
+    assert fr.translation_key == key
     assert fr.get_link("Source") == "https://src.example"
     assert fr.date == "2026-06-10"
+
+
+def test_astro_serialize_golden(fr):
+    fr.set_date("2026-06-13")
+    fr.set_title("Un Titre")
+    fr.set_content("Corps.")
+    fr.set_facets(["dev", "ideas"])
+    fr.set_link("X/Twitter", "https://x.com/a")
+    assert fr.content_md() == (
+        '---\n'
+        'title: "Un Titre"\n'
+        'date: 2026-06-13\n'
+        'translationKey: 2026-06-13-un-titre\n'
+        'facets: [dev, ideas]\n'
+        'tags: [Gamsblurb]\n'
+        '---\n'
+        '\n'
+        'Corps.\n'
+        '\n'
+        '---\n'
+        '\n'
+        '- [X/Twitter](https://x.com/a)\n'
+    )
 
 
 def test_change_article_rejects_garbage(fr):
     assert not fr.change_article("no frontmatter here", "2026-06-10")
 
 
+def test_legacy_jekyll_load(fr):
+    legacy = (
+        '---\n'
+        'layout: post\n'
+        'title: "Vieux Titre"\n'
+        'categories: ["Longueur: Court", "Gamsblurb"]\n'
+        'tags: [Gamsblurb,Vie]\n'
+        'excerpt_image: assets/img/old.png\n'
+        'ref: https://martingamsby.github.io/en/old-title\n'
+        '\n'
+        '---\n'
+        '\n'
+        '### **Vieux Titre**\n'
+        '\n'
+        'Le corps.\n'
+        '\n'
+        '---\n'
+        '\n'
+        '- [X/Twitter](https://x.com/old)\n'
+    )
+    assert fr.change_article(legacy, "2026-06-10", change_ref=False)
+    assert fr.title == "Vieux Titre"
+    assert fr.content == "Le corps."          # title heading stripped
+    assert fr.tags == "Gamsblurb,Vie"
+    assert fr.excerpt_image == "assets/img/old.png"
+    assert fr.facets == []
+    assert fr.draft is False
+    assert fr.get_link("X/Twitter") == "https://x.com/old"
+
+
 # ========================================================================================
 def test_make_v2_seeds_based_on_link(fr):
+    fr.set_date("2026-06-13")
     fr.set_title("Original")
-    original_url = fr.get_website_url() + "original"
+    original_url = fr.get_website_url() + "2026-06-13-original/"
     fr.new_article(copy_current=True)
     assert fr.title == "Original V2"
     assert fr.get_link("Basé sur") == original_url
 
 
-def test_ref_resolution(pair):
+# ========================================================================================
+# Astro pairing: sticky translationKey, pair-shared facets/draft, twin-by-key scan.
+def test_translation_key_is_english_derived_and_shared(pair):
     fr, en = pair.fr(), pair.en()
-    fr.set_title("Bonjour")
+    en.set_date("2026-06-13")
+    fr.set_date("2026-06-13")
+    en.set_title("Hello World")
+    fr.set_title("Bonjour Le Monde")
+    assert en.get_translation_key() == "2026-06-13-hello-world"
+    assert fr.get_translation_key() == "2026-06-13-hello-world"
+
+
+def test_translation_key_is_sticky_under_title_change(pair):
+    fr, en = pair.fr(), pair.en()
+    en.set_date("2026-06-13")
     en.set_title("Hello")
-    assert fr.get_ref() == "https://example.com/en/hello"
-    assert en.get_ref() == "https://example.com/fr/bonjour"
+    key = en.get_translation_key()
+    en.set_title("Hello Renamed")
+    en.set_date("2026-07-01")
+    assert en.get_translation_key() == key   # filename/URL move, key frozen
+
+
+def test_facets_and_draft_are_pair_shared(pair):
+    fr, en = pair.fr(), pair.en()
+    fr.set_facets(["physics"])
+    fr.set_draft(True)
+    assert en.facets == ["physics"]
+    assert en.draft is True
+
+
+def test_astro_twin_resolved_by_key(pair):
+    fr, en = pair.fr(), pair.en()
+    en.set_date("2026-06-13")
+    fr.set_date("2026-06-13")
+    en.set_title("Hello")
+    fr.set_title("Bonjour")
+    en.set_content("EN body")
+    fr.set_content("FR body")
+
+    # Fresh, independent pair on the same folders: loading FR must pull its EN twin.
+    fresh = ArticlesModel.create(config_dir=pair.cfg_dir)
+    fr_file = os.path.join(fr.get_posts_folder(), "2026-06-13-bonjour.md")
+    fresh.fr().load_file(fr_file)
+    assert fresh.fr().title == "Bonjour"
+    assert fresh.en().title == "Hello"   # twin found via translationKey scan
 
 
 # ========================================================================================

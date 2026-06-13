@@ -1,7 +1,15 @@
 # WriterHelper — Summary
 
-Personal bilingual (FR/EN) blog-authoring desktop app for [martingamsby.github.io](https://martingamsby.github.io/) (a Jekyll site).
-Pairs FR + EN articles side-by-side, auto-saves Jekyll posts on every edit, renders branded image cards from the content, and posts to BlueSky and X — now through a **confirmation popup** that previews the exact text/image before anything is sent (text if it fits the platform limit, else title + the generated PNG).
+Personal bilingual (FR/EN) blog-authoring desktop app for the **Astro** site
+[martingamsby.com](https://martingamsby.com/) (repo `martingamsby.com`, one bilingual
+site replacing the two old Jekyll blogs).
+Pairs FR + EN articles side-by-side, auto-saves **Astro** posts on every edit (FR/EN
+twins coupled by a sticky `translationKey`; pair-shared `facets`/`draft`), renders
+branded image cards from the content, and posts to BlueSky and X — through a
+**confirmation popup** that previews the exact text/image before anything is sent
+(text if it fits the platform limit, else title + the generated PNG). The format seam
+lives in `serializers.py`; old Jekyll posts stay loadable via auto-detection. See
+[file-storage/astro-format.md](file-storage/astro-format.md).
 
 ## Current architecture (pywebview + web UI)
 
@@ -18,8 +26,10 @@ graph TD
     FR <-. set_ref .-> EN
     FR -- updated() --> CF[filemanager.ContentFile]
     EN -- updated() --> CF
-    CF --> POSTS[(YYYY-MM-DD-slug.md)]
-    FR --> REND[rendering.py: content_md flavors]
+    FR -- content_md() --> SER[serializers.py: Astro serialize / parse]
+    SER --> CF
+    CF --> POSTS[(src/content/blog/hl/YYYY-MM-DD-slug.md)]
+    FR --> REND[rendering.py: card/social flavors]
     WEB -- html2canvas --> PNG[(richTextArea_hl_N.png)]
     WEB -- prepare_post/publish --> PUB[publishing.py]
     PUB --> PB[post_bsky.PostBsky]

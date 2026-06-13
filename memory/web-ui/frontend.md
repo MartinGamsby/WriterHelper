@@ -8,7 +8,9 @@ Header (length label, "<hl> Article", char/word counter), posts-folder + website
 Wiring: every `[data-field]` input debounce-saves via `App.setField` on `input` and immediately on `change`. Green/Black checkboxes call `set_field`. Font/W/H/Center are **local only** — they call `Editor.restyleCard` without a backend round-trip (card geometry isn't persisted).
 
 ## Meta column (`meta.js`)
-Button grid (New / Translate / Open / Make V2 / Open Prev / Open Next / New both articles — each awaits the bridge then `App.refreshAll`), the Image field + preview `<img>`, the Links grid, the Tags field.
+Button grid (New / Translate / Open / Make V2 / Open Prev / Open Next / New both articles — each awaits the bridge then `App.refreshAll`), the Image field + preview `<img>`, the Links grid, the Tags field, the **Facets** checkbox grid (5: dev/physics/fiction/music/ideas), and the **Draft** toggle.
+
+Facets/Draft are pair-shared: their handlers persist via `API.set_field` then `App.refreshAll()` so BOTH columns reflect the change. `apply` re-checks the facet boxes and the draft toggle from `state.facets`/`state.draft`.
 
 Link slots render one `.link-row` each. Slots with `publish` (`x`/`bluesky`) get a `<button>` that opens `Publish.open(hl, platform)`; others get a plain label. The URL `<input>` debounce-saves via `App.setLink`. Rows are created once and updated in place; a row's input is not overwritten while focused.
 

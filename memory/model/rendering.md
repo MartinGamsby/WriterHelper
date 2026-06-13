@@ -4,7 +4,7 @@ The same article data in five shapes. The functions now live in `rendering.py` a
 
 | Flavor | Template | HTML? | Used by |
 |---|---|---|---|
-| `content_md` | `templates/post.md` | No | What gets written to disk (Jekyll post). Always. |
+| `content_md` | `serializers.serialize` (NOT a `rendering.py` template) | No | What gets written to disk (now the **Astro** post). Always. |
 | `content_md_rich` | `post_content_only.md` then `markdown.markdown(...)` | Yes | Base for the other HTML flavors; rich preview |
 | `content_md_separators` | `post_content_only.md` + extra HTML decoration | Yes | The image card (`.card-frame`) captured to PNG via html2canvas |
 | `content_md_separators_br` | `post_content_only.md` + `<br/>` decoration + hashtags | Yes | Source of the social-post text (`rendering.plain_text` strips it for the char count) |
@@ -15,7 +15,13 @@ The same article data in five shapes. The functions now live in `rendering.py` a
 ## What each one does (specifics)
 
 ### `content_md`
-Uses the full `templates/post.md` (Jekyll frontmatter + body + footer). No HTML conversion. This is what `on_updated` writes to `<posts>/<YYYY-MM-DD>-<slug>.md`.
+Now delegates to `serializers.serialize(article)` — the **Astro** file (frontmatter
+with `translationKey`/`facets`, body with no title heading, footer). No HTML
+conversion. This is what `updated()` writes to
+`<posts>/<YYYY-MM-DD>-<slug>.md`. (The legacy Jekyll `templates/post.md` +
+`categories()`/`<REF>` path is no longer used for writing; `rendering.categories`
+remains only for legacy reference.) See
+[../file-storage/astro-format.md](../file-storage/astro-format.md).
 
 ### `content_md_rich`
 Markdown→HTML via the `markdown` library, then:

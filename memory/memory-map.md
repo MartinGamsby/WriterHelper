@@ -9,10 +9,10 @@ Index of all Memory files. Read this first when seeding a session.
 - `tmp/` — git-ignored scratch dir for session-only notes
 
 ## Domains
-- **model/** — Qt-free data + rendering layer (`article.py`, `rendering.py`, `articles.py`)
+- **model/** — Qt-free data + rendering layer (`article.py`, `rendering.py`, `articles.py`, `serializers.py`)
   - [model/summary.md](model/summary.md)
-  - [model/article-model.md](model/article-model.md) — fields, setters, lifecycle, change_article parser
-  - [model/articles-model.md](model/articles-model.md) — FR/EN pairing via `set_ref`
+  - [model/article-model.md](model/article-model.md) — fields (incl. `facets`/`draft`/`translation_key`), setters, `updated()` lifecycle, content_md→serialize, change_article→parse
+  - [model/articles-model.md](model/articles-model.md) — FR/EN pairing via `set_ref`; twin-by-`translationKey`
   - [model/translation.md](model/translation.md) — Google Translator src→empty-dst
   - [model/rendering.md](model/rendering.md) — the five `content_md_*` flavors (now in `rendering.py`)
   - [model/post-routing.md](model/post-routing.md) — text-vs-image decision (now `publishing.prepare_post`)
@@ -30,9 +30,10 @@ Index of all Memory files. Read this first when seeding a session.
   - [posting/x.md](posting/x.md) — tweepy v1+v2
   - [posting/facebook.md](posting/facebook.md) — Graph v18, NOT inheriting Post
   - [posting/linkedin.md](posting/linkedin.md) — BROKEN, do not import
-- **file-storage/** — disk layout
+- **file-storage/** — disk layout + the format seam (`serializers.py`)
   - [file-storage/summary.md](file-storage/summary.md)
-  - [file-storage/jekyll-format.md](file-storage/jekyll-format.md) — frontmatter, slug rules, save-on-update
+  - [file-storage/astro-format.md](file-storage/astro-format.md) — **written format**: frontmatter, sticky `translationKey`, twin-by-key scan, format auto-detection
+  - [file-storage/jekyll-format.md](file-storage/jekyll-format.md) — legacy, load-only
 - **templates/** — markdown placeholders
   - [templates/summary.md](templates/summary.md) — the four files + placeholder vocabulary
 - **ui/** — LEGACY QML tree (used only by `writerhelper_qt.py`)

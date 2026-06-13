@@ -14,12 +14,15 @@ def pair(tmp_path):
     """FR/EN ArticlesModel wired to temp posts folders and temp config INIs."""
     cfg_dir = tmp_path / "cfg"
     cfg_dir.mkdir()
-    for hl, site in (("fr", "https://example.com/fr/"), ("en", "https://example.com/en/")):
+    for hl, site in (("fr", "https://example.com/fr/blog/"),
+                     ("en", "https://example.com/en/blog/")):
         posts = tmp_path / hl
         posts.mkdir()
         (cfg_dir / f"settings_{hl}.ini").write_text(
             "[Paths]\nposts = %s\n[URLs]\nwebsite = %s\n" % (str(posts), site))
-    return ArticlesModel.create(config_dir=str(cfg_dir))
+    p = ArticlesModel.create(config_dir=str(cfg_dir))
+    p.cfg_dir = str(cfg_dir)   # lets tests spin up a second, independent pair
+    return p
 
 
 @pytest.fixture

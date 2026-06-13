@@ -1,15 +1,24 @@
 # Templates — Summary
 
-`templates/` holds four markdown templates that `ArticleModel.load_templates` reads at init. All are rendered by the same `templated(template)` helper, which substitutes a fixed placeholder vocabulary.
+`templates/` holds the markdown templates. The four loaded by
+`rendering.load_templates` are rendered by `templated(template)` (fixed placeholder
+vocabulary). `post_astro.md` is a **reference** only — the written Astro file is built
+in code by `serializers.serialize` (the optional `draft`/`image` lines and footer
+block are conditional), not via `templated`.
 
-## The four files
+## The files
 
 | File | Used by | What's in it |
 |---|---|---|
-| `post.md` | `content_md` — the saved Jekyll file | Full frontmatter + `### **<TITLE>**` heading + `<CONTENT>` + `---` + `<FOOTER>` |
+| `post_astro.md` | reference for `serializers.serialize` (the **saved** file) | Astro frontmatter (no `layout`/`categories`, `translationKey`, `facets`, optional `draft`/`image`) + `<CONTENT>` (no title heading) + `---` + `<FOOTER>` |
+| `post.md` | legacy Jekyll write (no longer used; format is load-only) | Full Jekyll frontmatter + `### **<TITLE>**` heading + `<CONTENT>` + `---` + `<FOOTER>` |
 | `post_content.md` | (currently unused; older `content_md_rich` path) | `### **<TITLE>**` + `<CONTENT>` + `---` + `<FOOTER>` (no frontmatter) |
 | `post_content_only.md` | `content_md_rich`, `content_md_separators`, `content_md_separators_br` (i.e. the rich/HTML flavors) | `### **<TITLE>**` + `<CONTENT>` (no footer, no separator) |
 | `post_title_only.md` | `content_short` | `### **<TITLE>**` only |
+
+The rich/HTML card flavors (`post_content_only.md`, `post_title_only.md`) still
+include the `### **<TITLE>**` heading — they render the visual image card, which is
+independent of the saved file format.
 
 ## Placeholder vocabulary
 

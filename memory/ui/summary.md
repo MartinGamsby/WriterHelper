@@ -1,6 +1,14 @@
 # UI — Summary (LEGACY)
 
 > **LEGACY.** This QML UI is superseded by the web UI ([../web-ui/summary.md](../web-ui/summary.md)). It still exists and runs via `writerhelper_qt.py` → `backend.py` → `model.py` → `ui/qml/`, kept as a fallback. New UI work goes in `web/`. The docs below describe the QML path as-is.
+>
+> ⚠️ **Do not run the Qt path now.** `model.py` still emits the **Jekyll** format and
+> still reads the shared `settings_<hl>.ini`, which were repointed at the **Astro**
+> repo (`martingamsby.com/src/content/blog/<hl>`). Running it would write
+> Jekyll-format files (no `translationKey`, has `layout`/`categories`) into the Astro
+> blog folders and break the site build. The active web stack (`article.py` +
+> `serializers.py`) emits Astro. Porting `model.py` to the serializer seam (or
+> retiring it) is an open follow-up.
 
 QML-based UI under `ui/qml/`. PySide6 loads `main.qml` via `QQmlApplicationEngine` in `writerhelper_qt.py`, exposes the `Backend` QObject as the root `backend` property, and the QML accesses everything via `root.backend`.
 

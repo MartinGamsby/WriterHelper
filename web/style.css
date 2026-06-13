@@ -173,6 +173,10 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 .link-row .publish-btn { padding: 4px; }
 .link-row input { flex: 1; min-width: 0; }
 
+.facets-grid { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.facets-grid label { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.draft-toggle { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--green-dark); }
+
 /* ---------- modal (publish confirmation) ---------- */
 #modal-overlay {
     position: fixed;

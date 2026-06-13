@@ -5,6 +5,7 @@ import webbrowser
 
 import rendering
 import publishing
+import serializers
 from articles import ArticlesModel
 
 # Link slots shown in the meta panel, in footer order. "publish" marks slots
@@ -58,6 +59,11 @@ class Api:
             "posts_folder": a.get_posts_folder(),
             "website_url": a.get_website_url(),
             "slug": a.get_slug(),
+            "post_url": a.get_post_url(),
+            "facets": a.facets,
+            "all_facets": serializers.FACETS,
+            "draft": a.draft,
+            "translation_key": a.get_translation_key(),
             "green": a.green,
             "black": a.black,
             "title_color": rendering.title_color(a),
@@ -81,6 +87,8 @@ class Api:
             "excerpt_image": a.set_excerpt_img,
             "posts_folder": a.set_posts_folder,
             "website_url": a.set_website_url,
+            "facets": a.set_facets,
+            "draft": a.set_draft,
             "green": a.set_green,
             "black": a.set_black,
         }

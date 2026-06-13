@@ -1,6 +1,12 @@
 # Jekyll Post Format
 
-What a saved `.md` file looks like and how `change_article` parses it back.
+**Legacy, load-only.** WriterHelper no longer *writes* Jekyll — it writes Astro (see
+[astro-format.md](astro-format.md)). This format survives only so old `.md` posts
+stay loadable: `serializers.parse` auto-detects `layout: post` and routes to the
+Jekyll parser (`serializers._load_jekyll`, moved verbatim from the old
+`change_article`).
+
+What a legacy saved `.md` file looks like and how it is parsed back.
 
 ## Anatomy
 

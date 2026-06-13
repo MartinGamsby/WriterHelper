@@ -1,78 +1,85 @@
 # ArticleModel
 
-`ArticleModel(QObject)` in `model.py`. One instance per language (`hl="fr"` or `hl="en"`).
+Pure-Python `ArticleModel` in `article.py` (Qt-free; the active web stack uses it).
+One instance per language (`hl="fr"` or `hl="en"`). The legacy Qt twin lives in
+`model.py` — see [../ui/summary.md](../ui/summary.md).
 
 ## State (instance attributes)
 
 - `hl: str` — language code; threads through INI loading, file naming, social posts.
-- `title: str`, `content: str`, `excerpt_image: str`, `tags: str` (default `"Gamsblurb"`), `date: str` (default = today, `YYYY-MM-DD`).
+- `title`, `content`, `excerpt_image`, `tags` (default `"Gamsblurb"`), `date`
+  (default today, `YYYY-MM-DD`).
+- `facets: list[str]` — pair-shared; `dev|physics|fiction|music|ideas`. Drives the
+  Astro site's "doors".
+- `draft: bool` — pair-shared; `draft: true` hides the post from the site build.
+- `translation_key: str` — sticky pairing key (see below). `""` until generated.
 - `links: list[Link]` — populated via `set_link(text, url)`.
-- `mini: bool`, `medium: bool` — length category flags (see [post-routing.md](post-routing.md)).
-- `green: bool`, `black: bool` — title-color toggles for the image surface.
-- `ref: ArticleModel | None` — the paired other-language model. Set externally via `set_ref(ref)`.
-- `delete_last: bool` (default True) — gates rename-by-delete in `on_updated`.
-- `content_file: ContentFile` — the persistence helper.
-- `config: ConfigParser` — reads `settings_<hl>.ini` (`[Paths]:Posts`, `[URLs]:Website`).
+- `mini`, `medium` — length category flags (see [post-routing.md](post-routing.md)).
+- `green`, `black` — title-color toggles for the image surface.
+- `ref: ArticleModel | None` — the paired other-language model, set via `set_ref`.
+- `delete_last` (default True) — gates rename-by-delete in `updated()`.
+- `content_file: ContentFile`, `config: ConfigParser` (`settings_<hl>.ini`).
 
-## Signal
-- `updated = Signal()` — connected to `on_updated` in `__init__`. Every property setter that detects a real change emits this.
+## updated() — the save hook
 
-## Lifecycle
+Not a Qt signal anymore: a plain method every setter calls on a real change. It
+writes the file via `content_file.create_file(folder, slug, content_md(), delete_last,
+date)`. `content_md()` now returns the **Astro** file (`serializers.serialize`). The
+JS layer drives re-render separately by re-fetching `get_state` (pull-based).
 
-```mermaid
-sequenceDiagram
-    UI->>Model: set_title("Foo")
-    Model->>Model: title = "Foo"
-    Model->>Model: updated.emit()
-    Model->>Model: on_updated()
-    Model->>ContentFile: create_file(folder, slug, content_md, delete_last, date)
-    ContentFile-->>Disk: write YYYY-MM-DD-foo.md
-    ContentFile-->>Disk: delete previous filename if delete_last
-```
+## Setters
 
-`on_updated` always writes via `content_md()` (the full Jekyll flavor). UI re-render is driven by Qt's `Property notify` mechanism — every property is `Property(T, getter, setter, notify=updated)`.
+Each `set_*` persists via `updated()` only on a real change:
+`set_title/date/content/tags/excerpt_img/posts_folder/website_url/green/black`.
 
-## Slots / Qt Properties
+Pair-shared setters mirror the value onto `ref` (like `date`) and save both:
+- `set_facets(list)` — cleans + mirrors `facets`.
+- `set_draft(bool)` — mirrors `draft`.
 
-Naming: `p_<name>` is the QML-exposed `Property`; `get_<name>` and `set_<name>` are the underlying Slots.
+## Astro pairing + URLs
 
-- `p_posts_folder`, `p_website_url` — `[Paths]` and `[URLs]` from the INI; setter writes the INI back.
-- `p_title`, `p_date`, `p_slug` (read-only), `p_content`, `p_tags`, `p_excerpt_img`.
-- `p_green`, `p_black`, `p_mini`, `p_medium`.
-- `p_content_md`, `p_content_md_rich`, `p_content_md_separators`, `p_content_md_separators_br`, `p_content_short` — the five rendered flavors. See [rendering.md](rendering.md).
-- `p_link_medium`, `p_link_x`, `p_link_typeshare`, `p_link_linkedin`, `p_link_facebook`, `p_link_source`, `p_link_bluesky`, `p_link_YouTube`, `p_link_YouTubeShorts`, `p_link_based_on` — read-only views into `links`. See [links.md](links.md).
+- `get_translation_key()` — sticky `<date>-<EN-slug>`, generated once and frozen;
+  see [../file-storage/astro-format.md](../file-storage/astro-format.md). English
+  drives it so FR and EN agree.
+- `get_post_url()` — public Astro URL `<website><date>-<slug>/`. Used for the
+  "Based on"/"Basé sur" seed link (and the URL social posts share).
+- `get_ref()` — `ref.website_url + ref.slug` (the old Jekyll `ref:` URL). Retained
+  but no longer in saved output (Astro uses `translationKey`).
 
-## Article navigation slots
+## Rendering flavors
 
-- `open_last_article()` — auto-called from `Backend.__init__` for the FR side. Scans `posts_folder` for the lexicographically-last `.md` and loads it via `change_article`. (Lex-last == date-last because filenames are date-prefixed.)
-- `open_article()` — `QFileDialog` to pick any `.md` from `posts_folder`.
-- `open_prev_article()` / `open_next_article()` — walk to adjacent file in directory listing relative to current `date+slug`.
-- `new_article(copy_current=False)` — clears state. With `copy_current=True`: keeps title (suffixed " V2") and the current content, plus seeds the "Based on" / "Basé sur" link to the current website URL.
-- `new_both_articles(copy_current)` — calls `ref.new_article` then `self.new_article`. Toggles `delete_last=False` around the pair so neither side clobbers the other's file mid-transition.
+`content_md()` → `serializers.serialize(self)` (the saved Astro file). The other
+flavors (`content_md_rich/separators/separators_br/content_short`) delegate to
+`rendering.py` and are unchanged — they render the visual card/social text, not the
+saved file. See [rendering.md](rendering.md).
+
+## Navigation
+
+- `open_last_article()` / `open_article()` (file dialog) / `open_prev_article()` /
+  `open_next_article()` — scan/walk `posts_folder` `.md` files and load via
+  `change_article`.
+- `new_article(copy_current=False)` — clears state; resets `translation_key` (fresh
+  key). With `copy_current=True`: keeps content, title suffixed " V2", seeds the
+  "Based on" link to `get_post_url()`; keeps `facets`/`draft`.
+- `new_both_articles(copy_current)` — `ref.new_article` then `self.new_article`,
+  with `delete_last=False` around the pair.
 
 ## change_article(file_contents, old_date, change_ref=True)
 
-Loads an existing Jekyll file into the model. Parses `file_contents.split("---")`:
-
-- Part 1 = frontmatter (yaml). Reads `title`, `excerpt_image`, `tags`, `ref`.
-- Part 2 = body. Strips a leading `### **<title>**` line if present.
-- Part 3 (optional) = footer. Regex `\[(name)]\((http[s]?://url)\)` extracts each link and seeds `links`.
-
-If `change_ref=True` and frontmatter has a `ref:` URL, derives the reciprocal filename `<old_date>-<ref-without-website>.md` in the *other* language's posts folder. If it exists, recurses into `self.ref.change_article(..., change_ref=False)` to load the paired side. Otherwise calls `self.ref.new_article()`.
-
-`delete_last` is forced False during the load and restored after, so loading does not delete the file on disk.
-
-## Templating helper
-
-`templated(template) -> str` — substitutes `<TITLE>`, `<EXCERPT_IMAGE>`, `<CONTENT>`, `<TAGS>`, `<FOOTER>`, `<CATEGORIES>`, `<REF>` in any of the four template strings loaded from `templates/` at init.
+Thin wrapper over `serializers.parse(self, ...)`. Format (Jekyll vs Astro) is
+auto-detected and routed; Astro twins resolve by `translationKey` scan, Jekyll twins
+by ref-URL filename. `delete_last` forced False during load. See
+[../file-storage/astro-format.md](../file-storage/astro-format.md).
 
 ## Slug rule
 
-`get_slug()` = `unidecode(title)` → replace `.` and ` ` with `-` → collapse repeated `-` → lowercase → strip non-alphanumeric (preserves `-`) → trim trailing `-`. Drives both the filename and the `<REF>` placeholder for the *other* language.
+`get_slug()` = `unidecode(title)` → `.`/` `→`-` → collapse repeated `-` → lowercase
+→ strip non-alphanumeric (preserves `-`) → trim trailing `-`. Drives the filename and
+(via the EN slug) the `translationKey`.
 
 ## See also
 - [articles-model.md](articles-model.md)
 - [rendering.md](rendering.md)
 - [post-routing.md](post-routing.md)
 - [links.md](links.md)
-- [../file-storage/jekyll-format.md](../file-storage/jekyll-format.md)
+- [../file-storage/astro-format.md](../file-storage/astro-format.md)
