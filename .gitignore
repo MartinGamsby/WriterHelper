@@ -6,7 +6,7 @@ richTextArea*.png
 settings*.ini
 /build
 /dist
-memory/tmp/
+wiki/tmp/
 * - Copy*
 all_content_fr.txt
 posts.txt

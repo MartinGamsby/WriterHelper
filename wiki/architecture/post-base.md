@@ -1,0 +1,59 @@
+# Post base class (`post.py`)
+
+`Post` is the inheritance base for new platform adapters. `PostBsky`
+([[bluesky-adapter]]) and `PostX` ([[x-adapter]]) inherit it; `PostFB`
+([[facebook-adapter]]) predates it and does NOT.
+
+## Class shape
+
+```python
+class Post:
+    def __init__(self, hl, access={'Handle': '<TODO>', 'AppPassword': '<TODO>'}):
+        self.hl = hl
+        self.config = configparser.ConfigParser()
+        self.config['Access'] = access
+        self.load_config()
+
+    def get_handle(self):       return self.config["Access"]["Handle"]
+    def get_app_password(self): return self.config["Access"]["AppPassword"]
+
+    def post(self, msg, image_local_url, alt_text):
+        print("To implement")
+
+    def config_filename(self):
+        return 'settings_TODO_%s.ini' % self.hl    # smoke signal — subclass forgot to override
+
+    def load_config(self):
+        if os.path.isfile(self.config_filename()):
+            self.config.read(self.config_filename())
+        else:
+            self.write_default_config()
+```
+
+## Override contract
+
+A new subclass must:
+1. Pass an `access=...` dict to `super().__init__` describing its INI fields.
+2. Override `config_filename` → `settings_<platform>_<hl>.ini`.
+3. Override `post(msg, image_local_url, alt_text)` → do the API call, return the public
+   URL.
+
+If `config_filename` is forgotten, the base writes `settings_TODO_<hl>.ini` on first run
+— the easy-to-spot signal ([[invariants-and-traps]]).
+
+## INI shape
+
+Always one `[Access]` section; field names come from the subclass's `access` dict
+(stored git-ignored, [[secrets]]):
+- `PostBsky` → `Handle`, `AppPassword` → `settings_bsky_<hl>.ini`
+- `PostX` → `Handle`, `APIKey`, `APISecret`, `BearerToken`, `AccessToken`,
+  `AccessSecret`, `ClientID`, `ClientSecret` → `settings_x_<hl>.ini`
+
+## post() contract
+
+`post(msg, image_local_url, alt_text) → str` (the public URL). `msg` = text body,
+`image_local_url` = local file path or None, `alt_text` = image alt where supported
+(Bluesky yes; X v2 currently doesn't attach it).
+
+## See also
+- [[bluesky-adapter]] · [[x-adapter]] · [[publishing]] · [[social-publishing]]
