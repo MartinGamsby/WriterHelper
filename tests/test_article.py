@@ -55,6 +55,37 @@ def test_rename_deletes_previous_file(fr):
     assert f"{today}-premier-titre.md" not in files
 
 
+def test_new_article_does_not_delete_previous_post(fr):
+    """A fresh post is not a rename: starting one and titling it must leave the
+    article we left on disk (regression — new_both_articles was deleting it on the
+    first keystroke via the stale last_filename)."""
+    fr.set_title("Article existant")
+    today = filemanager.ContentFile.get_date_str()
+    existing = f"{today}-article-existant.md"
+
+    fr.new_article()
+    fr.set_title("Nouvel article")
+
+    files = sorted(os.listdir(fr.get_posts_folder()))
+    assert existing in files               # the one we left stays put
+    assert f"{today}-nouvel-article.md" in files
+
+
+def test_new_both_articles_does_not_delete_previous_posts(pair):
+    """Same guarantee for the FR+EN 'New both articles' path on both columns."""
+    fr, en = pair.fr(), pair.en()
+    fr.set_title("FR existant")
+    en.set_title("EN existing")
+    today = filemanager.ContentFile.get_date_str()
+
+    fr.new_both_articles()
+    fr.set_title("FR nouveau")
+    en.set_title("EN new")
+
+    assert f"{today}-fr-existant.md" in os.listdir(fr.get_posts_folder())
+    assert f"{today}-en-existing.md" in os.listdir(en.get_posts_folder())
+
+
 # ========================================================================================
 def test_links_upsert_and_footer(fr):
     fr.set_link("Source", "https://a.example")

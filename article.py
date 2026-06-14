@@ -295,6 +295,11 @@ class ArticleModel:
     # ====================================================================================
     def new_article(self, copy_current=False):
         self.delete_last = False
+        # A new post is not a rename of the previous one: forget the last filename so the
+        # first save can't rename-by-delete the article we just left. (A blank new article
+        # skips updated() on its empty slug, so last_filename would otherwise still point
+        # at the previous real file and the next keystroke would delete it.)
+        self.content_file.last_filename = ""
         self.links = []
         self.translation_key = ""     # a fresh post gets a fresh pairing key
         if copy_current:

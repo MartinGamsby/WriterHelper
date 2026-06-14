@@ -25,7 +25,11 @@ Two guards on the write:
   new — that's how a title/date change *renames* on disk. A `threading.Lock` in
   `filemanager.py` guards the write. `delete_last` is forced False around
   `change_article`, `new_article`, and `new_both_articles` so loading/transitioning
-  never deletes a real file.
+  never deletes a real file. **`new_article` also resets `ContentFile.last_filename`
+  to `""`** — a fresh post is not a rename of the one before it. Without that reset a
+  blank new article (empty slug → `updated()` skips the write, so `last_filename` is
+  never refreshed) left the *previous* article as the deletion target, and the first
+  keystroke of the new title rename-by-deleted the post you just left.
 
 ## Pull-based UI (no push)
 
