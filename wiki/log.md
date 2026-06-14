@@ -4,6 +4,8 @@ Append-only timeline. One line per operation: `## [YYYY-MM-DD] operation | descr
 Grep-able. The wiki *pages* hold current state; this file holds the sequence of how it
 got there.
 
+## [2026-06-14] ingest | Drop/Browse a local image for an article ([[astro-format]], [[web-ui]], [[webapi-bridge]]): meta panel gains a drop zone + Browse… button. Both convert the file to a `data:` URL and feed `set_excerpt_img`, reusing the existing self-hosting hook unchanged (data: was already first-class in `is_remote`/`isExternal`/Node fetch) → slug-named webp pair. New: `localize.file_to_data_url`, `webapi.open_image`, `Meta.wireImage`, app.js stray-drop guard. No change to the sibling site repo.
+
 ## [2026-06-13] migrate | Converted the old `memory/` Memory system to the Karpathy-style `wiki/`. Ported every memory file (incl. the `startup-freeze` + `translationkey-bug` additions) into [[overview]], [[glossary]], concepts/, architecture/, sources/; rewrote `CLAUDE.md` to point at the wiki; added the `llm-wiki` skill (`.claude/skills/llm-wiki/`); repointed `.gitignore` (`wiki/tmp/`). No code behavior changed.
 
 ## [2026-06-13] ingest | Domain cutover for [[martingamsby-site]]: site live at apex `martingamsby.com`; WriterHelper's social/"Based on" URLs share the Astro base `https://martingamsby.com/<hl>/blog/`.

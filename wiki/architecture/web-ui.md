@@ -56,9 +56,12 @@ persisted).
 ## Meta column (`meta.js`)
 
 Button grid (New / Translate / Open / Make V2 / Open Prev / Open Next / New both
-articles — each awaits the bridge then `App.refreshAll`), the Image field + preview
-`<img>`, the Links grid, the Tags field, the **Facets** checkbox grid (5 values), and
-the **Draft** toggle. Facets/Draft are pair-shared → handlers persist then `refreshAll`
+articles — each awaits the bridge then `App.refreshAll`), the Image field (text input +
+**Browse…** button + a **drop zone**/preview `<img>`), the Links grid, the Tags field,
+the **Facets** checkbox grid (5 values), and the **Draft** toggle. Dropping or browsing
+an image hands it to the backend as a `data:` URL → the self-hosting hook turns it into
+webp ([[astro-format]]); `Meta.wireImage` wires both. `app.js` swallows file-drops
+outside a `.img-drop` zone so a stray drop can't navigate the webview to the file. Facets/Draft are pair-shared → handlers persist then `refreshAll`
 so BOTH columns reflect the change; the Facets section flags red until ≥1 is picked
 (facets are mandatory, [[social-publishing]]). Link slots render one `.link-row` each;
 slots with `publish` (`x`/`bluesky`) get a button opening `Publish.open`; rows update in

@@ -3,6 +3,7 @@
 import base64
 import webbrowser
 
+import localize
 import rendering
 import publishing
 import serializers
@@ -126,6 +127,24 @@ class Api:
             a.load_file(file_name)
             return True
         return False
+
+    def open_image(self, hl):
+        """Pick a local image via the native dialog and set it as the excerpt
+        image. It's handed to the model as a data: URL, so it flows through the
+        same self-hosting hook as a pasted remote URL (download/decode → webp
+        derivatives → frontmatter rewrite). Returns False if the user cancels.
+        Drag-drop takes the other door: the JS reads the file and calls
+        set_field('excerpt_image', <data url>) directly."""
+        import webview
+        result = self._window.create_file_dialog(
+            webview.OPEN_DIALOG,
+            file_types=("Image files (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)",
+                        "All files (*.*)"))
+        if not result:
+            return False
+        path = result[0] if isinstance(result, (list, tuple)) else result
+        self._article(hl).set_excerpt_img(localize.file_to_data_url(path))
+        return True
 
     def open_prev_article(self, hl):
         self._article(hl).open_prev_article()

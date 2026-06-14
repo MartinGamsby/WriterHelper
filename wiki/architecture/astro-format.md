@@ -83,5 +83,17 @@ re-emit local paths. Naming-scheme-agnostic (the bridge reads whatever the tool 
 and best-effort: if node / the tool / the network is unavailable it logs and leaves the
 remote URL (still renders). Idempotent — a local value is skipped.
 
+### Importing a local file (drop / Browse) — same hook, no new mode
+
+A user can also **drop an image** on the meta panel's image zone or pick one via
+**Browse…**. Both turn the file into a `data:` URL — already a first-class
+`localize.is_remote` value (the tool's `isExternal` and Node's `fetch` both resolve
+`data:`) — and feed it straight to `set_excerpt_img`. So a dropped/opened file flows
+through the *exact* path above: the data URL is written to frontmatter, the hook decodes
+it into the slug-named webp pair, and the local paths are read back. No image-specific
+branch exists in the model. Browse reads the file in Python (`webapi.open_image` →
+`localize.file_to_data_url`); drag-drop reads it in JS and calls
+`set_field('excerpt_image', <data url>)`. See [[web-ui]], [[webapi-bridge]].
+
 ## See also
 - [[serializers]] · [[jekyll-format]] · [[file-storage]] · [[bilingual-pairing]] · [[templates]]

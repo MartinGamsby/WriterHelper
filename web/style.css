@@ -165,7 +165,18 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 .setting { margin-top: 12px; }
 .setting-name { font-weight: 600; margin-bottom: 4px; color: var(--green-dark); }
 .setting > input { width: 100%; }
-.img-preview { max-width: 100%; margin-top: 6px; border-radius: 4px; }
+
+.img-input-row { display: flex; gap: 6px; }
+.img-input-row input { flex: 1; min-width: 0; }
+.img-browse { flex-shrink: 0; font-size: 12px; padding: 4px 8px; }
+.img-drop {
+    margin-top: 6px; padding: 8px; border: 2px dashed var(--accent);
+    border-radius: 4px; text-align: center; transition: background .12s, border-color .12s;
+}
+.img-drop.drag-over { border-color: var(--green-strip); background: var(--accent); }
+.img-drop-hint { display: block; font-size: 12px; color: var(--green-dark); opacity: .75; }
+.img-drop:has(.img-preview:not(.hidden)) .img-drop-hint { display: none; }
+.img-preview { max-width: 100%; margin-top: 0; border-radius: 4px; }
 
 .links-grid { display: flex; flex-direction: column; gap: 4px; }
 .link-row { display: flex; gap: 6px; align-items: center; }

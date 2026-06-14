@@ -3,11 +3,35 @@
 # `tools/localize-images.mjs --file <post.md>`; this module runs that hook and
 # reads the rewritten `image:` / `imageThumb:` back so the model can store the
 # local paths instead of the hot-linked URL.
+import base64
+import mimetypes
 import os
 import re
 import subprocess
 
 TOOL_REL = os.path.join("tools", "localize-images.mjs")
+
+# mimetypes misses some image types on Windows (notably webp/avif), so fill the
+# gaps; the label is cosmetic (sharp sniffs the bytes) but keep it honest.
+_EXT_MIME = {".webp": "image/webp", ".avif": "image/avif", ".bmp": "image/bmp"}
+
+
+def file_to_data_url(path):
+    """Read a local image off disk and return it as a `data:` URL.
+
+    The whole point: a data URL is already a first-class `is_remote` value, so
+    feeding it to `ArticleModel.set_excerpt_img` runs it through the exact same
+    self-hosting pipeline as a pasted remote URL — the site hook downloads it
+    (here, decodes it) into the slug-named `…header.webp` / `…thumb.webp`. That
+    lets a dropped/opened file reuse 100% of the existing path with no new mode."""
+    mime, _ = mimetypes.guess_type(path)
+    if not mime:
+        mime = _EXT_MIME.get(os.path.splitext(path)[1].lower())
+    if not mime or not mime.startswith("image/"):
+        mime = "application/octet-stream"
+    with open(path, "rb") as f:
+        data = base64.b64encode(f.read()).decode("ascii")
+    return "data:%s;base64,%s" % (mime, data)
 
 
 def is_remote(src):

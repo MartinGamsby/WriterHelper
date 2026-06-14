@@ -27,6 +27,7 @@ doesn't introspect the bridge object.) See [[invariants-and-traps]].
 | `new_article(hl, copy_current=False)` | True | copy_current=True → "Make V2". |
 | `new_both_articles(hl, copy_current=False)` | True | |
 | `open_article(hl)` | bool | Native file dialog via `window.create_file_dialog`. |
+| `open_image(hl)` | bool | Native **image** file dialog; reads the file and hands it to `set_excerpt_img` as a `data:` URL so it runs the self-hosting hook (→ webp). False on cancel. Drag-drop skips this — JS reads the file and calls `set_field(hl,'excerpt_image',<data url>)`. See [[astro-format]]. |
 | `open_prev_article(hl)` / `open_next_article(hl)` | True | |
 | `translate(hl)` | bool | → `ArticlesModel.translate`. |
 | `prepare_post(hl, platform)` | dict | No side effects — popup data. Includes `facets_ok` (≥1 facet). |

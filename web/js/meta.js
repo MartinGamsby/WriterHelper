@@ -17,8 +17,14 @@ const Meta = {
         </div>
         <div class="setting">
             <div class="setting-name">Image</div>
-            <input id="img-${hl}" data-field="excerpt_image" placeholder="assets/images/...">
-            <img id="img-preview-${hl}" class="img-preview hidden" alt="">
+            <div class="img-input-row">
+                <input id="img-${hl}" data-field="excerpt_image" placeholder="path · URL · or drop/Browse a file">
+                <button type="button" id="img-browse-${hl}" class="img-browse">Browse…</button>
+            </div>
+            <div id="img-drop-${hl}" class="img-drop">
+                <img id="img-preview-${hl}" class="img-preview hidden" alt="">
+                <span class="img-drop-hint">Drop an image here — it gets self-hosted (webp)</span>
+            </div>
         </div>
         <div class="setting">
             <div class="setting-name">Links</div>
@@ -67,6 +73,8 @@ const Meta = {
                 App.setField(hl, input.dataset.field, input.value));
         }
 
+        this.wireImage(hl);
+
         // Facets and draft are shared across the FR/EN pair: persist, then refresh
         // BOTH columns so the twin reflects the change. Delegated so it survives the
         // checkboxes being (re)rendered from the backend facet list in apply().
@@ -78,6 +86,43 @@ const Meta = {
         });
         document.getElementById(`draft-${hl}`).addEventListener('change', (e) =>
             refreshBoth(() => API.set_field(hl, 'draft', e.target.checked)));
+    },
+
+    // ====================================================================================
+    // Drop-zone + Browse for the excerpt image. Both ends hand the image to the
+    // backend as a data: URL, which routes through set_excerpt_img → the site's
+    // localize hook → self-hosted webp (header + 160² thumb). No new backend mode:
+    // Browse reads the file in Python (open_image); drop reads it here and reuses
+    // the generic set_field('excerpt_image', …).
+    wireImage(hl) {
+        const browse = document.getElementById(`img-browse-${hl}`);
+        browse.addEventListener('click', async () => {
+            const ok = await API.open_image(hl);
+            if (ok) { await App.refresh(hl); App.toast('Image self-hosted'); }
+        });
+
+        const zone = document.getElementById(`img-drop-${hl}`);
+        const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+        for (const ev of ['dragenter', 'dragover']) {
+            zone.addEventListener(ev, (e) => { stop(e); zone.classList.add('drag-over'); });
+        }
+        for (const ev of ['dragleave', 'dragend']) {
+            zone.addEventListener(ev, (e) => { stop(e); zone.classList.remove('drag-over'); });
+        }
+        zone.addEventListener('drop', (e) => {
+            stop(e);
+            zone.classList.remove('drag-over');
+            const file = [...((e.dataTransfer && e.dataTransfer.files) || [])]
+                .find(f => f.type.startsWith('image/'));
+            if (!file) { return; }
+            const reader = new FileReader();
+            reader.onload = async () => {
+                App.toast('Self-hosting image…');
+                await App.setField(hl, 'excerpt_image', reader.result);
+                App.toast('Image self-hosted');
+            };
+            reader.readAsDataURL(file);
+        });
     },
 
     // ====================================================================================

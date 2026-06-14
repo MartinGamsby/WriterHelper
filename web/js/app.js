@@ -71,6 +71,14 @@ const App = {
             clock.textContent = new Date().toLocaleString('fr-CA');
         }, 1000);
 
+        // Never let a stray file-drop navigate the webview away from the app:
+        // swallow drops everywhere except inside an image drop-zone (Meta wires those).
+        for (const ev of ['dragover', 'drop']) {
+            window.addEventListener(ev, (e) => {
+                if (!e.target.closest('.img-drop')) { e.preventDefault(); }
+            });
+        }
+
         // Close the modal on overlay click (outside the dialog)
         document.getElementById('modal-overlay').addEventListener('click', (e) => {
             if (e.target.id === 'modal-overlay') { Publish.close(); }

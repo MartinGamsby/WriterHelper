@@ -57,6 +57,7 @@
             new_article: async () => true,
             new_both_articles: async () => true,
             open_article: async () => true,
+            open_image: async () => true,
             open_prev_article: async () => true,
             open_next_article: async () => true,
             translate: async () => true,
