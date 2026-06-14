@@ -42,7 +42,7 @@ def is_remote(src):
     return bool(re.match(r"^(https?:)?//", src)) or src.startswith("data:")
 
 
-def _find_repo_root(start):
+def find_repo_root(start):
     """Walk up from `start` until a folder containing tools/localize-images.mjs is
     found (the martingamsby.com checkout). Returns the path or None."""
     cur = os.path.abspath(start)
@@ -74,7 +74,7 @@ def localize_file(md_path, timeout=120):
 
     Best-effort: if node, the tool, or the download is unavailable the post keeps
     its remote `image:` (still renders) and this returns (None, None)."""
-    root = _find_repo_root(os.path.dirname(md_path))
+    root = find_repo_root(os.path.dirname(md_path))
     if not root:
         print("localize: %s not found above %s" % (TOOL_REL, md_path))
         return None, None

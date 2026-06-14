@@ -95,5 +95,18 @@ branch exists in the model. Browse reads the file in Python (`webapi.open_image`
 `localize.file_to_data_url`); drag-drop reads it in JS and calls
 `set_field('excerpt_image', <data url>)`. See [[web-ui]], [[webapi-bridge]].
 
+### Rendering the saved image back (card preview)
+
+Once self-hosted, `image:` is a site-absolute `/assets/posts/<slug>.header.webp`
+that lives under the site's **`public/`** dir, not next to the posts folder.
+`rendering.excerpt_image_local` resolves it by walking up to the site root
+(`localize.find_repo_root`, the same anchor the hook uses) then into `public/`,
+and embeds the file as a `data:` URL so the card `<img>` renders and html2canvas
+can capture it untainted. MIME comes from `localize.file_to_data_url`, which fills
+the webp/avif gap Windows' `mimetypes` lacks — an `<img>` won't render a
+`data:application/octet-stream` payload. Remote/unresolved values pass through
+untouched. (Earlier this resolved against `posts_folder.parent`, so post-migration
+Astro images showed a broken-image icon.)
+
 ## See also
 - [[serializers]] · [[jekyll-format]] · [[file-storage]] · [[bilingual-pairing]] · [[templates]]

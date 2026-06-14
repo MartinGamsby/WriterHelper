@@ -1,7 +1,5 @@
 # Pure rendering helpers for ArticleModel: the five content_md flavors,
 # footer, categories, and local-image embedding. No Qt, no UI.
-import base64
-import mimetypes
 import os
 import re
 from pathlib import Path
@@ -9,6 +7,8 @@ from pathlib import Path
 import markdown
 from bs4 import BeautifulSoup
 from unidecode import unidecode
+
+import localize
 
 
 # ========================================================================================
@@ -145,19 +145,40 @@ def plain_text(article) -> str:
 # ========================================================================================
 def data_url(local_file) -> str:
     """Embed a local file as a data: URL so the webview can render it without
-    filesystem origin issues (and html2canvas can capture it untainted)."""
-    mime, _ = mimetypes.guess_type(local_file)
-    with open(local_file, 'rb') as f:
-        encoded = base64.b64encode(f.read()).decode("ascii")
-    return "data:%s;base64,%s" % (mime or "application/octet-stream", encoded)
+    filesystem origin issues (and html2canvas can capture it untainted).
+
+    Delegates to `localize.file_to_data_url`, which carries the webp/avif MIME
+    fallback Windows' `mimetypes` lacks — crucial here, since an `<img>` won't
+    render a `data:application/octet-stream` payload."""
+    return localize.file_to_data_url(local_file)
 
 
 # ========================================================================================
 def excerpt_image_local(article) -> str:
-    """Resolve the excerpt image: local file next to the posts folder if present
-    (embedded as data URL), else the raw value (assumed remote URL)."""
-    path = Path(article.get_posts_folder()).parent
-    local_file = os.path.join(str(path), article.excerpt_image.replace("/", os.sep))
-    if os.path.isfile(local_file):
-        return data_url(local_file)
-    return article.excerpt_image
+    """Resolve the excerpt image to something the webview can actually render: a
+    local file embedded as a data: URL, or the raw value when it's remote / not
+    found on disk.
+
+    Astro stores `image:` as a site-absolute `/assets/posts/<slug>.header.webp`
+    that lives under the site's **`public/`** dir — NOT next to the posts folder —
+    so resolve against the [[martingamsby-site]] checkout root found by walking up
+    from the posts folder (same anchor the localize hook uses). A couple of
+    fallbacks keep absolute paths and the legacy blog-relative layout working."""
+    src = article.excerpt_image
+    if not src or localize.is_remote(src):
+        return src
+
+    rel = src.replace("/", os.sep).lstrip(os.sep)
+    posts = article.get_posts_folder()
+    candidates = []
+    if os.path.isabs(src):
+        candidates.append(src)
+    root = localize.find_repo_root(posts)
+    if root:
+        candidates.append(os.path.join(root, "public", rel))     # Astro: under public/
+    candidates.append(os.path.join(str(Path(posts).parent), rel))  # legacy blog-relative
+
+    for cand in candidates:
+        if os.path.isfile(cand):
+            return data_url(cand)
+    return src
