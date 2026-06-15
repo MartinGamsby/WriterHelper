@@ -26,8 +26,18 @@ def post(self, msg, image_local_url, alt_text):
 ```
 
 - Logs in each call (no session reuse). Text path = `send_post`; image path reads bytes,
-  `send_image` with `image_alt`. `langs=[self.hl]` advertises the post language.
+  `send_image` with `image_alt`. `langs=[self.hl]` advertises the post language. Both
+  paths go through `_send(...)`, which also takes a `reply_to`; URL building is factored
+  into `_post_url(uri)`.
 - Returns the rendered web URL (handle + post id), not the raw `at://` URI.
+
+## post_thread() — the reply chain
+
+`post_thread(messages, image_local_url, alt_text) → [url]` logs in once, then posts each
+message in order. Every reply carries `models.AppBskyFeedPost.ReplyRef(root=<first>,
+parent=<previous>)`; the strong ref for each post comes from `models.create_strong_ref(resp)`
+(uri+cid). The image (if any) attaches to the **first** post only. Returns one web URL per
+post. Used by [[publishing]] `_publish_thread`.
 
 ## See also
 - [[post-base]] · [[x-adapter]] · [[social-publishing]]

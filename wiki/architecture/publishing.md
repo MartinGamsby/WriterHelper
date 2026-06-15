@@ -16,16 +16,22 @@ reference.
   | `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
 
 - `prepare_post(article, platform_key) → dict` — NO side effects; fills the popup
-  (includes `facets_ok`).
-- `publish(article, platform_key, mode, message) → {ok, url, error}` — the only method
-  with side effects: guards (existing link, mandatory facet), calls
-  `poster.post(msg, image_local_url, alt_text)`, stores the URL via `set_link` (re-saves
-  the footer), opens it with `webbrowser.open`.
-- `image_filename(hl)` → `richTextArea_<hl>1.png` (the load-bearing PNG name).
+  (includes `facets_ok` and the thread seed `thread_text`/`thread_count`/`separator`,
+  [[thread-split]]).
+- `publish(article, platform_key, mode, message, options=None) → {ok, url, error}` — the
+  only method with side effects: guards (existing link, mandatory facet), then by `mode`
+  posts via `poster.post(...)` (text/image) or delegates to `_publish_thread`; stores the
+  URL via `set_link` (re-saves the footer), opens it with `webbrowser.open`.
+- `_publish_thread(article, p, message, opts)` — splits `message` on `---`
+  ([[thread-split]]), optionally numbers, rejects any over-limit segment, calls
+  `poster.post_thread(...)`; stores `urls[0]` as the slot guard, returns `{...,urls}`.
+  `opts = {"number", "image"}`.
+- `image_filename(article)` → `richTextArea_<hl>1.png` (the load-bearing PNG name).
 
 The adapters (`post.py`, `post_bsky.py`, `post_x.py`) are invoked through here rather
 than the old `ArticleModel.post` (which survives only in legacy `model.py`).
 
 ## See also
 - [[social-publishing]] — the full flow + popup
+- [[thread-split]] — the pure splitter behind Thread mode
 - [[post-base]] · [[bluesky-adapter]] · [[x-adapter]] · [[link-slots]]

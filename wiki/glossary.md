@@ -20,7 +20,8 @@ Domain language for WriterHelper. One line each; deeper treatment is linked.
 - **card / .card-frame** — the capturable branded image surface in the web UI (was the QML `richTextArea` Rectangle). See [[image-card-capture]].
 - **Post (base) vs PostFB** — `post.py`'s `Post` is the base for `PostBsky` and `PostX`. `PostFB` predates it and does NOT inherit. See [[post-base]], [[facebook-adapter]].
 - **prepare_post / publish** — the two-phase social-post flow in `publishing.py`. `prepare_post` computes the preview with no side effects; `publish` actually sends the user-confirmed message. See [[social-publishing]].
-- **mode (text vs image)** — the publish choice in the popup: `"text"` posts the message only; `"image"` posts message + page-1 PNG. Defaulted from `suggested_mode`, user-overridable. See [[social-publishing]].
+- **mode (text · thread · image)** — the publish choice in the popup: `"text"` posts the message only; `"thread"` splits it into a reply chain ([[thread-split]]); `"image"` posts message + page-1 PNG. Defaulted from `suggested_mode` (text if it fits, else thread), user-overridable. See [[social-publishing]].
+- **thread** — a long article posted as a reply chain of platform-sized posts (X, Bluesky). Auto-split at paragraph/sentence/word boundaries with the split points **editable** via `---` lines in the popup textarea; optional ` (i/n)` numbering; first post's URL is the link-slot guard. Code: `thread_split.py` + `Post.post_thread`. See [[thread-split]], [[social-publishing]].
 - **bridge / webapi.Api** — the pywebview JS bridge; JS calls `window.pywebview.api.<method>`. UI is pull-based. See [[webapi-bridge]].
 - **save_capture** — bridge method that writes one html2canvas page as `richTextArea_<hl><page>.png`. See [[webapi-bridge]], [[image-card-capture]].
 - **updated()** — `ArticleModel.updated()` — a plain method (not a Qt signal) every setter calls on real change; it re-saves the `.md`. See [[auto-save-and-pull-ui]].

@@ -18,10 +18,17 @@ class Post():
     def get_app_password(self):
         return self.config["Access"]["AppPassword"]
                 
-    # ====================================================================================    
+    # ====================================================================================
     def post(self, msg, image_local_url, alt_text):
         print("To implement")
-            
+
+    # ====================================================================================
+    def post_thread(self, messages, image_local_url, alt_text):
+        """Post `messages` as a reply chain, returning a URL per post (first = root).
+        `image_local_url` (if any) attaches to the first post only. Platform-specific
+        — adapters override; the base has no generic reply mechanism."""
+        raise NotImplementedError("This platform does not support threads")
+
     # ====================================================================================    
     def config_filename(self):
         return 'settings_TODO_%s.ini' % self.hl

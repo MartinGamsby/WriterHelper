@@ -15,6 +15,11 @@ class FakePoster:
         FakePoster.last = {"msg": msg, "image": image_local_url, "alt": alt_text}
         return "https://fake.example/post/1"
 
+    def post_thread(self, messages, image_local_url, alt_text):
+        FakePoster.last_thread = {"messages": list(messages),
+                                  "image": image_local_url, "alt": alt_text}
+        return ["https://fake.example/post/%d" % (n + 1) for n in range(len(messages))]
+
 
 @pytest.fixture
 def fake_x(monkeypatch):
@@ -47,13 +52,26 @@ def test_prepare_flags_missing_facet(fr):
     assert info["facets_ok"] is False
 
 
-def test_prepare_long_content_suggests_image(fr):
+def test_prepare_long_content_suggests_thread(fr):
     fr.set_title("Long")
     fr.set_content("mot " * 200)
     info = publishing.prepare_post(fr, "x")
     assert info["fits"] is False
-    assert info["suggested_mode"] == "image"
+    assert info["suggested_mode"] == "thread"
     assert info["text_length"] > 280
+    # The editable thread blob is split into multiple `---`-separated segments.
+    assert info["thread_count"] > 1
+    assert info["separator"] in info["thread_text"]
+
+
+def test_prepare_short_content_thread_is_single_segment(fr, monkeypatch):
+    monkeypatch.chdir(os.path.dirname(fr.get_posts_folder()))
+    fr.set_title("Court")
+    fr.set_content("Très court.")
+    fr.set_facets(["dev"])
+    info = publishing.prepare_post(fr, "x")
+    assert info["thread_count"] == 1
+    assert info["separator"] not in info["thread_text"]
 
 
 # ========================================================================================
@@ -107,3 +125,61 @@ def test_publish_image_attaches_page_one(fr, fake_x, tmp_path, monkeypatch):
     assert result["ok"] is True
     assert FakePoster.last["image"] == "richTextArea_fr1.png"
     assert "contenu" in FakePoster.last["alt"]
+
+
+# ========================================================================================
+def test_publish_thread_posts_chain_and_records_first(fr, fake_x):
+    fr.set_facets(["dev"])
+    message = "First part.\n---\nSecond part.\n---\nThird part."
+    result = publishing.publish(fr, "x", "thread", message,
+                                {"number": False, "image": False})
+    assert result["ok"] is True
+    assert result["url"] == "https://fake.example/post/1"
+    assert result["urls"] == ["https://fake.example/post/%d" % n for n in (1, 2, 3)]
+    assert FakePoster.last_thread["messages"] == ["First part.", "Second part.", "Third part."]
+    assert FakePoster.last_thread["image"] is None
+    # Only the first post's URL is the idempotence guard.
+    assert fr.get_link("X/Twitter") == "https://fake.example/post/1"
+
+
+def test_publish_thread_numbers_segments_when_requested(fr, fake_x):
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
+                                {"number": True, "image": False})
+    assert result["ok"] is True
+    assert FakePoster.last_thread["messages"] == ["Un (1/2)", "Deux (2/2)"]
+
+
+def test_publish_thread_rejects_over_limit_segment(fr, fake_x):
+    fr.set_facets(["dev"])
+    message = "ok\n---\n" + "x" * 281
+    result = publishing.publish(fr, "x", "thread", message, {"number": False})
+    assert result["ok"] is False
+    assert "2" in result["error"]
+
+
+def test_publish_thread_empty_message_blocked(fr, fake_x):
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "x", "thread", "   \n---\n   ", {"number": False})
+    assert result["ok"] is False
+
+
+def test_publish_thread_image_requires_captured_png(fr, fake_x, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)  # no richTextArea_fr1.png here
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
+                                {"number": False, "image": True})
+    assert result["ok"] is False
+    assert "richTextArea_fr1.png" in result["error"]
+
+
+def test_publish_thread_attaches_image_to_first(fr, fake_x, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "richTextArea_fr1.png").write_bytes(b"png")
+    fr.set_title("Titre")
+    fr.set_content("contenu")
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
+                                {"number": False, "image": True})
+    assert result["ok"] is True
+    assert FakePoster.last_thread["image"] == "richTextArea_fr1.png"

@@ -5,6 +5,7 @@ import os
 import webbrowser
 
 import rendering
+import thread_split
 
 
 # ========================================================================================
@@ -48,6 +49,10 @@ def prepare_post(article, platform_key) -> dict:
     fits = len(text) <= p.max_length
     img = image_filename(article)
     img_exists = os.path.isfile(img)
+    # The auto-split is what seeds the editable thread textarea. Segments are left
+    # un-numbered (counters are stamped at publish) but split with room reserved for
+    # them, so turning numbering on never pushes a segment over the limit.
+    segments = thread_split.split_text(text, p.max_length, number=True)
     return {
         "platform": p.key,
         "label": p.label,
@@ -56,7 +61,11 @@ def prepare_post(article, platform_key) -> dict:
         "text": text,
         "text_length": len(text),
         "fits": fits,
-        "suggested_mode": "text" if fits else "image",
+        # A post that doesn't fit is best served as a thread; image stays available.
+        "suggested_mode": "text" if fits else "thread",
+        "thread_text": thread_split.join_for_edit(segments),
+        "thread_count": len(segments),
+        "separator": thread_split.SEPARATOR,
         "title": article.title,
         "image_file": img,
         "image_exists": img_exists,
@@ -68,9 +77,11 @@ def prepare_post(article, platform_key) -> dict:
 
 
 # ========================================================================================
-def publish(article, platform_key, mode, message) -> dict:
-    """Actually post. `mode` is "text" (message only) or "image" (message +
-    page-1 PNG). `message` is the user-confirmed text from the popup."""
+def publish(article, platform_key, mode, message, options=None) -> dict:
+    """Actually post. `mode` is "text" (message only), "image" (message + page-1
+    PNG), or "thread" (a reply chain split on `---` lines). `message` is the
+    user-confirmed text from the popup. `options` carries thread choices:
+    `{"number": bool, "image": bool}`."""
     p = PLATFORMS[platform_key]
 
     if not article.facets:
@@ -82,6 +93,9 @@ def publish(article, platform_key, mode, message) -> dict:
     if existing:
         return {"ok": False, "url": existing,
                 "error": "A %s link already exists. Clear it to re-post." % p.label}
+
+    if mode == "thread":
+        return _publish_thread(article, p, message, options or {})
 
     if mode == "image":
         img = image_filename(article)
@@ -102,3 +116,41 @@ def publish(article, platform_key, mode, message) -> dict:
     article.set_link(p.link_name, url)
     webbrowser.open(url)
     return {"ok": True, "url": url, "error": ""}
+
+
+# ========================================================================================
+def _publish_thread(article, p, message, opts) -> dict:
+    """Post `message` (segments separated by `---` lines) as a reply chain. The
+    first post's URL is stored in the link slot (the idempotence guard for the
+    whole thread)."""
+    segments = thread_split.split_on_separator(message)
+    if not segments:
+        return {"ok": False, "url": "", "error": "Nothing to post."}
+
+    if opts.get("number", True):
+        segments = thread_split.number_segments(segments)
+
+    over = [i + 1 for i, s in enumerate(segments) if len(s) > p.max_length]
+    if over:
+        return {"ok": False, "url": "",
+                "error": "Post %s over the %d-character limit."
+                         % (", ".join(map(str, over)), p.max_length)}
+
+    image = None
+    if opts.get("image"):
+        img = image_filename(article)
+        if not os.path.isfile(img):
+            return {"ok": False, "url": "",
+                    "error": "%s not found — Grab the image card first." % img}
+        image = img
+
+    alt_text = rendering.plain_text(article)
+    urls = p.make_poster(article.hl).post_thread(messages=segments,
+                                                 image_local_url=image,
+                                                 alt_text=alt_text)
+    if not urls:
+        return {"ok": False, "url": "", "error": "Thread post failed."}
+
+    article.set_link(p.link_name, urls[0])
+    webbrowser.open(urls[0])
+    return {"ok": True, "url": urls[0], "urls": urls, "error": ""}

@@ -162,8 +162,8 @@ class Api:
     def prepare_post(self, hl, platform):
         return publishing.prepare_post(self._article(hl), platform)
 
-    def publish(self, hl, platform, mode, message):
-        return publishing.publish(self._article(hl), platform, mode, message)
+    def publish(self, hl, platform, mode, message, options=None):
+        return publishing.publish(self._article(hl), platform, mode, message, options)
 
     def clear_link(self, hl, platform):
         name = publishing.PLATFORMS[platform].link_name

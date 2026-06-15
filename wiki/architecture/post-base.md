@@ -37,6 +37,10 @@ A new subclass must:
 2. Override `config_filename` → `settings_<platform>_<hl>.ini`.
 3. Override `post(msg, image_local_url, alt_text)` → do the API call, return the public
    URL.
+4. Override `post_thread(messages, image_local_url, alt_text) → [url]` → post a reply
+   chain (image attaches to the first post only). The base raises `NotImplementedError`
+   (no generic reply mechanism). Used by Thread mode ([[social-publishing]],
+   [[thread-split]]).
 
 If `config_filename` is forgotten, the base writes `settings_TODO_<hl>.ini` on first run
 — the easy-to-spot signal ([[invariants-and-traps]]).

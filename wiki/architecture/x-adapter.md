@@ -32,7 +32,16 @@ Why the v1+v2 split: v2 `create_tweet` is the supported way to post text + attac
 existing media, but v2 has no media-upload endpoint at the free/basic tiers — v1
 `media_upload` is still required to get a `media_id`; v1 `update_status` (text+media in
 one call) is forbidden at current tiers. `alt_text` is passed through but not currently
-attached to the media (would need `api_v1.create_media_metadata`).
+attached to the media (would need `api_v1.create_media_metadata`). Client construction is
+factored into `_clients()` (shared by `post` + `post_thread`); URL building into
+`_tweet_url(id)`.
+
+## post_thread() — the reply chain
+
+`post_thread(messages, image_local_url, alt_text) → [url]` posts each message in order,
+chaining with `in_reply_to_tweet_id=<previous id>`. The image (if any) is uploaded via v1
+and attached to the **first** tweet only. Returns one URL per tweet. Used by
+[[publishing]] `_publish_thread`.
 
 ## See also
 - [[post-base]] · [[bluesky-adapter]] · [[social-publishing]]

@@ -5,35 +5,53 @@ that fills a confirmation popup, then a `publish` that actually sends only what 
 confirmed. Code: `publishing.py` ([[publishing]]) + `js/publish.js`. This replaced the
 old "click a link label → instant post".
 
-## The decision (text vs image)
+## The three modes (text · thread · image)
 
-The fallback hinges on the **rendered plain-text length** vs the platform's char limit
-(not the `mini`/`medium` UI [[glossary]] length category):
+A post is sent one of three ways, chosen by radio in the popup:
 
-- Fits the limit → post the text only, no image.
-- Doesn't fit → post the **title** only, attaching `richTextArea_<hl>1.png` (page 1 of
-  the captured card, [[image-card-capture]]).
+- **text** — post the rendered plain text as one post.
+- **thread** — split the plain text into a reply chain of posts that each fit the limit
+  ([[thread-split]]); the author can **edit where it splits** (see below).
+- **image** — post the **title** only, attaching `richTextArea_<hl>1.png` (page 1 of the
+  captured card, [[image-card-capture]]).
 
-`prepare_post` computes this as `suggested_mode`; the popup defaults to it but the user
-can override.
+The suggestion hinges on the **rendered plain-text length** vs the platform's char limit
+(not the `mini`/`medium` UI [[glossary]] length category): fits → `suggested_mode="text"`;
+doesn't fit → `suggested_mode="thread"`. `prepare_post` computes this; the popup defaults
+to it but the user can override to any mode.
+
+## Editable split points (Thread mode)
+
+`prepare_post` returns `thread_text`: the auto-split segments joined by `---` lines
+([[thread-split]] `join_for_edit`). The popup loads that into the textarea; the author
+moves/adds/removes `---` lines to control the breaks. A live per-segment readout shows
+`#i len/max` (red when over), accounting for the projected ` (i/n)` counter when numbering
+is on. Publish is blocked while any segment is over the limit. Two checkboxes:
+**Number posts (1/n)** (default on) and **Attach card image to first post** (default off,
+disabled until the PNG is grabbed).
 
 ## `prepare_post(article, platform_key) → dict` — NO side effects
 
 Safe to call every time the popup opens. Returns: `text` (`rendering.plain_text`),
 `text_length`, `fits` (≤ max_length), `suggested_mode`, `existing_url` (idempotence
 guard), `title`, `image_file` (`richTextArea_<hl>1.png`), `image_exists`,
-`image_data_url` (base64 if present), `max_length`, `label`, and **`facets_ok`** (≥1
-facet — the mandatory-facets gate, see [[glossary]]).
+`image_data_url` (base64 if present), `max_length`, `label`, **`facets_ok`** (≥1 facet —
+the mandatory-facets gate, see [[glossary]]), and the thread seed `thread_text` /
+`thread_count` / `separator` ([[thread-split]]).
 
-## `publish(article, platform_key, mode, message) → {ok, url, error}`
+## `publish(article, platform_key, mode, message, options=None) → {ok, url, error}`
 
-The only method with side effects:
-1. Existing link for the slot → `{ok: False, url: existing, error}`. (Clear it to re-post.)
-2. No facet → refused (facets are mandatory).
-3. `mode == "image"` → requires the PNG on disk; posts `message` + that PNG, alt text =
+The only method with side effects. `options` carries thread choices
+`{"number": bool, "image": bool}`.
+1. No facet → refused (facets are mandatory).
+2. Existing link for the slot → `{ok: False, url: existing, error}`. (Clear it to re-post.)
+3. `mode == "thread"` → `_publish_thread`: split `message` on `---`, optionally number,
+   reject any over-limit segment, post the reply chain via `poster.post_thread`; the
+   **first** post's URL becomes the slot guard (`urls[]` also returned). [[thread-split]]
+4. `mode == "image"` → requires the PNG on disk; posts `message` + that PNG, alt text =
    full article plain text.
-4. `mode == "text"` → re-checks `len(message) <= max_length`; posts text only.
-5. On success → `set_link(slot, url)` (re-saves the footer, [[link-slots]]) +
+5. `mode == "text"` → re-checks `len(message) <= max_length`; posts text only.
+6. On success → `set_link(slot, url)` (re-saves the footer, [[link-slots]]) +
    `webbrowser.open(url)`.
 
 ## `PLATFORMS` registry
@@ -48,13 +66,15 @@ import and tests can monkeypatch the registry.
 
 ## The popup (`js/publish.js`)
 
-`Publish.open(hl, platform)` calls `prepare_post`, seeds per-mode drafts (text draft =
-full text, image draft = title), and renders the modal: two radio modes defaulted to
-`suggested_mode`, an **editable** textarea (switching modes swaps the remembered draft),
-a live `count / max_length` (red when over), and the PNG preview in image mode (or a
-"not found — use Grab first!" note). Publish is disabled when over the limit, when text
-is empty, or in image mode when the PNG is missing. If already posted, it shows the
-existing URL + a "Clear link (allow re-post)" button.
+`Publish.open(hl, platform)` calls `prepare_post`, seeds per-mode drafts (text = full
+text, thread = `thread_text`, image = title), and renders the modal: three radio modes
+(text · thread · image) defaulted to `suggested_mode`, an **editable** textarea (switching
+modes swaps the remembered draft). In text/image mode a live `count / max_length` (red
+when over) + the PNG preview in image mode; in thread mode the per-segment readout +
+the Number/Image checkboxes (see *Editable split points* above). Publish is disabled when
+over the limit, when text is empty, in image mode when the PNG is missing, or in thread
+mode when any segment is over. If already posted, it shows the existing URL + a "Clear
+link (allow re-post)" button.
 
 ## Invariants
 - Nothing is sent until **Publish** is clicked; opening the popup is read-only.

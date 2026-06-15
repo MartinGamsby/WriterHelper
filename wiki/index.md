@@ -14,7 +14,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[machine-translation]] — one-way Google translate that fills only an empty twin
 - [[auto-save-and-pull-ui]] — save-on-every-edit, rename-by-delete, the pull-based UI
 - [[content-flavors]] — the five render shapes of one article
-- [[social-publishing]] — two-phase publish behind a confirmation popup; text-vs-image decision
+- [[social-publishing]] — two-phase publish behind a confirmation popup; text · thread · image modes
 - [[link-slots]] — named `(text,url)` link slots, the file footer, the publish guard
 - [[image-card-capture]] — html2canvas branded-PNG generation + sizing
 - [[invariants-and-traps]] — the non-negotiables, the landmines, tests, style
@@ -33,6 +33,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[web-ui]] — `web/`: layout, JS modules, the two columns
 - [[webapi-bridge]] — `webapi.Api`: methods, `get_state` shape, the no-public-attrs invariant
 - [[publishing]] — `publishing.py`: `PLATFORMS` registry + prepare/publish module reference
+- [[thread-split]] — `thread_split.py`: pure long-article → editable thread splitter
 - [[post-base]] — `post.py`: the adapter base class + override contract
 - [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto)
 - [[x-adapter]] — `post_x.PostX` (tweepy v1+v2)
