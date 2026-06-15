@@ -26,9 +26,12 @@ to it but the user can override to any mode.
 ([[thread-split]] `join_for_edit`). The popup loads that into the textarea; the author
 moves/adds/removes `---` lines to control the breaks. A live per-segment readout shows
 `#i len/max` (red when over), accounting for the projected ` (i/n)` counter when numbering
-is on. Publish is blocked while any segment is over the limit. Two checkboxes:
-**Number posts (1/n)** (default on) and **Attach card image to first post** (default off,
-disabled until the PNG is grabbed).
+is on. Publish is blocked while any segment is over the limit. Controls:
+**Number posts (1/n)** (default on) and **Attach image to first post** (default on when
+an image is available) with a source choice between the **article image** (the post's own
+header picture — the default, so a thread shows the real picture not the whole text on a
+card) and the **grabbed text card** (`richTextArea_<hl>1.png`). Each source radio is
+disabled until that image exists.
 
 ## `prepare_post(article, platform_key) → dict` — NO side effects
 
@@ -37,20 +40,24 @@ Safe to call every time the popup opens. Returns: `text` (`rendering.plain_text`
 guard), `title`, `image_file` (`richTextArea_<hl>1.png`), `image_exists`,
 `image_data_url` (base64 if present), `max_length`, `label`, **`facets_ok`** (≥1 facet —
 the mandatory-facets gate, see [[glossary]]), the thread seed `thread_text` /
-`thread_count` / `separator` ([[thread-split]]), and `author` (a loose identity label
-for the preview cards — `martingamsby.com/<hl>`, NOT the real platform handle).
+`thread_count` / `separator` ([[thread-split]]), `author` (a loose identity label for the
+preview cards — `martingamsby.com/<hl>`, NOT the real platform handle), and the article
+image (`article_image_exists` — a local file is attachable; `article_image_data_url` —
+for the preview).
 
 ## `publish(article, platform_key, mode, message, options=None) → {ok, url, error}`
 
 The only method with side effects. `options` carries thread choices
-`{"number": bool, "image": bool}`.
+`{"number": bool, "image": "none"|"grabbed"|"article"}`.
 1. No facet → refused (facets are mandatory).
 2. Existing link for the slot → `{ok: False, url: existing, error}`. (Clear it to re-post.)
 3. `mode == "thread"` → `_publish_thread`: split `message` on `---`, optionally number,
-   reject any over-limit segment, post the reply chain via `poster.post_thread`; the
-   **first** post's URL becomes the slot guard (`urls[]` also returned). [[thread-split]]
-4. `mode == "image"` → requires the PNG on disk; posts `message` + that PNG, alt text =
-   full article plain text.
+   reject any over-limit segment, resolve the image source via `_resolve_image` (attaches
+   to the first post only; grabbed alt = full text, article alt = title), post the reply
+   chain via `poster.post_thread`; the **first** post's URL becomes the slot guard
+   (`urls[]` also returned). [[thread-split]]
+4. `mode == "image"` → requires the grabbed PNG on disk; posts `message` + that PNG, alt
+   text = full article plain text.
 5. `mode == "text"` → re-checks `len(message) <= max_length`; posts text only.
 6. On success → `set_link(slot, url)` (re-saves the footer, [[link-slots]]) +
    `webbrowser.open(url)`.
@@ -87,7 +94,8 @@ The right column is a WYSIWYG **"what you'll post"** dock that re-renders on eve
   placeholder). The image lives ONLY here now — it was removed from the controls column.
 - **thread** → the segments rendered **exactly as sent** (with the ` (i/n)` counter when
   numbering is on, via `numberedSegments`), stacked as cards joined by a connector line;
-  the card image attaches to the first card when "Attach card image to first post" is on.
+  the chosen image (article header or grabbed card, `threadImageData`) attaches to the
+  first card when "Attach image to first post" is on.
 
 ## Invariants
 - Nothing is sent until **Publish** is clicked; opening the popup is read-only.

@@ -23,9 +23,14 @@ reference.
   posts via `poster.post(...)` (text/image) or delegates to `_publish_thread`; stores the
   URL via `set_link` (re-saves the footer), opens it with `webbrowser.open`.
 - `_publish_thread(article, p, message, opts)` — splits `message` on `---`
-  ([[thread-split]]), optionally numbers, rejects any over-limit segment, calls
-  `poster.post_thread(...)`; stores `urls[0]` as the slot guard, returns `{...,urls}`.
-  `opts = {"number", "image"}`.
+  ([[thread-split]]), optionally numbers, rejects any over-limit segment, resolves the
+  image via `_resolve_image`, calls `poster.post_thread(...)`; stores `urls[0]` as the
+  slot guard, returns `{...,urls}`. `opts = {"number": bool, "image":
+  "none"|"grabbed"|"article"}`.
+- `_resolve_image(article, source)` → `(local_path, error)`. `"grabbed"` = the captured
+  text-card PNG (`image_filename`); `"article"` = the post's own header image as a local
+  file (`rendering.excerpt_image_file`, self-hosted on save). Grabbed alt text = full
+  plain text; article alt text = the title.
 - `image_filename(article)` → `richTextArea_<hl>1.png` (the load-bearing PNG name).
 
 The adapters (`post.py`, `post_bsky.py`, `post_x.py`) are invoked through here rather

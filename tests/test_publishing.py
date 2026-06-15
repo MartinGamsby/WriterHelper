@@ -44,6 +44,7 @@ def test_prepare_short_content_suggests_text(fr, monkeypatch):
     assert info["image_exists"] is False
     assert info["max_length"] == 280
     assert info["facets_ok"] is True
+    assert info["article_image_exists"] is False    # no excerpt image set
 
 
 def test_prepare_flags_missing_facet(fr):
@@ -132,7 +133,7 @@ def test_publish_thread_posts_chain_and_records_first(fr, fake_x):
     fr.set_facets(["dev"])
     message = "First part.\n---\nSecond part.\n---\nThird part."
     result = publishing.publish(fr, "x", "thread", message,
-                                {"number": False, "image": False})
+                                {"number": False, "image": "none"})
     assert result["ok"] is True
     assert result["url"] == "https://fake.example/post/1"
     assert result["urls"] == ["https://fake.example/post/%d" % n for n in (1, 2, 3)]
@@ -145,7 +146,7 @@ def test_publish_thread_posts_chain_and_records_first(fr, fake_x):
 def test_publish_thread_numbers_segments_when_requested(fr, fake_x):
     fr.set_facets(["dev"])
     result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
-                                {"number": True, "image": False})
+                                {"number": True, "image": "none"})
     assert result["ok"] is True
     assert FakePoster.last_thread["messages"] == ["Un (1/2)", "Deux (2/2)"]
 
@@ -164,22 +165,46 @@ def test_publish_thread_empty_message_blocked(fr, fake_x):
     assert result["ok"] is False
 
 
-def test_publish_thread_image_requires_captured_png(fr, fake_x, tmp_path, monkeypatch):
+def test_publish_thread_grabbed_image_requires_captured_png(fr, fake_x, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)  # no richTextArea_fr1.png here
     fr.set_facets(["dev"])
     result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
-                                {"number": False, "image": True})
+                                {"number": False, "image": "grabbed"})
     assert result["ok"] is False
     assert "richTextArea_fr1.png" in result["error"]
 
 
-def test_publish_thread_attaches_image_to_first(fr, fake_x, tmp_path, monkeypatch):
+def test_publish_thread_attaches_grabbed_card_to_first(fr, fake_x, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "richTextArea_fr1.png").write_bytes(b"png")
     fr.set_title("Titre")
     fr.set_content("contenu")
     fr.set_facets(["dev"])
     result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
-                                {"number": False, "image": True})
+                                {"number": False, "image": "grabbed"})
     assert result["ok"] is True
     assert FakePoster.last_thread["image"] == "richTextArea_fr1.png"
+    # The grabbed card carries the whole article, so its alt text is the full text.
+    assert "contenu" in FakePoster.last_thread["alt"]
+
+
+def test_publish_thread_attaches_article_image_to_first(fr, fake_x, tmp_path):
+    header = tmp_path / "header.webp"
+    header.write_bytes(b"webp")
+    fr.set_title("Titre")
+    fr.set_excerpt_img(str(header))   # absolute local path → resolves as the article image
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
+                                {"number": False, "image": "article"})
+    assert result["ok"] is True
+    assert FakePoster.last_thread["image"] == str(header)
+    # The header image is decorative, so its alt text is the title (not the body).
+    assert FakePoster.last_thread["alt"] == "Titre"
+
+
+def test_publish_thread_article_image_missing_is_reported(fr, fake_x):
+    fr.set_facets(["dev"])                 # no excerpt image set
+    result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
+                                {"number": False, "image": "article"})
+    assert result["ok"] is False
+    assert "image" in result["error"].lower()

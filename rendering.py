@@ -154,10 +154,9 @@ def data_url(local_file) -> str:
 
 
 # ========================================================================================
-def excerpt_image_local(article) -> str:
-    """Resolve the excerpt image to something the webview can actually render: a
-    local file embedded as a data: URL, or the raw value when it's remote / not
-    found on disk.
+def excerpt_image_file(article) -> str:
+    """The article's excerpt image as a **local filesystem path**, or "" when it's
+    remote / a data: URL / not found on disk.
 
     Astro stores `image:` as a site-absolute `/assets/posts/<slug>.header.webp`
     that lives under the site's **`public/`** dir — NOT next to the posts folder —
@@ -166,7 +165,7 @@ def excerpt_image_local(article) -> str:
     fallbacks keep absolute paths and the legacy blog-relative layout working."""
     src = article.excerpt_image
     if not src or localize.is_remote(src):
-        return src
+        return ""
 
     rel = src.replace("/", os.sep).lstrip(os.sep)
     posts = article.get_posts_folder()
@@ -180,5 +179,14 @@ def excerpt_image_local(article) -> str:
 
     for cand in candidates:
         if os.path.isfile(cand):
-            return data_url(cand)
-    return src
+            return cand
+    return ""
+
+
+# ========================================================================================
+def excerpt_image_local(article) -> str:
+    """Resolve the excerpt image to something the webview can actually render: a
+    local file embedded as a data: URL, or the raw value when it's remote / a
+    data: URL / not found on disk."""
+    cand = excerpt_image_file(article)
+    return data_url(cand) if cand else article.excerpt_image

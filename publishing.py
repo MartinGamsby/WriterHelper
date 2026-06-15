@@ -72,6 +72,11 @@ def prepare_post(article, platform_key) -> dict:
         "image_file": img,
         "image_exists": img_exists,
         "image_data_url": rendering.data_url(img) if img_exists else "",
+        # The article's own header image, the default attachment for a thread (so a
+        # thread shows the real picture, not the whole text rendered onto a card).
+        "article_image_exists": bool(rendering.excerpt_image_file(article)),
+        "article_image_data_url": rendering.excerpt_image_local(article)
+        if article.excerpt_image else "",
         # An article must carry at least one facet (it drives which site "door" the
         # post appears under). Pair-shared, so either language reflects the pair.
         "facets_ok": bool(article.facets),
@@ -79,11 +84,30 @@ def prepare_post(article, platform_key) -> dict:
 
 
 # ========================================================================================
+def _resolve_image(article, source):
+    """Local file path for an attachment, or `(None, error)`. `source` is
+    `"grabbed"` (the captured text-card PNG) or `"article"` (the post's own header
+    image, already self-hosted to a local file on save)."""
+    if source == "grabbed":
+        img = image_filename(article)
+        if not os.path.isfile(img):
+            return None, "%s not found — Grab the image card first." % img
+        return img, None
+    if source == "article":
+        path = rendering.excerpt_image_file(article)
+        if path:
+            return path, None
+        return None, ("This article has no local image to attach "
+                      "(set one, or pick the grabbed text card).")
+    return None, "Unknown image source: %r" % source
+
+
+# ========================================================================================
 def publish(article, platform_key, mode, message, options=None) -> dict:
     """Actually post. `mode` is "text" (message only), "image" (message + page-1
     PNG), or "thread" (a reply chain split on `---` lines). `message` is the
     user-confirmed text from the popup. `options` carries thread choices:
-    `{"number": bool, "image": bool}`."""
+    `{"number": bool, "image": "none"|"grabbed"|"article"}`."""
     p = PLATFORMS[platform_key]
 
     if not article.facets:
@@ -139,14 +163,15 @@ def _publish_thread(article, p, message, opts) -> dict:
                          % (", ".join(map(str, over)), p.max_length)}
 
     image = None
-    if opts.get("image"):
-        img = image_filename(article)
-        if not os.path.isfile(img):
-            return {"ok": False, "url": "",
-                    "error": "%s not found — Grab the image card first." % img}
-        image = img
+    source = opts.get("image", "none")
+    if source and source != "none":
+        image, error = _resolve_image(article, source)
+        if error:
+            return {"ok": False, "url": "", "error": error}
 
-    alt_text = rendering.plain_text(article)
+    # Alt text: the grabbed card carries the whole article as text, so its alt is the
+    # full plain text; the article header image is decorative, so use the title.
+    alt_text = rendering.plain_text(article) if source == "grabbed" else article.title
     urls = p.make_poster(article.hl).post_thread(messages=segments,
                                                  image_local_url=image,
                                                  alt_text=alt_text)

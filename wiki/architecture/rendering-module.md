@@ -16,9 +16,11 @@ callers can use either. No Qt, no state of its own.
 - `plain_text(article)` — BeautifulSoup-stripped text, no hashtags — the exact post
   text used for the [[social-publishing]] char count.
 - `footer_md(article)` — `- [text](url)` lines for non-empty links ([[link-slots]]).
-- `hashtags(article)`, `categories(article)` (legacy-only), `excerpt_image_local`
-  (embeds a local image as a `data:` URL so the webview / html2canvas can use it without
-  tainting the canvas).
+- `hashtags(article)`, `categories(article)` (legacy-only), `excerpt_image_file`
+  (resolves the excerpt image to a **local filesystem path**, or "" when remote/data/not
+  found — used to attach the article image to a post, [[social-publishing]]) and
+  `excerpt_image_local` (the same file as a `data:` URL so the webview / html2canvas can
+  use it without tainting the canvas; falls back to the raw value when not local).
 - `templated(template, article)` + `load_templates()` — the placeholder substitution
   engine ([[templates]]).
 

@@ -75,10 +75,18 @@ const Publish = {
                 : `too long for one post (${i.text_length}/${i.max_length}) — thread suggested`}</span>
             <textarea id="pub-text" rows="10"></textarea>
             <div id="pub-thread-controls" class="thread-controls hidden">
-                <label class="check"><input type="checkbox" id="pub-number"> Number posts (1/n)</label>
-                <label class="check"><input type="checkbox" id="pub-thread-img"
-                    ${i.image_exists ? '' : 'disabled'}> Attach card image to first post${
-                    i.image_exists ? '' : ' (Grab first)'}</label>
+                <label class="check"><input type="checkbox" id="pub-number" checked> Number posts (1/n)</label>
+                <div class="img-row">
+                    <label class="check"><input type="checkbox" id="pub-thread-img"
+                        ${(i.article_image_exists || i.image_exists) ? 'checked' : 'disabled'}>
+                        Attach image to first post:</label>
+                    <label class="check"><input type="radio" name="pub-img-src" value="article"
+                        ${i.article_image_exists ? 'checked' : 'disabled'}>
+                        article image${i.article_image_exists ? '' : ' (none)'}</label>
+                    <label class="check"><input type="radio" name="pub-img-src" value="grabbed"
+                        ${i.article_image_exists ? '' : 'checked'} ${i.image_exists ? '' : 'disabled'}>
+                        grabbed text card${i.image_exists ? '' : ' (Grab first)'}</label>
+                </div>
                 <div class="hint">Edit the split: separate posts with a line containing only <code>${i.separator}</code>.</div>
                 <div id="pub-segs" class="pub-segs"></div>
             </div>
@@ -114,6 +122,9 @@ const Publish = {
         for (const id of ['pub-number', 'pub-thread-img']) {
             document.getElementById(id).addEventListener('change', () => this.validate());
         }
+        for (const r of modal.querySelectorAll('input[name="pub-img-src"]')) {
+            r.addEventListener('change', () => this.validate());
+        }
 
         document.getElementById('pub-cancel').addEventListener('click', () => this.close());
         document.getElementById('pub-go').addEventListener('click', () => this.send());
@@ -131,6 +142,15 @@ const Publish = {
 
     threadNumber() { return document.getElementById('pub-number').checked; },
     threadImage()  { return document.getElementById('pub-thread-img').checked; },
+    threadImageSource() {
+        const el = document.querySelector('input[name="pub-img-src"]:checked');
+        return el ? el.value : 'none';
+    },
+    // The data: URL for the currently-selected image source (for the preview card).
+    threadImageData() {
+        return this.threadImageSource() === 'article'
+            ? this.info.article_image_data_url : this.info.image_data_url;
+    },
 
     // ====================================================================================
     validate() {
@@ -198,7 +218,7 @@ const Publish = {
         const i = this.info;
         const media = image
             ? `<img class="pv-media" src="${image}" alt="">`
-            : (missing ? `<div class="pv-media-missing">image not grabbed yet — “Grab” first</div>` : '');
+            : (missing ? `<div class="pv-media-missing">no image to attach — set an article image or “Grab” the card</div>` : '');
         const text = body ? `<div class="pv-body">${this.escapeHtml(body)}</div>` : '';
         const badge = (count !== undefined)
             ? `<div class="pv-foot${over ? ' over' : ''}">${count}/${i.max_length}</div>` : '';
@@ -225,12 +245,13 @@ const Publish = {
 
         if (mode === 'thread') {
             const segs = this.numberedSegments(text);
-            const withImg = this.threadImage() && i.image_exists;
+            const imgData = this.threadImage() ? this.threadImageData() : '';
             host.className = 'pv-thread';
             host.innerHTML = segs.length
                 ? segs.map((s, idx) => this.postCard({
                     body: s, count: s.length, over: s.length > i.max_length,
-                    image: (idx === 0 && withImg) ? i.image_data_url : null })).join('')
+                    image: (idx === 0 && imgData) ? imgData : null,
+                    missing: idx === 0 && this.threadImage() && !imgData })).join('')
                 : '<div class="pv-empty">Add some text to preview the thread.</div>';
             return;
         }
@@ -249,8 +270,8 @@ const Publish = {
 
         const mode = this.mode();
         const options = mode === 'thread' ? {
-            number: document.getElementById('pub-number').checked,
-            image: document.getElementById('pub-thread-img').checked,
+            number: this.threadNumber(),
+            image: this.threadImage() ? this.threadImageSource() : 'none',
         } : null;
         const result = await API.publish(this.hl, this.info.platform, mode,
                                          document.getElementById('pub-text').value, options);
