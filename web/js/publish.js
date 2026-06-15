@@ -273,8 +273,17 @@ const Publish = {
             number: this.threadNumber(),
             image: this.threadImage() ? this.threadImageSource() : 'none',
         } : null;
-        const result = await API.publish(this.hl, this.info.platform, mode,
-                                         document.getElementById('pub-text').value, options);
+
+        // The bridge rejects this promise if Python raises (e.g. a platform 403).
+        // Catch it so the popup recovers instead of hanging on "Publishing…".
+        let result;
+        try {
+            result = await API.publish(this.hl, this.info.platform, mode,
+                                       document.getElementById('pub-text').value, options);
+        } catch (e) {
+            result = { ok: false, error: 'Publish failed: ' + (e && e.message ? e.message : e) };
+        }
+
         if (result.ok) {
             await App.refresh(this.hl);
             const modal = document.getElementById('modal');

@@ -84,6 +84,21 @@ def prepare_post(article, platform_key) -> dict:
 
 
 # ========================================================================================
+def _post_error(p, exc) -> str:
+    """Turn a platform adapter exception into a short, actionable popup message."""
+    msg = str(exc).strip()
+    # X/Twitter's generic 403 when the developer App isn't attached to a Project or
+    # the Access Token lacks write scope. The raw message is a wall of text; give the
+    # operator the concrete fix instead.
+    if "attached to a Project" in msg or "developer App" in msg:
+        return ("%s refused the post (403): the X developer App must be attached to a "
+                "Project and the Access Token must have Read+Write scope. Enable write, "
+                "regenerate the Access Token & Secret, then update settings_x_<hl>.ini."
+                % p.label)
+    return "%s couldn't post: %s" % (p.label, msg)
+
+
+# ========================================================================================
 def _resolve_image(article, source):
     """Local file path for an attachment, or `(None, error)`. `source` is
     `"grabbed"` (the captured text-card PNG) or `"article"` (the post's own header
@@ -129,15 +144,20 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
             return {"ok": False, "url": "",
                     "error": "%s not found — Grab the image card first." % img}
         alt_text = rendering.plain_text(article)
-        url = p.make_poster(article.hl).post(msg=message, image_local_url=img,
-                                             alt_text=alt_text)
+        send = lambda: p.make_poster(article.hl).post(
+            msg=message, image_local_url=img, alt_text=alt_text)
     else:
         if len(message) > p.max_length:
             return {"ok": False, "url": "",
                     "error": "Text is %d characters; %s allows %d."
                              % (len(message), p.label, p.max_length)}
-        url = p.make_poster(article.hl).post(msg=message, image_local_url=None,
-                                             alt_text=message)
+        send = lambda: p.make_poster(article.hl).post(
+            msg=message, image_local_url=None, alt_text=message)
+
+    try:
+        url = send()
+    except Exception as exc:  # auth/network failure must reach the UI, not the console
+        return {"ok": False, "url": "", "error": _post_error(p, exc)}
 
     article.set_link(p.link_name, url)
     webbrowser.open(url)
@@ -172,9 +192,12 @@ def _publish_thread(article, p, message, opts) -> dict:
     # Alt text: the grabbed card carries the whole article as text, so its alt is the
     # full plain text; the article header image is decorative, so use the title.
     alt_text = rendering.plain_text(article) if source == "grabbed" else article.title
-    urls = p.make_poster(article.hl).post_thread(messages=segments,
-                                                 image_local_url=image,
-                                                 alt_text=alt_text)
+    try:
+        urls = p.make_poster(article.hl).post_thread(messages=segments,
+                                                     image_local_url=image,
+                                                     alt_text=alt_text)
+    except Exception as exc:  # auth/network failure must reach the UI, not the console
+        return {"ok": False, "url": "", "error": _post_error(p, exc)}
     if not urls:
         return {"ok": False, "url": "", "error": "Thread post failed."}
 
