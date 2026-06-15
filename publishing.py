@@ -66,6 +66,8 @@ def prepare_post(article, platform_key) -> dict:
         "thread_text": thread_split.join_for_edit(segments),
         "thread_count": len(segments),
         "separator": thread_split.SEPARATOR,
+        # A loose identity label for the preview cards (not the real platform handle).
+        "author": "MartinGamsby.com/%s" % article.hl,
         "title": article.title,
         "image_file": img,
         "image_exists": img_exists,

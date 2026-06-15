@@ -63,32 +63,36 @@ const Publish = {
 
         modal.innerHTML = `
         <h3>Publish to ${i.label} — ${this.hl.toUpperCase()}</h3>
-        <div class="mode-row">
-            <label class="check"><input type="radio" name="pub-mode" value="text"> Text post</label>
-            <label class="check"><input type="radio" name="pub-mode" value="thread"> Thread</label>
-            <label class="check"><input type="radio" name="pub-mode" value="image"> Title + image</label>
+        <div class="pub-cols">
+          <div class="pub-controls">
+            <div class="mode-row">
+                <label class="check"><input type="radio" name="pub-mode" value="text"> Text post</label>
+                <label class="check"><input type="radio" name="pub-mode" value="thread"> Thread</label>
+                <label class="check"><input type="radio" name="pub-mode" value="image"> Title + image</label>
+            </div>
             <span class="hint">${i.fits
                 ? 'fits as text'
                 : `too long for one post (${i.text_length}/${i.max_length}) — thread suggested`}</span>
-        </div>
-        <textarea id="pub-text" rows="8"></textarea>
-        <div id="pub-thread-controls" class="thread-controls hidden">
-            <label class="check"><input type="checkbox" id="pub-number" checked> Number posts (1/n)</label>
-            <label class="check"><input type="checkbox" id="pub-thread-img"
-                ${i.image_exists ? '' : 'disabled'}> Attach card image to first post${
-                i.image_exists ? '' : ' (Grab first)'}</label>
-            <div class="hint">Edit the split: separate posts with a line containing only <code>${i.separator}</code>.</div>
-            <div id="pub-segs" class="pub-segs"></div>
-        </div>
-        <div class="pub-meta">
-            <span id="pub-count"></span>
-            <span id="pub-img-note"></span>
-        </div>
-        <img id="pub-img" class="pub-img hidden" alt="Captured card preview">
-        <p class="warn hidden" id="pub-warn"></p>
-        <div class="modal-buttons">
-            <button id="pub-go" class="primary">Publish</button>
-            <button id="pub-cancel">Cancel</button>
+            <textarea id="pub-text" rows="10"></textarea>
+            <div id="pub-thread-controls" class="thread-controls hidden">
+                <label class="check"><input type="checkbox" id="pub-number" checked> Number posts (1/n)</label>
+                <label class="check"><input type="checkbox" id="pub-thread-img"
+                    ${i.image_exists ? '' : 'disabled'}> Attach card image to first post${
+                    i.image_exists ? '' : ' (Grab first)'}</label>
+                <div class="hint">Edit the split: separate posts with a line containing only <code>${i.separator}</code>.</div>
+                <div id="pub-segs" class="pub-segs"></div>
+            </div>
+            <div class="pub-meta"><span id="pub-count"></span></div>
+            <p class="warn hidden" id="pub-warn"></p>
+            <div class="modal-buttons">
+                <button id="pub-go" class="primary">Publish</button>
+                <button id="pub-cancel">Cancel</button>
+            </div>
+          </div>
+          <div class="pub-preview">
+            <div class="pv-label">Preview — what you'll post</div>
+            <div id="pub-preview-body"></div>
+          </div>
         </div>`;
 
         const radios = modal.querySelectorAll('input[name="pub-mode"]');
@@ -125,67 +129,115 @@ const Publish = {
         return text.split(/^\s*-{3,}\s*$/m).map(s => s.trim()).filter(Boolean);
     },
 
+    threadNumber() { return document.getElementById('pub-number').checked; },
+    threadImage()  { return document.getElementById('pub-thread-img').checked; },
+
     // ====================================================================================
     validate() {
         const i = this.info;
         const mode = this.mode();
         const text = document.getElementById('pub-text').value;
         const count = document.getElementById('pub-count');
-        const img = document.getElementById('pub-img');
-        const note = document.getElementById('pub-img-note');
         const go = document.getElementById('pub-go');
         const threadCtl = document.getElementById('pub-thread-controls');
 
         threadCtl.classList.toggle('hidden', mode !== 'thread');
         count.classList.toggle('hidden', mode === 'thread');
-        img.classList.toggle('hidden', mode !== 'image');
 
         if (mode === 'thread') {
-            note.textContent = '';
             this.validateThread(text, go);
-            return;
-        }
-
-        count.textContent = `${text.length} / ${i.max_length}`;
-        const over = text.length > i.max_length;
-        count.classList.toggle('over', over);
-
-        if (mode === 'image') {
-            if (i.image_exists) {
-                img.src = i.image_data_url;
-                note.textContent = `attaching ${i.image_file} (alt text = full article text)`;
-                go.disabled = over;
-            } else {
-                img.classList.add('hidden');
-                note.textContent = `${i.image_file} not found — use Grab first!`;
-                go.disabled = true;
-            }
         } else {
-            note.textContent = '';
-            go.disabled = over || text.length === 0;
+            count.textContent = `${text.length} / ${i.max_length}`;
+            const over = text.length > i.max_length;
+            count.classList.toggle('over', over);
+            if (mode === 'image') {
+                go.disabled = over || !i.image_exists;
+            } else {
+                go.disabled = over || text.length === 0;
+            }
         }
+        this.renderPreview(mode, text);
     },
 
     // Per-segment counts, accounting for the projected " (i/n)" counter when numbering
     // is on. Publish is blocked if any segment is over the limit or there are none.
     validateThread(text, go) {
         const i = this.info;
-        const segs = this.segments(text);
+        const segs = this.numberedSegments(text);
         const n = segs.length;
-        const number = document.getElementById('pub-number').checked;
         const segsEl = document.getElementById('pub-segs');
         let anyOver = false;
 
         const parts = segs.map((s, idx) => {
-            const extra = (number && n > 1) ? ` (${idx + 1}/${n})`.length : 0;
-            const len = s.length + extra;
-            const over = len > i.max_length;
+            const over = s.length > i.max_length;
             anyOver = anyOver || over;
-            return `<span class="seg${over ? ' over' : ''}">#${idx + 1} ${len}/${i.max_length}</span>`;
+            return `<span class="seg${over ? ' over' : ''}">#${idx + 1} ${s.length}/${i.max_length}</span>`;
         });
         segsEl.innerHTML = n ? `<b>${n} post${n > 1 ? 's' : ''}:</b> ${parts.join(' · ')}`
                              : '<span class="over">no posts — add some text</span>';
         go.disabled = anyOver || n === 0;
+    },
+
+    // The segments exactly as they'll be sent: split + the projected " (i/n)" counter
+    // appended when numbering is on (mirrors thread_split.number_segments).
+    numberedSegments(text) {
+        const segs = this.segments(text);
+        const n = segs.length;
+        if (!this.threadNumber() || n <= 1) return segs;
+        return segs.map((s, idx) => `${s} (${idx + 1}/${n})`);
+    },
+
+    // ====================================================================================
+    escapeHtml(s) {
+        return s.replace(/[&<>"]/g, c => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    },
+
+    // One rendered "post" card. `over`/`missing` flag problems; `image` is a data URL.
+    postCard({ body, image, count, over, missing }) {
+        const i = this.info;
+        const media = image
+            ? `<img class="pv-media" src="${image}" alt="">`
+            : (missing ? `<div class="pv-media-missing">image not grabbed yet — “Grab” first</div>` : '');
+        const text = body ? `<div class="pv-body">${this.escapeHtml(body)}</div>` : '';
+        const badge = (count !== undefined)
+            ? `<div class="pv-foot${over ? ' over' : ''}">${count}/${i.max_length}</div>` : '';
+        return `<div class="pv-post${over ? ' over' : ''}">
+            <div class="pv-head">
+                <div class="pv-avatar">M</div>
+                <div class="pv-who"><b>Martin Gamsby</b><span>${i.author} · now</span></div>
+            </div>
+            ${text}${media}${badge}
+        </div>`;
+    },
+
+    renderPreview(mode, text) {
+        const i = this.info;
+        const host = document.getElementById('pub-preview-body');
+
+        if (mode === 'image') {
+            host.className = '';
+            host.innerHTML = this.postCard({
+                body: text, image: i.image_exists ? i.image_data_url : null,
+                missing: !i.image_exists, count: text.length, over: text.length > i.max_length });
+            return;
+        }
+
+        if (mode === 'thread') {
+            const segs = this.numberedSegments(text);
+            const withImg = this.threadImage() && i.image_exists;
+            host.className = 'pv-thread';
+            host.innerHTML = segs.length
+                ? segs.map((s, idx) => this.postCard({
+                    body: s, count: s.length, over: s.length > i.max_length,
+                    image: (idx === 0 && withImg) ? i.image_data_url : null })).join('')
+                : '<div class="pv-empty">Add some text to preview the thread.</div>';
+            return;
+        }
+
+        host.className = '';
+        host.innerHTML = this.postCard({
+            body: text, count: text.length, over: text.length > i.max_length });
     },
 
     // ====================================================================================

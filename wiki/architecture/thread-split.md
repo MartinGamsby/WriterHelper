@@ -31,9 +31,11 @@ segment is guaranteed ≤ the limit.
 
 ## Mirror in JS
 
-`js/publish.js` re-implements `split_on_separator` (`segments()`) and the numbered-length
-projection in `validateThread` so the live per-segment count matches what `publish` will
-send. Keep the two in sync (same `^\s*-{3,}\s*$` rule, same ` (i/n)` width).
+`js/publish.js` re-implements `split_on_separator` (`segments()`) and `number_segments`
+(`numberedSegments()`) so the live per-segment count AND the preview cards match what
+`publish` will send. Keep the two in sync (same `^\s*-{3,}\s*$` rule, same ` (i/n)`
+suffix). The preview dock ([[social-publishing]]) renders `numberedSegments` as stacked
+cards.
 
 ## See also
 - [[social-publishing]] — the Thread mode + popup · [[publishing]] — `_publish_thread`

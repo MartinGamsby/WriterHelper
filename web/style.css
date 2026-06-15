@@ -208,16 +208,17 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
     background: white;
     border-radius: 8px;
     padding: 18px 20px;
-    width: 560px;
-    max-width: 92vw;
+    width: 880px;
+    max-width: 94vw;
     max-height: 88vh;
     overflow-y: auto;
     box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
 }
 #modal h3 { margin: 0 0 10px; color: var(--green-dark); }
 #modal textarea { width: 100%; resize: vertical; line-height: 1.4; }
-.mode-row { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
-.mode-row .hint { color: #667; font-size: 12px; }
+.mode-row { display: flex; gap: 14px; align-items: center; margin-bottom: 4px; }
+.mode-row .hint, .pub-controls > .hint { color: #667; font-size: 12px; }
+.pub-controls > .hint { display: block; margin-bottom: 8px; }
 .pub-meta { display: flex; justify-content: space-between; margin: 6px 0; color: #667; font-size: 12px; }
 #pub-count.over { color: #c22; font-weight: 700; }
 .thread-controls { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
@@ -226,9 +227,57 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 .pub-segs { font-size: 12px; color: #667; line-height: 1.6; }
 .pub-segs .seg { white-space: nowrap; }
 .pub-segs .over { color: #c22; font-weight: 700; }
-.pub-img { max-width: 100%; border: 1px solid var(--border); border-radius: 4px; }
 .warn { color: #c22; font-weight: 600; }
 .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+
+/* ---------- publish: two columns (controls | live preview) ---------- */
+.pub-cols { display: flex; gap: 18px; align-items: flex-start; }
+.pub-controls { flex: 1 1 0; min-width: 0; }
+.pub-preview {
+    flex: 0 0 320px;
+    align-self: stretch;
+    border-left: 1px solid var(--border);
+    padding-left: 16px;
+    max-height: 64vh;
+    overflow-y: auto;
+}
+.pv-label { font-size: 12px; font-weight: 700; color: #667; text-transform: uppercase;
+    letter-spacing: .03em; margin-bottom: 10px; }
+
+/* a single rendered post card */
+.pv-post {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+}
+.pv-post.over { border-color: #e2a; box-shadow: 0 0 0 1px #c22 inset; }
+.pv-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.pv-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--green-dark, #2e6b3e); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; flex: 0 0 auto;
+}
+.pv-who { display: flex; flex-direction: column; line-height: 1.2; font-size: 13px; }
+.pv-who span { color: #889; font-size: 11px; }
+.pv-body { white-space: pre-wrap; word-wrap: break-word; font-size: 14px; line-height: 1.45; }
+.pv-media { display: block; max-width: 100%; border-radius: 10px;
+    border: 1px solid var(--border); margin-top: 8px; }
+.pv-media-missing { margin-top: 8px; padding: 14px; border: 1px dashed var(--border);
+    border-radius: 10px; color: #c22; font-size: 12px; text-align: center; }
+.pv-foot { margin-top: 8px; font-size: 11px; color: #889; text-align: right; }
+.pv-foot.over { color: #c22; font-weight: 700; }
+.pv-empty { color: #889; font-size: 13px; font-style: italic; }
+
+/* thread: stacked cards joined by a connector line */
+.pv-thread { display: flex; flex-direction: column; gap: 0; }
+.pv-thread .pv-post { position: relative; margin-bottom: 14px; }
+.pv-thread .pv-post:not(:last-child)::after {
+    content: ""; position: absolute; left: 30px; bottom: -14px;
+    width: 2px; height: 14px; background: var(--border);
+}
 
 /* ---------- misc ---------- */
 #toast {

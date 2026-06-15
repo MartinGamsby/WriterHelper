@@ -36,8 +36,9 @@ Safe to call every time the popup opens. Returns: `text` (`rendering.plain_text`
 `text_length`, `fits` (≤ max_length), `suggested_mode`, `existing_url` (idempotence
 guard), `title`, `image_file` (`richTextArea_<hl>1.png`), `image_exists`,
 `image_data_url` (base64 if present), `max_length`, `label`, **`facets_ok`** (≥1 facet —
-the mandatory-facets gate, see [[glossary]]), and the thread seed `thread_text` /
-`thread_count` / `separator` ([[thread-split]]).
+the mandatory-facets gate, see [[glossary]]), the thread seed `thread_text` /
+`thread_count` / `separator` ([[thread-split]]), and `author` (a loose identity label
+for the preview cards — `martingamsby.com/<hl>`, NOT the real platform handle).
 
 ## `publish(article, platform_key, mode, message, options=None) → {ok, url, error}`
 
@@ -67,14 +68,26 @@ import and tests can monkeypatch the registry.
 ## The popup (`js/publish.js`)
 
 `Publish.open(hl, platform)` calls `prepare_post`, seeds per-mode drafts (text = full
-text, thread = `thread_text`, image = title), and renders the modal: three radio modes
-(text · thread · image) defaulted to `suggested_mode`, an **editable** textarea (switching
-modes swaps the remembered draft). In text/image mode a live `count / max_length` (red
-when over) + the PNG preview in image mode; in thread mode the per-segment readout +
-the Number/Image checkboxes (see *Editable split points* above). Publish is disabled when
-over the limit, when text is empty, in image mode when the PNG is missing, or in thread
-mode when any segment is over. If already posted, it shows the existing URL + a "Clear
-link (allow re-post)" button.
+text, thread = `thread_text`, image = title), and renders a **two-column** modal: the
+left column holds the controls — three radio modes (text · thread · image) defaulted to
+`suggested_mode`, an **editable** textarea (switching modes swaps the remembered draft),
+the live `count / max_length` (text/image) or per-segment readout + Number/Image
+checkboxes (thread). Publish is disabled when over the limit, when text is empty, in
+image mode when the PNG is missing, or in thread mode when any segment is over. If
+already posted, it shows the existing URL + a "Clear link (allow re-post)" button.
+
+## The live preview dock (`renderPreview`)
+
+The right column is a WYSIWYG **"what you'll post"** dock that re-renders on every edit
+(`renderPreview(mode, text)` runs inside `validate`). It draws real post **cards**
+(avatar + `author` from `prepare_post` + body, `postCard`), approximating the end result
+— not platform-accurate:
+- **text** → one card with the full body.
+- **image** → one card with the title body + the captured PNG (or a "not grabbed yet"
+  placeholder). The image lives ONLY here now — it was removed from the controls column.
+- **thread** → the segments rendered **exactly as sent** (with the ` (i/n)` counter when
+  numbering is on, via `numberedSegments`), stacked as cards joined by a connector line;
+  the card image attaches to the first card when "Attach card image to first post" is on.
 
 ## Invariants
 - Nothing is sent until **Publish** is clicked; opening the popup is read-only.
