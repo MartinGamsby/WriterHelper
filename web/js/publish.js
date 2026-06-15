@@ -75,7 +75,7 @@ const Publish = {
                 : `too long for one post (${i.text_length}/${i.max_length}) — thread suggested`}</span>
             <textarea id="pub-text" rows="10"></textarea>
             <div id="pub-thread-controls" class="thread-controls hidden">
-                <label class="check"><input type="checkbox" id="pub-number" checked> Number posts (1/n)</label>
+                <label class="check"><input type="checkbox" id="pub-number"> Number posts (1/n)</label>
                 <label class="check"><input type="checkbox" id="pub-thread-img"
                     ${i.image_exists ? '' : 'disabled'}> Attach card image to first post${
                     i.image_exists ? '' : ' (Grab first)'}</label>
