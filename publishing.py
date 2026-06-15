@@ -2,6 +2,8 @@
 # popup: prepare_post() computes what WOULD be sent (no side effects),
 # publish() actually sends it. No Qt.
 import os
+import sys
+import traceback
 import webbrowser
 
 import rendering
@@ -84,6 +86,26 @@ def prepare_post(article, platform_key) -> dict:
 
 
 # ========================================================================================
+def _log_post_exc(p, exc):
+    """Log a posting failure with full stack + the platform's structured error so the
+    real cause is visible in the console (the UI only gets the short message)."""
+    print("[publish] %s post failed: %r" % (p.label, exc), file=sys.stderr)
+    # tweepy.HTTPException carries parsed API errors and the raw HTTP response body.
+    for attr in ("api_codes", "api_messages", "api_errors"):
+        val = getattr(exc, attr, None)
+        if val:
+            print("[publish]   %s: %s" % (attr, val), file=sys.stderr)
+    resp = getattr(exc, "response", None)
+    if resp is not None:
+        try:
+            print("[publish]   HTTP %s: %s" % (resp.status_code, resp.text),
+                  file=sys.stderr)
+        except Exception:
+            pass
+    traceback.print_exc()
+
+
+# ========================================================================================
 def _post_error(p, exc) -> str:
     """Turn a platform adapter exception into a short, actionable popup message."""
     msg = str(exc).strip()
@@ -156,7 +178,8 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
 
     try:
         url = send()
-    except Exception as exc:  # auth/network failure must reach the UI, not the console
+    except Exception as exc:  # auth/network failure must reach the UI, not just the console
+        _log_post_exc(p, exc)
         return {"ok": False, "url": "", "error": _post_error(p, exc)}
 
     article.set_link(p.link_name, url)
@@ -196,7 +219,8 @@ def _publish_thread(article, p, message, opts) -> dict:
         urls = p.make_poster(article.hl).post_thread(messages=segments,
                                                      image_local_url=image,
                                                      alt_text=alt_text)
-    except Exception as exc:  # auth/network failure must reach the UI, not the console
+    except Exception as exc:  # auth/network failure must reach the UI, not just the console
+        _log_post_exc(p, exc)
         return {"ok": False, "url": "", "error": _post_error(p, exc)}
     if not urls:
         return {"ok": False, "url": "", "error": "Thread post failed."}

@@ -32,6 +32,13 @@ reference.
   file (`rendering.excerpt_image_file`, self-hosted on save). Grabbed alt text = full
   plain text; article alt text = the title.
 - `image_filename(article)` → `richTextArea_<hl>1.png` (the load-bearing PNG name).
+- `_post_error(p, exc)` / `_log_post_exc(p, exc)` — the adapter call in `publish`/
+  `_publish_thread` is wrapped in `try/except`: an auth/network failure becomes a normal
+  `{ok: False, error}` (via `_post_error`, which special-cases X's `client-not-enrolled`
+  403) instead of propagating. `_log_post_exc` still prints the full stack + tweepy
+  `api_codes`/HTTP body to stderr. This pairs with `js/publish.js` `send()` wrapping the
+  bridge call in try/catch, so a posting failure shows in the popup rather than leaving it
+  stuck on "Publishing…". See [[x-adapter]] for the pay-per-use 403.
 
 The adapters (`post.py`, `post_bsky.py`, `post_x.py`) are invoked through here rather
 than the old `ArticleModel.post` (which survives only in legacy `model.py`).

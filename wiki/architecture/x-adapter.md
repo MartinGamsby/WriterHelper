@@ -43,5 +43,31 @@ chaining with `in_reply_to_tweet_id=<previous id>`. The image (if any) is upload
 and attached to the **first** tweet only. Returns one URL per tweet. Used by
 [[publishing]] `_publish_thread`.
 
+## Access tier — pay-per-use enrollment (2026)
+
+X **deprecated the Free API tier** in 2026 (Basic/Pro closed to new signups). v2
+`create_tweet` now requires the app to be enrolled in a paid product. An un-enrolled app
+fails with **403 `client-forbidden`, `reason: client-not-enrolled`** — the response body
+echoes the app's numeric `client_id`. This is a portal/account state, **not** a code or
+credential bug: regenerating the API key, secret, or access tokens does nothing.
+
+Fix: **console.x.com → Apps → the app → "move this app" to Pay-Per-Use production**
+(the portal moved from developer.x.com to console.x.com). Billing is per-request, no
+monthly minimum: ~$0.015/post, ~$0.20 if the post **contains a URL** (the surcharge worth
+watching for thread segments that carry a link). Enrollment is **per app** (keyed by the
+consumer API key = the `client_id`), so every app must be moved separately.
+
+## One app vs. two accounts — `handle` is cosmetic
+
+Each language is a **distinct X account**: `en` posts as @Martin_Gamsby, `fr` as
+@MartinGamsby. The `handle` in `settings_x_<hl>.ini` only formats the result URL
+(`_tweet_url`); it does **not** select the posting account. The account is determined by
+the **access token** (`accesstoken`/`accesssecret`), bound to whichever X account
+authorized the app. So reusing one account's access token with the other's handle posts
+to the *original* account (and typically 403s on duplicate text) — no code change can
+rebind it. Serving both accounts needs a per-account access token; you may share one
+app's consumer keys across both only if each account separately authorized that app
+(otherwise each account keeps its own app, enrolled in pay-per-use separately).
+
 ## See also
-- [[post-base]] · [[bluesky-adapter]] · [[social-publishing]]
+- [[post-base]] · [[bluesky-adapter]] · [[social-publishing]] · [[secrets]]
