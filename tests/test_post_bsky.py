@@ -1,9 +1,12 @@
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from post_bsky import build_rich_text  # noqa: E402
+import post_bsky  # noqa: E402
+from post_bsky import build_rich_text, fetch_external_card, youtube_id  # noqa: E402
 
 
 # ========================================================================================
@@ -64,3 +67,94 @@ def test_unicode_before_url_keeps_byte_offsets_correct():
     tb = build_rich_text("Voilà → https://martingamsby.com/fr")
     text, links = _facets(tb)
     assert links == [("https://martingamsby.com/fr", "https://martingamsby.com/fr")]
+
+
+# ========================================================================================
+# YouTube id extraction
+@pytest.mark.parametrize("url, vid", [
+    ("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "dQw4w9WgXcQ"),
+    ("https://youtu.be/dQw4w9WgXcQ", "dQw4w9WgXcQ"),
+    ("https://www.youtube.com/shorts/dQw4w9WgXcQ", "dQw4w9WgXcQ"),
+    ("https://martingamsby.com/en/foo", None),
+    ("", None),
+])
+def test_youtube_id(url, vid):
+    assert youtube_id(url) == vid
+
+
+# ========================================================================================
+# External link-card embed
+class FakeResp:
+    def __init__(self, text="", content=b"", status=200):
+        self.text, self.content, self.status_code = text, content, status
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError("HTTP %d" % self.status_code)
+
+
+class FakeBlobResp:
+    def __init__(self):
+        self.blob = "BLOB_REF"
+
+
+class FakeClient:
+    def __init__(self):
+        self.uploaded = None
+
+    def upload_blob(self, data):
+        self.uploaded = data
+        return FakeBlobResp()
+
+
+_HTML = """<html><head>
+    <meta property="og:title" content="My Article">
+    <meta property="og:description" content="A great read.">
+    <meta property="og:image" content="https://img.example/cover.jpg">
+</head></html>"""
+
+
+def test_fetch_external_card_builds_from_opengraph(monkeypatch):
+    def fake_get(url, timeout=None, headers=None):
+        return FakeResp(text=_HTML) if "img.example" not in url else FakeResp(content=b"imgbytes")
+    monkeypatch.setattr(post_bsky.requests, "get", fake_get)
+    client = FakeClient()
+    embed = fetch_external_card(client, "https://martingamsby.com/en/foo")
+    assert embed.external.uri == "https://martingamsby.com/en/foo"
+    assert embed.external.title == "My Article"
+    assert embed.external.description == "A great read."
+    assert embed.external.thumb == "BLOB_REF"
+    assert client.uploaded == b"imgbytes"
+
+
+def test_fetch_external_card_youtube_uses_img_youtube_thumbnail(monkeypatch):
+    seen = {}
+
+    def fake_get(url, timeout=None, headers=None):
+        seen.setdefault("urls", []).append(url)
+        return FakeResp(text="<html><head><title>Vid</title></head></html>") \
+            if "img.youtube" not in url else FakeResp(content=b"thumb")
+    monkeypatch.setattr(post_bsky.requests, "get", fake_get)
+    embed = fetch_external_card(FakeClient(), "https://youtu.be/dQw4w9WgXcQ")
+    # The thumbnail is fetched from the reliable img.youtube.com URL, not scraped.
+    assert any("img.youtube.com/vi/dQw4w9WgXcQ/" in u for u in seen["urls"])
+    assert embed.external.thumb == "BLOB_REF"
+
+
+def test_fetch_external_card_returns_none_on_fetch_failure(monkeypatch):
+    def fake_get(url, timeout=None, headers=None):
+        raise RuntimeError("network down")
+    monkeypatch.setattr(post_bsky.requests, "get", fake_get)
+    # A missing card must never block the post — caller posts plain instead.
+    assert fetch_external_card(FakeClient(), "https://x.example") is None
+
+
+def test_fetch_external_card_survives_missing_thumbnail(monkeypatch):
+    def fake_get(url, timeout=None, headers=None):
+        if "cover" in url:
+            return FakeResp(status=404)          # image fetch fails
+        return FakeResp(text=_HTML)
+    monkeypatch.setattr(post_bsky.requests, "get", fake_get)
+    embed = fetch_external_card(FakeClient(), "https://martingamsby.com/en/foo")
+    assert embed.external.title == "My Article"
+    assert embed.external.thumb is None          # no thumb, but the card still posts

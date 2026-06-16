@@ -4,6 +4,8 @@ Append-only timeline. One line per operation: `## [YYYY-MM-DD] operation | descr
 Grep-able. The wiki *pages* hold current state; this file holds the sequence of how it
 got there.
 
+## [2026-06-16] fix | Frontmatter `title:` is now escaped as a YAML double-quoted scalar ([[serializers]], [[astro-format]]). `serialize` emitted `title: "%s" % article.title` raw, so a quoted title (`I just watched "the Martian" …`) produced invalid YAML; worse, loading a correctly-escaped title and re-saving (every save) re-broke it. New `_yaml_dq` escapes `\` then `"`; the round-trip is preserved. Test: `test_title_with_quotes_is_escaped_and_round_trips`.
+
 ## [2026-06-16] change | Bluesky posts now carry **clickable link facets** ([[bluesky-adapter]]). URLs in a post were plain un-clickable text; `_send` now runs the message through new module-level `build_rich_text(msg)` (so single posts AND threads benefit). No URL → returns the plain `str` unchanged; one+ URLs → an `atproto.client_utils.TextBuilder` with a `.link(url,url)` facet per URL (`send_post`/`send_image` accept `str | TextBuilder`). `_trim_url` strips trailing sentence punctuation and an *unbalanced* `)]}` (so `…/Foo_(bar)` survives); facet ranges are UTF-8 byte offsets so FR accents before a URL stay aligned. Tests: `tests/test_post_bsky.py`.
 
 ## [2026-06-16] fix | A dropped image whose self-host hook failed transiently left a 100KB+ `data:` blob persisted in `fr/2026-06-15-ok.md`. `_localize_excerpt_image` now retries once on a `data:` value and, if still failing, drops the image + re-saves rather than persist the blob (new invariant, [[invariants-and-traps]] / [[astro-format]]). Recovered the affected FR post by running the site hook. Tests in `test_article.py`.

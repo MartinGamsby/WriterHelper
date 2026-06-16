@@ -90,6 +90,10 @@ const Publish = {
                 <div class="hint">Edit the split: separate posts with a line containing only <code>${i.separator}</code>.</div>
                 <div id="pub-segs" class="pub-segs"></div>
             </div>
+            <label class="check hidden" id="pub-embed-row" title="${i.embed_url}">
+                <input type="checkbox" id="pub-embed"> Add link preview card
+                <span class="hint" id="pub-embed-host"></span>
+            </label>
             <div class="pub-meta"><span id="pub-count"></span></div>
             <p class="warn hidden" id="pub-warn"></p>
             <div class="modal-buttons">
@@ -122,6 +126,13 @@ const Publish = {
         for (const id of ['pub-number', 'pub-thread-img']) {
             document.getElementById(id).addEventListener('change', () => this.validate());
         }
+        if (i.embed_url) {
+            const embed = document.getElementById('pub-embed');
+            embed.checked = true;   // opt-out: a card is the nicer post when a link exists
+            document.getElementById('pub-embed-host').textContent =
+                '→ ' + this.linkHost(i.embed_url);
+            embed.addEventListener('change', () => this.validate());
+        }
         for (const r of modal.querySelectorAll('input[name="pub-img-src"]')) {
             r.addEventListener('change', () => this.validate());
         }
@@ -133,6 +144,22 @@ const Publish = {
 
     mode() {
         return document.querySelector('input[name="pub-mode"]:checked').value;
+    },
+
+    // The host part of a URL, for a compact link-card label ("→ youtube.com").
+    linkHost(url) {
+        try { return new URL(url).hostname.replace(/^www\./, ''); }
+        catch (e) { return url; }
+    },
+
+    // The link-card embed applies to single posts and the first thread post (not image
+    // mode, where the image owns the embed slot). On only when a URL exists + checked.
+    embedAvailable(mode) {
+        return !!this.info.embed_url && (mode === 'text' || mode === 'thread');
+    },
+    embedEnabled(mode) {
+        const el = document.getElementById('pub-embed');
+        return this.embedAvailable(mode) && el && el.checked;
     },
 
     // Split the edited thread blob back into segments (mirrors thread_split.py).
@@ -163,6 +190,9 @@ const Publish = {
 
         threadCtl.classList.toggle('hidden', mode !== 'thread');
         count.classList.toggle('hidden', mode === 'thread');
+
+        const embedRow = document.getElementById('pub-embed-row');
+        if (embedRow) embedRow.classList.toggle('hidden', !this.embedAvailable(mode));
 
         if (mode === 'thread') {
             this.validateThread(text, go);
@@ -231,6 +261,16 @@ const Publish = {
         </div>`;
     },
 
+    // A mock link-preview card for the right-hand preview ("" when no embed is on).
+    embedCardHtml(mode) {
+        if (!this.embedEnabled(mode)) return '';
+        const url = this.info.embed_url;
+        const video = /youtu\.?be/.test(url);
+        return `<div class="pv-embed">${video ? '▶ ' : '🔗 '}
+            <b>${this.escapeHtml(this.linkHost(url))}</b>
+            <span>${this.escapeHtml(url)}</span></div>`;
+    },
+
     renderPreview(mode, text) {
         const i = this.info;
         const host = document.getElementById('pub-preview-body');
@@ -247,18 +287,21 @@ const Publish = {
             const segs = this.numberedSegments(text);
             const imgData = this.threadImage() ? this.threadImageData() : '';
             host.className = 'pv-thread';
+            // The link card (if any) rides the first post, and only without an image.
             host.innerHTML = segs.length
                 ? segs.map((s, idx) => this.postCard({
                     body: s, count: s.length, over: s.length > i.max_length,
                     image: (idx === 0 && imgData) ? imgData : null,
-                    missing: idx === 0 && this.threadImage() && !imgData })).join('')
+                    missing: idx === 0 && this.threadImage() && !imgData })
+                    + (idx === 0 && !imgData ? this.embedCardHtml(mode) : '')).join('')
                 : '<div class="pv-empty">Add some text to preview the thread.</div>';
             return;
         }
 
         host.className = '';
         host.innerHTML = this.postCard({
-            body: text, count: text.length, over: text.length > i.max_length });
+            body: text, count: text.length, over: text.length > i.max_length })
+            + this.embedCardHtml(mode);
     },
 
     // ====================================================================================
@@ -269,17 +312,20 @@ const Publish = {
         go.textContent = 'Publishing…';
 
         const mode = this.mode();
-        const options = mode === 'thread' ? {
-            number: this.threadNumber(),
-            image: this.threadImage() ? this.threadImageSource() : 'none',
-        } : null;
+        const options = {};
+        if (mode === 'thread') {
+            options.number = this.threadNumber();
+            options.image = this.threadImage() ? this.threadImageSource() : 'none';
+        }
+        if (this.embedAvailable(mode)) options.embed = this.embedEnabled(mode);
+        const opts = Object.keys(options).length ? options : null;
 
         // The bridge rejects this promise if Python raises (e.g. a platform 403).
         // Catch it so the popup recovers instead of hanging on "Publishing…".
         let result;
         try {
             result = await API.publish(this.hl, this.info.platform, mode,
-                                       document.getElementById('pub-text').value, options);
+                                       document.getElementById('pub-text').value, opts);
         } catch (e) {
             result = { ok: false, error: 'Publish failed: ' + (e && e.message ? e.message : e) };
         }

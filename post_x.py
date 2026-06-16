@@ -39,7 +39,8 @@ class PostX(Post):
         return f"https://x.com/{self.get_handle()}/status/{tweet_id}"
 
     # ====================================================================================
-    def post(self, msg, image_local_url, alt_text):
+    def post(self, msg, image_local_url, alt_text, embed_url=None):
+        # embed_url ignored: X unfurls link previews from the URL in the text itself.
         client_v2, api_v1 = self._clients()
         if image_local_url and os.path.isfile(image_local_url):
             media = api_v1.media_upload(image_local_url)
@@ -49,7 +50,7 @@ class PostX(Post):
         return self._tweet_url(res.data["id"])
 
     # ====================================================================================
-    def post_thread(self, messages, image_local_url, alt_text):
+    def post_thread(self, messages, image_local_url, alt_text, embed_url=None):
         client_v2, api_v1 = self._clients()
         urls, prev_id = [], None
         for idx, msg in enumerate(messages):

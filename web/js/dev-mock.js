@@ -78,6 +78,8 @@
                 image_exists: false,
                 image_data_url: "",
                 facets_ok: store[hl].facets.length > 0,
+                embed_url: platform === 'bluesky'
+                    ? "https://www.youtube.com/watch?v=dQw4w9WgXcQ" : "",
             }),
             publish: async () => ({ ok: true, url: "https://bsky.app/profile/demo/post/123", error: "" }),
         },

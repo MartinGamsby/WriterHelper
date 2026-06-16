@@ -2,12 +2,21 @@
 # popup: prepare_post() computes what WOULD be sent (no side effects),
 # publish() actually sends it. No Qt.
 import os
+import re
 import sys
 import traceback
 import webbrowser
 
 import rendering
 import thread_split
+
+# Bluesky is the only platform we hand an explicit link-preview card to (X/Facebook
+# unfurl the URL in the post text themselves). A bare http(s) URL, for scanning the
+# message when no YouTube slot is set.
+_MSG_URL_RE = re.compile(r'https?://[^\s<>"\']+')
+# Link slots that hold a video URL worth turning into a Bluesky link card, preferred
+# over any URL found in the message text.
+_EMBED_LINK_SLOTS = ("YouTube", "YouTube Shorts")
 
 
 # ========================================================================================
@@ -62,6 +71,19 @@ def image_filename(article):
 
 
 # ========================================================================================
+def embed_candidate(article, message=""):
+    """The URL a Bluesky link-preview card would point at, or "". A YouTube link slot
+    wins (the operator set it deliberately, and Bluesky renders it as a video card);
+    otherwise the first URL in `message` (so a link pasted into the post is unfurled)."""
+    for slot in _EMBED_LINK_SLOTS:
+        url = article.get_link(slot)
+        if url:
+            return url
+    m = _MSG_URL_RE.search(message or "")
+    return m.group(0).rstrip('.,;:!?)]}\'"') if m else ""
+
+
+# ========================================================================================
 def prepare_post(article, platform_key) -> dict:
     """Everything the confirmation popup needs. Performs NO side effects."""
     p = PLATFORMS[platform_key]
@@ -100,6 +122,9 @@ def prepare_post(article, platform_key) -> dict:
         # An article must carry at least one facet (it drives which site "door" the
         # post appears under). Pair-shared, so either language reflects the pair.
         "facets_ok": bool(article.facets),
+        # Bluesky-only: the URL an optional link-preview card would embed (a YouTube
+        # slot, else a URL in the text). The popup shows a checkbox when this is set.
+        "embed_url": embed_candidate(article, text) if p.key == "bluesky" else "",
     }
 
 
@@ -161,9 +186,10 @@ def _resolve_image(article, source):
 def publish(article, platform_key, mode, message, options=None) -> dict:
     """Actually post. `mode` is "text" (message only), "image" (message + page-1
     PNG), or "thread" (a reply chain split on `---` lines). `message` is the
-    user-confirmed text from the popup. `options` carries thread choices:
-    `{"number": bool, "image": "none"|"grabbed"|"article"}`."""
+    user-confirmed text from the popup. `options` carries thread choices and the embed
+    flag: `{"number": bool, "image": "none"|"grabbed"|"article", "embed": bool}`."""
     p = PLATFORMS[platform_key]
+    opts = options or {}
 
     if not article.facets:
         return {"ok": False, "url": "",
@@ -175,8 +201,12 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
         return {"ok": False, "url": existing,
                 "error": "A %s link already exists. Clear it to re-post." % p.label}
 
+    # Optional Bluesky link-preview card (None = plain post, as before).
+    embed_url = (embed_candidate(article, message)
+                 if opts.get("embed") and p.key == "bluesky" else None) or None
+
     if mode == "thread":
-        return _publish_thread(article, p, message, options or {})
+        return _publish_thread(article, p, message, opts, embed_url)
 
     if mode == "image":
         img = image_filename(article)
@@ -184,6 +214,7 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
             return {"ok": False, "url": "",
                     "error": "%s not found — Grab the image card first." % img}
         alt_text = rendering.plain_text(article)
+        # An attached image owns the post's embed slot, so no link card here.
         send = lambda: p.make_poster(article.hl).post(
             msg=message, image_local_url=img, alt_text=alt_text)
     else:
@@ -192,7 +223,7 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
                     "error": "Text is %d characters; %s allows %d."
                              % (len(message), p.label, p.max_length)}
         send = lambda: p.make_poster(article.hl).post(
-            msg=message, image_local_url=None, alt_text=message)
+            msg=message, image_local_url=None, alt_text=message, embed_url=embed_url)
 
     try:
         url = send()
@@ -206,10 +237,10 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
 
 
 # ========================================================================================
-def _publish_thread(article, p, message, opts) -> dict:
+def _publish_thread(article, p, message, opts, embed_url=None) -> dict:
     """Post `message` (segments separated by `---` lines) as a reply chain. The
     first post's URL is stored in the link slot (the idempotence guard for the
-    whole thread)."""
+    whole thread). `embed_url` (if any) adds a link card to the first post."""
     segments = thread_split.split_on_separator(message)
     if not segments:
         return {"ok": False, "url": "", "error": "Nothing to post."}
@@ -236,7 +267,8 @@ def _publish_thread(article, p, message, opts) -> dict:
     try:
         urls = p.make_poster(article.hl).post_thread(messages=segments,
                                                      image_local_url=image,
-                                                     alt_text=alt_text)
+                                                     alt_text=alt_text,
+                                                     embed_url=embed_url)
     except Exception as exc:  # auth/network failure must reach the UI, not just the console
         _log_post_exc(p, exc)
         return {"ok": False, "url": "", "error": _post_error(p, exc)}

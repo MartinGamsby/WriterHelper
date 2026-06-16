@@ -37,8 +37,9 @@ class PostFB(Post):
             GRAPH_API_VERSION, self.get_page_id(), edge)
 
     # ====================================================================================
-    def post(self, msg, image_local_url, alt_text):
-        """Post to the Page. With an image -> /photos (the local file is uploaded
+    def post(self, msg, image_local_url, alt_text, embed_url=None):
+        """Post to the Page. (embed_url is ignored — Facebook unfurls a link preview
+        from the URL in the message text itself.) With an image -> /photos (the local file is uploaded
         as the `source` multipart part, and `alt_text` becomes the photo's custom
         alt text); without -> /feed. Returns the public post URL; raises on a Graph
         API error so publishing.py surfaces it in the popup."""

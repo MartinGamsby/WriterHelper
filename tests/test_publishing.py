@@ -12,13 +12,15 @@ class FakePoster:
     def __init__(self, hl):
         self.hl = hl
 
-    def post(self, msg, image_local_url, alt_text):
-        FakePoster.last = {"msg": msg, "image": image_local_url, "alt": alt_text}
+    def post(self, msg, image_local_url, alt_text, embed_url=None):
+        FakePoster.last = {"msg": msg, "image": image_local_url, "alt": alt_text,
+                           "embed_url": embed_url}
         return "https://fake.example/post/1"
 
-    def post_thread(self, messages, image_local_url, alt_text):
+    def post_thread(self, messages, image_local_url, alt_text, embed_url=None):
         FakePoster.last_thread = {"messages": list(messages),
-                                  "image": image_local_url, "alt": alt_text}
+                                  "image": image_local_url, "alt": alt_text,
+                                  "embed_url": embed_url}
         return ["https://fake.example/post/%d" % (n + 1) for n in range(len(messages))]
 
 
@@ -36,6 +38,14 @@ def fake_fb(monkeypatch):
                         Platform("facebook", "Facebook", "Facebook", 63206, FakePoster))
     monkeypatch.setattr(publishing.webbrowser, "open", lambda url: None)
     return publishing.PLATFORMS["facebook"]
+
+
+@pytest.fixture
+def fake_bsky(monkeypatch):
+    monkeypatch.setitem(publishing.PLATFORMS, "bluesky",
+                        Platform("bluesky", "Bluesky", "Bluesky", 300, FakePoster))
+    monkeypatch.setattr(publishing.webbrowser, "open", lambda url: None)
+    return publishing.PLATFORMS["bluesky"]
 
 
 # ========================================================================================
@@ -91,7 +101,8 @@ def test_publish_text_posts_and_records_link(fr, fake_x):
     result = publishing.publish(fr, "x", "text", "Mon message")
     assert result["ok"] is True
     assert result["url"] == "https://fake.example/post/1"
-    assert FakePoster.last == {"msg": "Mon message", "image": None, "alt": "Mon message"}
+    assert FakePoster.last == {"msg": "Mon message", "image": None, "alt": "Mon message",
+                               "embed_url": None}
     assert fr.get_link("X/Twitter") == result["url"]
 
 
@@ -188,7 +199,8 @@ def test_publish_facebook_text_records_facebook_link(fr, fake_fb):
     fr.set_facets(["dev"])
     result = publishing.publish(fr, "facebook", "text", "Mon message FB")
     assert result["ok"] is True
-    assert FakePoster.last == {"msg": "Mon message FB", "image": None, "alt": "Mon message FB"}
+    assert FakePoster.last == {"msg": "Mon message FB", "image": None,
+                               "alt": "Mon message FB", "embed_url": None}
     assert fr.get_link("Facebook") == result["url"]
 
 
@@ -201,6 +213,64 @@ def test_publish_facebook_image_attaches_card(fr, fake_fb, tmp_path, monkeypatch
     result = publishing.publish(fr, "facebook", "image", "Titre")
     assert result["ok"] is True
     assert FakePoster.last["image"] == publishing.image_filename(fr)
+
+
+# ========================================================================================
+# Bluesky link-preview card (embed)
+def test_embed_candidate_prefers_youtube_slot_over_message_url(fr):
+    fr.set_link("YouTube", "https://youtu.be/abc")
+    # Even with a different URL in the message, the deliberate YouTube slot wins.
+    assert publishing.embed_candidate(fr, "see https://example.com/x") == "https://youtu.be/abc"
+
+
+def test_embed_candidate_falls_back_to_first_message_url(fr):
+    got = publishing.embed_candidate(fr, "read https://martingamsby.com/en/foo, nice.")
+    assert got == "https://martingamsby.com/en/foo"   # trailing comma trimmed
+
+
+def test_embed_candidate_empty_when_no_link(fr):
+    assert publishing.embed_candidate(fr, "no links here") == ""
+
+
+def test_prepare_exposes_embed_url_for_bluesky_only(fr, monkeypatch):
+    monkeypatch.chdir(os.path.dirname(fr.get_posts_folder()))
+    fr.set_title("Court")
+    fr.set_content("Court.")
+    fr.set_facets(["dev"])
+    fr.set_link("YouTube", "https://youtu.be/abc")
+    assert publishing.prepare_post(fr, "bluesky")["embed_url"] == "https://youtu.be/abc"
+    assert publishing.prepare_post(fr, "x")["embed_url"] == ""   # X auto-unfurls
+
+
+def test_publish_text_passes_embed_url_when_opted_in(fr, fake_bsky):
+    fr.set_facets(["dev"])
+    fr.set_link("YouTube", "https://youtu.be/abc")
+    result = publishing.publish(fr, "bluesky", "text", "Watch this", {"embed": True})
+    assert result["ok"] is True
+    assert FakePoster.last["embed_url"] == "https://youtu.be/abc"
+
+
+def test_publish_text_no_embed_when_not_opted_in(fr, fake_bsky):
+    fr.set_facets(["dev"])
+    fr.set_link("YouTube", "https://youtu.be/abc")
+    publishing.publish(fr, "bluesky", "text", "Watch this", {"embed": False})
+    assert FakePoster.last["embed_url"] is None
+
+
+def test_publish_thread_passes_embed_url_when_opted_in(fr, fake_bsky):
+    fr.set_facets(["dev"])
+    fr.set_link("YouTube", "https://youtu.be/abc")
+    publishing.publish(fr, "bluesky", "thread", "Un\n---\nDeux",
+                       {"number": False, "image": "none", "embed": True})
+    assert FakePoster.last_thread["embed_url"] == "https://youtu.be/abc"
+
+
+def test_publish_non_bluesky_ignores_embed_option(fr, fake_x):
+    # X auto-unfurls, so even an opted-in embed must not pass a URL to its adapter.
+    fr.set_facets(["dev"])
+    fr.set_link("YouTube", "https://youtu.be/abc")
+    publishing.publish(fr, "x", "text", "Watch this", {"embed": True})
+    assert FakePoster.last["embed_url"] is None
 
 
 # ========================================================================================

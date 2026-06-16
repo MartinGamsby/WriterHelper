@@ -19,14 +19,17 @@ class Post():
         return self.config["Access"]["AppPassword"]
                 
     # ====================================================================================
-    def post(self, msg, image_local_url, alt_text):
+    def post(self, msg, image_local_url, alt_text, embed_url=None):
+        # `embed_url` requests an external link-preview card; only adapters whose
+        # platform doesn't auto-unfurl links (Bluesky) act on it — others ignore it.
         print("To implement")
 
     # ====================================================================================
-    def post_thread(self, messages, image_local_url, alt_text):
+    def post_thread(self, messages, image_local_url, alt_text, embed_url=None):
         """Post `messages` as a reply chain, returning a URL per post (first = root).
-        `image_local_url` (if any) attaches to the first post only. Platform-specific
-        — adapters override; the base has no generic reply mechanism."""
+        `image_local_url` (if any) attaches to the first post only. `embed_url` (if any)
+        requests a link-preview card on the first post. Platform-specific — adapters
+        override; the base has no generic reply mechanism."""
         raise NotImplementedError("This platform does not support threads")
 
     # ====================================================================================    
