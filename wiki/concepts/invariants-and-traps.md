@@ -51,7 +51,7 @@ working; step on a trap and you waste an hour.
 - **`post_linkedin.py` is broken dead code** — unindented snippet, never committed, do
   not import. See [[linkedin-adapter]], [[secrets]].
 - **`post_fb.PostFB` now inherits `Post`** and is wired into the UI (Facebook publish
-  button, both langs). It keeps the older `fb_settings_<hl>.ini` filename and has no
+  button, both langs). It has no
   `post_thread` (text/image only). See [[facebook-adapter]].
 - **`settings_<hl>.ini` point at the Astro repo** (`martingamsby.com/src/content/blog/<hl>`)
   with base URL `https://martingamsby.com/<hl>/blog/`. Git-ignored. See [[file-storage]].

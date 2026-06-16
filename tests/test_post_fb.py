@@ -37,8 +37,8 @@ def test_get_token_and_page_id_both_survive_init(fb):
     assert fb.get_page_id() == "123"
 
 
-def test_config_filename_is_fb_settings(fb):
-    assert fb.config_filename() == "fb_settings_fr.ini"
+def test_config_filename_is_settingsfb(fb):
+    assert fb.config_filename() == "settings_fb_fr.ini"
 
 
 def test_text_post_hits_feed_and_builds_url(fb, monkeypatch):

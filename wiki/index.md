@@ -37,7 +37,8 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[post-base]] — `post.py`: the adapter base class + override contract
 - [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto)
 - [[x-adapter]] — `post_x.PostX` (tweepy v1+v2)
-- [[facebook-adapter]] — `post_fb.PostFB` (Graph API Page posts; wired, text/image only)
+- [[facebook-adapter]] — `post_fb.PostFB` (Graph API Page posts; wired, text/image only); includes the non-expiring Page-token steps
+- [[instagram-adapter]] — PLANNED: rides the FB Graph token; IG-must-be-last ordering, JPEG-only + GitHub-raw image constraints
 - [[linkedin-adapter]] — `post_linkedin.py` (BROKEN, do not import)
 - [[legacy-qt-ui]] — the superseded PySide6/QML stack (do not run now)
 

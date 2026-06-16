@@ -68,9 +68,7 @@ class PostFB(Post):
 
     # ====================================================================================
     def config_filename(self):
-        # Kept as fb_settings_<hl>.ini (not the newer settings_<platform>_<hl>.ini)
-        # for backward compatibility with the operator's existing config files.
-        return 'fb_settings_%s.ini' % self.hl
+        return 'settings_fb_%s.ini' % self.hl
 
 
 # ====================================================================================

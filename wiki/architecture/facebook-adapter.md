@@ -6,15 +6,36 @@ the UI: the Facebook link slot is a Publish button on **both** languages
 
 ## Config
 
-`fb_settings_<hl>.ini` — `[Access]` with `PageId` (the Page's numeric id) and `Token` (a
-**long-lived Page access token**). Note the filename prefix (`fb_settings_` vs the newer
-`settings_<platform>_` pattern) is kept for backward-compat with the operator's existing
-files. See [[secrets]].
+`settings_fb_<hl>.ini` — `[Access]` with `PageId` (the Page's numeric id) and `Token` (a
+**long-lived Page access token**). See [[secrets]].
 
-The token needs the `pages_manage_posts` permission (and the app must clear Meta's app
-review for it). A short-lived user token won't work — exchange it for a long-lived Page
-token in the Graph API Explorer / token tool first. **This token/permission step is the
+The token needs the `pages_manage_posts` permission. A short-lived user token won't
+work — you need the **non-expiring Page token**. **This token/permission step is the
 usual reason "Facebook didn't work", not the code.**
+
+### Getting the non-expiring Page token
+
+You manage the Page and own the app, so this works in the app's **Development mode** —
+no full App Review needed (review is only for posting to *other people's* Pages).
+
+1. **App**: at [developers.facebook.com](https://developers.facebook.com) create an app
+   (type *Business*) if you don't have one. Note its **App ID** + **App Secret**
+   (Settings → Basic).
+2. **Short-lived user token**: open **Tools → Graph API Explorer**, pick your app, and
+   add permissions `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`
+   (+ `public_profile`). Click **Generate Access Token** and approve for your Page.
+3. **Exchange for a long-lived user token** (≈60 days):
+   `GET https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=<APP_ID>&client_secret=<APP_SECRET>&fb_exchange_token=<SHORT_TOKEN>`
+4. **Read the Page token** (this one effectively **never expires**):
+   `GET https://graph.facebook.com/v21.0/me/accounts?access_token=<LONG_USER_TOKEN>`
+   The response lists each Page with its numeric **`id`** (→ `PageId`) and a per-Page
+   **`access_token`** (→ `Token`).
+5. Put `PageId` + `Token` into `settings_fb_<hl>.ini`. (Same Page for both langs? Put the
+   same values in both files.)
+
+Meta's reference: <https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived/>.
+Sanity-check a token in **Tools → Access Token Debugger** (look for `pages_manage_posts`
+under scopes and "Expires: Never").
 
 ## API
 
