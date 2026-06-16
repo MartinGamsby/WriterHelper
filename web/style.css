@@ -49,7 +49,7 @@ html, body {
     flex-shrink: 0;
 }
 .col-meta { width: 280px; }
-.col-content { width: 680px; }
+.col-content { width: 640px; }
 
 #checklist {
     width: 190px;

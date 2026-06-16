@@ -21,7 +21,7 @@ The meta column exposes these slots, language-conditional (from `LINK_SLOTS` in
 | Typeshare | EN | text field |
 | X/Twitter | both | publish button → popup ([[social-publishing]]) |
 | LinkedIn | EN | text field ([[linkedin-adapter]] is broken/unused) |
-| Facebook | FR | text field ([[facebook-adapter]] not wired) |
+| Facebook | both | publish button → popup ([[facebook-adapter]]) |
 | Bluesky | both | publish button → popup |
 | YouTube | both | text field |
 | YouTube Shorts | both | text field |

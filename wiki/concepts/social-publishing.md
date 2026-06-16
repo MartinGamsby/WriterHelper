@@ -68,6 +68,7 @@ The only method with side effects. `options` carries thread choices
 |---|---|---|---|---|
 | `bluesky` | Bluesky | `Bluesky` | 300 | `PostBsky(hl)` ([[bluesky-adapter]]) |
 | `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
+| `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only |
 
 `make_poster` imports the adapter lazily, so a missing/broken adapter doesn't break
 import and tests can monkeypatch the registry.

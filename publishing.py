@@ -31,9 +31,17 @@ def _make_x(hl):
     return PostX(hl)
 
 
+def _make_fb(hl):
+    from post_fb import PostFB
+    return PostFB(hl)
+
+
 PLATFORMS = {
     "bluesky": Platform("bluesky", "Bluesky", "Bluesky", 300, _make_bsky),
     "x": Platform("x", "X / Twitter", "X/Twitter", 280, _make_x),
+    # Facebook posts allow ~63k chars, so a post always "fits" as text (thread mode
+    # is offered by the popup but PostFB has no post_thread — text/image only).
+    "facebook": Platform("facebook", "Facebook", "Facebook", 63206, _make_fb),
 }
 
 

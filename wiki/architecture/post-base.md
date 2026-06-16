@@ -1,8 +1,9 @@
 # Post base class (`post.py`)
 
 `Post` is the inheritance base for new platform adapters. `PostBsky`
-([[bluesky-adapter]]) and `PostX` ([[x-adapter]]) inherit it; `PostFB`
-([[facebook-adapter]]) predates it and does NOT.
+([[bluesky-adapter]]), `PostX` ([[x-adapter]]), and `PostFB` ([[facebook-adapter]])
+inherit it. (`PostFB` predated the base and was rewritten onto it; it skips the optional
+`post_thread` override — text/image only.)
 
 ## Class shape
 

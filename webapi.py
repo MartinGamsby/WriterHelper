@@ -16,7 +16,7 @@ LINK_SLOTS = [
     {"name": "Typeshare", "hls": ["en"]},
     {"name": "X/Twitter", "hls": ["fr", "en"], "publish": "x"},
     {"name": "LinkedIn", "hls": ["en"]},
-    {"name": "Facebook", "hls": ["fr"]},
+    {"name": "Facebook", "hls": ["fr", "en"], "publish": "facebook"},
     {"name": "Bluesky", "hls": ["fr", "en"], "publish": "bluesky"},
     {"name": "YouTube", "hls": ["fr", "en"]},
     {"name": "YouTube Shorts", "hls": ["fr", "en"]},

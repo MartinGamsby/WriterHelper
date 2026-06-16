@@ -37,7 +37,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[post-base]] — `post.py`: the adapter base class + override contract
 - [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto)
 - [[x-adapter]] — `post_x.PostX` (tweepy v1+v2)
-- [[facebook-adapter]] — `post_fb.PostFB` (not wired, doesn't inherit)
+- [[facebook-adapter]] — `post_fb.PostFB` (Graph API Page posts; wired, text/image only)
 - [[linkedin-adapter]] — `post_linkedin.py` (BROKEN, do not import)
 - [[legacy-qt-ui]] — the superseded PySide6/QML stack (do not run now)
 

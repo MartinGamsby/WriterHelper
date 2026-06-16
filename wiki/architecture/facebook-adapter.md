@@ -1,38 +1,58 @@
 # Facebook adapter (`post_fb.PostFB`)
 
-⚠️ Does **NOT** inherit [[post-base]] (it predates the base class) and is **NOT** wired
-into the UI. FB posting is currently manual (the legacy checklist, [[legacy-qt-ui]]).
+Posts to a Facebook **Page** via the Graph API. Inherits [[post-base]] and is wired into
+the UI: the Facebook link slot is a Publish button on **both** languages
+([[link-slots]]), routing through [[publishing]]'s `PLATFORMS["facebook"]`.
 
 ## Config
 
-`fb_settings_<hl>.ini` — `[Access]` with `token` (page access token) and `pageid`. Note
-the filename prefix (`fb_settings_` vs the newer `settings_<platform>_` pattern). See
-[[secrets]].
+`fb_settings_<hl>.ini` — `[Access]` with `PageId` (the Page's numeric id) and `Token` (a
+**long-lived Page access token**). Note the filename prefix (`fb_settings_` vs the newer
+`settings_<platform>_` pattern) is kept for backward-compat with the operator's existing
+files. See [[secrets]].
+
+The token needs the `pages_manage_posts` permission (and the app must clear Meta's app
+review for it). A short-lived user token won't work — exchange it for a long-lived Page
+token in the Graph API Explorer / token tool first. **This token/permission step is the
+usual reason "Facebook didn't work", not the code.**
 
 ## API
 
-Facebook Graph API v18.0 via `requests.post`:
+Graph API (version pinned in the module constant `GRAPH_API_VERSION`, currently
+`v21.0` — bump when Meta retires the version):
 
-```python
-def post_to_fb_page(self, msg, image_url):
-    if image_url:
-        url = f'https://graph.facebook.com/v18.0/{self.get_page_id()}/photos'
-        payload = {'message': msg, 'access_token': self.get_token(), 'url': image_url}
-    else:
-        url = f'https://graph.facebook.com/v18.0/{self.get_page_id()}/feed'
-        payload = {'message': msg, 'access_token': self.get_token()}
-    r = requests.post(url, data=payload)
-    return 'id' in r.json()    # bool, not a URL
-```
+- `post(msg, image_local_url, alt_text) → url`:
+  - **with image** → `POST /{page_id}/photos`, the local file uploaded as the `source`
+    multipart part, `alt_text` sent as `alt_text_custom`. Response carries `post_id`
+    (the feed-post id) → that's used for the URL.
+  - **without image** → `POST /{page_id}/feed`. Response `{"id": "<page>_<post>"}`.
+  - returns `https://www.facebook.com/<post_id|id>`; **raises `RuntimeError`** on a Graph
+    `error` payload or a missing id, so [[publishing]]'s try/except surfaces it in the
+    popup (`_post_error`/`_log_post_exc`).
 
-Differences vs the modern adapters: method is `post_to_fb_page` not `post`; returns
-`bool` not a URL (so it can't feed `set_link` directly); takes a remote `image_url`, not
-a local path.
+`get_handle()` is overridden to return the Page id so the [[post-base]] `__init__` log
+line works (FB has no handle field).
 
-## To integrate later
+## No threads
 
-Either subclass `Post` and rename `post_to_fb_page` → `post` returning a constructed
-URL, or keep the old shape and add a separate routing path. See [[invariants-and-traps]].
+`PostFB` does **not** override `post_thread`, so Thread mode raises
+`NotImplementedError` (caught → popup error). It's a non-issue in practice: Facebook's
+~63k-char limit (`max_length=63206`) means a post always `fits`, so `suggested_mode` is
+always `text`. Text and image modes are the supported paths.
+
+## Fixed bug
+
+The pre-rewrite class assigned `self.config['Access']` **twice** in `__init__`, so the
+second assignment (`PageId`) wiped `Token` and `get_token()` raised `KeyError`. Now a
+single `access={'PageId':…, 'Token':…}` dict carries both. Regression test:
+`tests/test_post_fb.py::test_get_token_and_page_id_both_survive_init`.
+
+## Tests
+
+`tests/test_post_fb.py` mocks `requests.post` to assert the feed/photos edge, the
+`source` upload, `alt_text_custom`, the built URL (uses `post_id` for photos), and that a
+Graph `error` becomes a `RuntimeError`. Platform-wiring cases live in
+`tests/test_publishing.py` (`fake_fb` fixture).
 
 ## See also
-- [[post-base]] · [[social-publishing]] · [[legacy-qt-ui]]
+- [[post-base]] · [[publishing]] · [[social-publishing]] · [[link-slots]] · [[secrets]]

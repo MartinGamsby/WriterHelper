@@ -14,6 +14,7 @@ reference.
   |---|---|---|---|---|
   | `bluesky` | Bluesky | `Bluesky` | 300 | `PostBsky(hl)` ([[bluesky-adapter]]) |
   | `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
+  | `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only, no threads |
 
 - `prepare_post(article, platform_key) → dict` — NO side effects; fills the popup
   (includes `facets_ok` and the thread seed `thread_text`/`thread_count`/`separator`,

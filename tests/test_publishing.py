@@ -29,6 +29,14 @@ def fake_x(monkeypatch):
     return publishing.PLATFORMS["x"]
 
 
+@pytest.fixture
+def fake_fb(monkeypatch):
+    monkeypatch.setitem(publishing.PLATFORMS, "facebook",
+                        Platform("facebook", "Facebook", "Facebook", 63206, FakePoster))
+    monkeypatch.setattr(publishing.webbrowser, "open", lambda url: None)
+    return publishing.PLATFORMS["facebook"]
+
+
 # ========================================================================================
 def test_prepare_short_content_suggests_text(fr, monkeypatch):
     monkeypatch.chdir(os.path.dirname(fr.get_posts_folder()))
@@ -126,6 +134,37 @@ def test_publish_image_attaches_page_one(fr, fake_x, tmp_path, monkeypatch):
     assert result["ok"] is True
     assert FakePoster.last["image"] == "richTextArea_fr1.png"
     assert "contenu" in FakePoster.last["alt"]
+
+
+# ========================================================================================
+def test_facebook_long_text_still_fits(fr):
+    fr.set_title("Long")
+    fr.set_content("mot " * 200)        # over X's 280 but well under Facebook's limit
+    info = publishing.prepare_post(fr, "facebook")
+    assert info["label"] == "Facebook"
+    assert info["max_length"] == 63206
+    assert info["fits"] is True
+    assert info["suggested_mode"] == "text"
+
+
+def test_publish_facebook_text_records_facebook_link(fr, fake_fb):
+    fr.set_title("Bonjour")
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "facebook", "text", "Mon message FB")
+    assert result["ok"] is True
+    assert FakePoster.last == {"msg": "Mon message FB", "image": None, "alt": "Mon message FB"}
+    assert fr.get_link("Facebook") == result["url"]
+
+
+def test_publish_facebook_image_attaches_card(fr, fake_fb, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "richTextArea_fr1.png").write_bytes(b"png")
+    fr.set_title("Titre")
+    fr.set_content("contenu")
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "facebook", "image", "Titre")
+    assert result["ok"] is True
+    assert FakePoster.last["image"] == "richTextArea_fr1.png"
 
 
 # ========================================================================================

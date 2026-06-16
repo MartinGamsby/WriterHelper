@@ -1,62 +1,81 @@
-# THIS WAS A TEST AND IT IS NOT WORKING YET
+# Facebook Page adapter. Posts to a Facebook Page's feed (text) or photos
+# (image) via the Graph API, returning the public post URL so it can feed the
+# Link slot. Inherits the Post base (msg/image/alt contract); no Qt.
+import os
+
 import requests
-import configparser
 
-# ====================================================================================    
-class PostFB():
+from post import Post
 
-    # ====================================================================================    
-    def __init__(self, hl):        
-        self.hl = hl
-        self.config = configparser.ConfigParser()
-        self.config['Access'] = {'Token': ''}
-        self.config['Access'] = {'PageId': ''}
-        self.load_config()
-        #print("Loaded", self.hl, self.get_token() )
-        print("Loaded Page ID: ", self.hl, self.get_page_id() )
-    
+# Graph API version. Meta retires versions ~2 years after release; bump this
+# when posts start returning an "unsupported version" error.
+GRAPH_API_VERSION = "v21.0"
+
+
+# ====================================================================================
+class PostFB(Post):
+
+    # ====================================================================================
+    def __init__(self, hl):
+        # One assignment with BOTH fields — the old code assigned ['Access'] twice,
+        # which dropped Token and made get_token() raise. See [[facebook-adapter]].
+        Post.__init__(self, hl, access={'PageId': '<TODO>', 'Token': '<TODO>'})
+
     def get_token(self):
         return self.config["Access"]["Token"]
-        
+
     def get_page_id(self):
         return self.config["Access"]["PageId"]
-        
-    # ====================================================================================    
-    def post_to_fb_page(self, msg, image_url):
-        if image_url:
-            post_url = 'https://graph.facebook.com/v18.0/{}/photos'.format(self.get_page_id())
-            payload = {
-                'message': msg,
-                'access_token': self.get_token(),
-                'url': image_url
-            }
+
+    # The base __init__ prints get_handle(); FB has no handle, so surface the page id.
+    def get_handle(self):
+        return self.get_page_id()
+
+    # ====================================================================================
+    def _graph_url(self, edge):
+        return "https://graph.facebook.com/%s/%s/%s" % (
+            GRAPH_API_VERSION, self.get_page_id(), edge)
+
+    # ====================================================================================
+    def post(self, msg, image_local_url, alt_text):
+        """Post to the Page. With an image -> /photos (the local file is uploaded
+        as the `source` multipart part, and `alt_text` becomes the photo's custom
+        alt text); without -> /feed. Returns the public post URL; raises on a Graph
+        API error so publishing.py surfaces it in the popup."""
+        if image_local_url and os.path.isfile(image_local_url):
+            data = {'message': msg, 'access_token': self.get_token()}
+            if alt_text:
+                data['alt_text_custom'] = alt_text
+            with open(image_local_url, 'rb') as f:
+                r = requests.post(self._graph_url('photos'), data=data,
+                                  files={'source': f})
         else:
-            post_url = 'https://graph.facebook.com/v18.0/{}/feed'.format(self.get_page_id())
-            payload = {
-                'message': msg,
-                'access_token': self.get_token()
-            }
-            
-        # Uploading on FB Group
-        r = requests.post(post_url, data=payload)
-        data = r.json()
-        print(data)
-        if 'id' in data:
-            return True
-        else:
-            return False
-            
-    # ====================================================================================    
+            r = requests.post(self._graph_url('feed'),
+                              data={'message': msg, 'access_token': self.get_token()})
+
+        payload = r.json()
+        if 'error' in payload:
+            err = payload['error']
+            raise RuntimeError("Facebook Graph API error %s: %s"
+                               % (err.get('code'), err.get('message', payload)))
+        # /feed returns {"id": "<page>_<post>"}; /photos returns a photo id plus the
+        # feed-post id in "post_id" — that's the one that resolves to the post page.
+        post_id = payload.get('post_id') or payload.get('id')
+        if not post_id:
+            raise RuntimeError("Facebook returned no post id (HTTP %s): %s"
+                               % (r.status_code, payload))
+        return "https://www.facebook.com/%s" % post_id
+
+    # ====================================================================================
     def config_filename(self):
+        # Kept as fb_settings_<hl>.ini (not the newer settings_<platform>_<hl>.ini)
+        # for backward compatibility with the operator's existing config files.
         return 'fb_settings_%s.ini' % self.hl
-        
-    # ====================================================================================    
-    def load_config(self):
-        self.config.read(self.config_filename())
-        
-# ====================================================================================        
+
+
+# ====================================================================================
 if __name__ == '__main__':
-    fb_fr = PostFB("fr")
-    res =fb_fr.post_to_fb_page(msg='Test',
-                    image_url=None)#'https://www.allrecipes.com/thmb/d7iH4d7LSY0c6aI98G-3AwLZTWw=/800x533/filters:no_upscale():max_bytes(150000):strip_icc():focal(399x0:401x2):format(webp)/263037-instant-pot-beef-stew-mfs-beauty-1x1-BP-2467-80aedb6795b84febbedc172f6d921c14.jpg')
-    print("Result:", res)
+    print("Commented to prevent accidental post")
+    # fb_fr = PostFB("fr")
+    # res = fb_fr.post(msg='Test', image_local_url=None, alt_text='')
+    # print("Result:", res)
