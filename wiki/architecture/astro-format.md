@@ -31,7 +31,7 @@ Enforced site-side by `src/content.config.ts` zod schema.
 
 | Field | Source | Notes |
 |---|---|---|
-| `title` | `title` | double-quoted |
+| `title` | `title` | double-quoted; backslashes + `"` are escaped (`_yaml_dq`) so a quoted title — `I just watched "the Martian"` — stays valid YAML and round-trips |
 | `date` | `date` | bare `YYYY-MM-DD` |
 | `translationKey` | `get_translation_key()` | sticky pairing key — [[bilingual-pairing]] |
 | `facets` | `facets` | bare flow list `[dev, ideas]`; `[]` when empty (but WriterHelper requires ≥1 to publish) |

@@ -93,9 +93,15 @@ class FakeResp:
             raise RuntimeError("HTTP %d" % self.status_code)
 
 
+def _fake_blob():
+    # A minimal-but-valid BlobRef — the External model rejects anything that isn't one.
+    from atproto_client.models.blob_ref import BlobRef
+    return BlobRef(mime_type="image/jpeg", size=9, ref={"$link": "bafkreih"}, py_type="blob")
+
+
 class FakeBlobResp:
     def __init__(self):
-        self.blob = "BLOB_REF"
+        self.blob = _fake_blob()
 
 
 class FakeClient:
@@ -123,7 +129,7 @@ def test_fetch_external_card_builds_from_opengraph(monkeypatch):
     assert embed.external.uri == "https://martingamsby.com/en/foo"
     assert embed.external.title == "My Article"
     assert embed.external.description == "A great read."
-    assert embed.external.thumb == "BLOB_REF"
+    assert embed.external.thumb is not None
     assert client.uploaded == b"imgbytes"
 
 
@@ -138,7 +144,7 @@ def test_fetch_external_card_youtube_uses_img_youtube_thumbnail(monkeypatch):
     embed = fetch_external_card(FakeClient(), "https://youtu.be/dQw4w9WgXcQ")
     # The thumbnail is fetched from the reliable img.youtube.com URL, not scraped.
     assert any("img.youtube.com/vi/dQw4w9WgXcQ/" in u for u in seen["urls"])
-    assert embed.external.thumb == "BLOB_REF"
+    assert embed.external.thumb is not None
 
 
 def test_fetch_external_card_returns_none_on_fetch_failure(monkeypatch):

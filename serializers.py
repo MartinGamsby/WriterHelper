@@ -14,6 +14,14 @@ FACETS = ["dev", "physics", "fiction", "music", "ideas"]
 _LINK_RE = r'\[([^\[]+)]\(\s*(http[s]?://.+)\s*\)'
 
 
+def _yaml_dq(value) -> str:
+    """Escape a string for emission inside a YAML double-quoted scalar (e.g. the
+    `title:` line). Backslashes first, then double quotes, so a title containing
+    quotes — `I just watched "the Martian"` — stays valid YAML instead of
+    prematurely closing the quoted scalar."""
+    return str(value).replace("\\", "\\\\").replace('"', '\\"')
+
+
 # ========================================================================================
 # Write (Astro only)
 # ========================================================================================
@@ -22,7 +30,7 @@ def serialize(article) -> str:
     layout renders the title) + optional footer links block."""
     fm = [
         "---",
-        'title: "%s"' % article.title,
+        'title: "%s"' % _yaml_dq(article.title),
         "date: %s" % article.date,
         "translationKey: %s" % article.get_translation_key(),
         "facets: [%s]" % ", ".join(article.facets),

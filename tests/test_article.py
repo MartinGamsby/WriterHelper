@@ -125,6 +125,21 @@ def test_change_article_round_trip(fr):
     assert fr.date == "2026-06-10"
 
 
+def test_title_with_quotes_is_escaped_and_round_trips(fr):
+    """A title containing double quotes must stay valid YAML, not prematurely
+    close the quoted scalar. Regression for the broken `the Martian` post."""
+    fr.set_date("2026-06-13")
+    fr.set_title('I just watched "the Martian" - saving a stranded astronaut')
+    fr.set_content("Corps.")
+    saved = fr.content_md()
+    assert ('title: "I just watched \\"the Martian\\" - '
+            'saving a stranded astronaut"\n') in saved
+
+    fr.new_article()
+    assert fr.change_article(saved, "2026-06-13", change_ref=False)
+    assert fr.title == 'I just watched "the Martian" - saving a stranded astronaut'
+
+
 def test_astro_serialize_golden(fr):
     fr.set_date("2026-06-13")
     fr.set_title("Un Titre")
