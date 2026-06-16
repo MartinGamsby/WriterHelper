@@ -172,10 +172,12 @@ class Api:
 
     # ====================================================================================
     def save_capture(self, hl, page, data_url):
-        """Persist one captured card page as richTextArea_<hl><page>.png (CWD,
-        same contract as the old QML grabToImage output)."""
+        """Persist one captured card page as a JPEG named by the current article's
+        slug (richTextArea_<slug>_<hl><page>.jpg, CWD) — see
+        publishing.capture_filename. Slug-naming ties the grab to the article, so
+        publishing/IG can't pick up a stale capture from a different post."""
         encoded = data_url.split(",", 1)[1]
-        filename = f"richTextArea_{hl}{page}.png"
+        filename = publishing.capture_filename(self._article(hl), page)
         with open(filename, "wb") as f:
             f.write(base64.b64decode(encoded))
         print("Saved", filename)

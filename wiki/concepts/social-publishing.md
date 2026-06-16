@@ -12,7 +12,7 @@ A post is sent one of three ways, chosen by radio in the popup:
 - **text** — post the rendered plain text as one post.
 - **thread** — split the plain text into a reply chain of posts that each fit the limit
   ([[thread-split]]); the author can **edit where it splits** (see below).
-- **image** — post the **title** only, attaching `richTextArea_<hl>1.png` (page 1 of the
+- **image** — post the **title** only, attaching `richTextArea_<slug>_<hl>1.jpg` (page 1 of the
   captured card, [[image-card-capture]]).
 
 The suggestion hinges on the **rendered plain-text length** vs the platform's char limit
@@ -30,14 +30,14 @@ is on. Publish is blocked while any segment is over the limit. Controls:
 **Number posts (1/n)** (default on) and **Attach image to first post** (default on when
 an image is available) with a source choice between the **article image** (the post's own
 header picture — the default, so a thread shows the real picture not the whole text on a
-card) and the **grabbed text card** (`richTextArea_<hl>1.png`). Each source radio is
+card) and the **grabbed text card** (`richTextArea_<slug>_<hl>1.jpg`). Each source radio is
 disabled until that image exists.
 
 ## `prepare_post(article, platform_key) → dict` — NO side effects
 
 Safe to call every time the popup opens. Returns: `text` (`rendering.plain_text`),
 `text_length`, `fits` (≤ max_length), `suggested_mode`, `existing_url` (idempotence
-guard), `title`, `image_file` (`richTextArea_<hl>1.png`), `image_exists`,
+guard), `title`, `image_file` (`richTextArea_<slug>_<hl>1.jpg`), `image_exists`,
 `image_data_url` (base64 if present), `max_length`, `label`, **`facets_ok`** (≥1 facet —
 the mandatory-facets gate, see [[glossary]]), the thread seed `thread_text` /
 `thread_count` / `separator` ([[thread-split]]), `author` (a loose identity label for the

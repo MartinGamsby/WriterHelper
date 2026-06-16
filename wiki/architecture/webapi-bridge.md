@@ -33,7 +33,7 @@ doesn't introspect the bridge object.) See [[invariants-and-traps]].
 | `prepare_post(hl, platform)` | dict | No side effects — popup data. Includes `facets_ok` (≥1 facet) + thread seed (`thread_text`/`thread_count`/`separator`). |
 | `publish(hl, platform, mode, message, options=None)` | `{ok,url,error}` | Sends. `mode` ∈ text/thread/image; `options={"number","image"}` for thread ([[social-publishing]]). |
 | `clear_link(hl, platform)` | True | Clears the slot to allow re-post. |
-| `save_capture(hl, page, data_url)` | filename | Writes `richTextArea_<hl><page>.png` (CWD). |
+| `save_capture(hl, page, data_url)` | filename | Writes the JPEG `richTextArea_<slug>_<hl><page>.jpg` (CWD), name from `publishing.capture_filename` — slug-tied to the article. |
 | `open_url(url)` | True | Opens in the system browser. |
 
 ## `get_state(hl)` shape

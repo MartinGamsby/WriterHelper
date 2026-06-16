@@ -16,7 +16,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[content-flavors]] — the five render shapes of one article
 - [[social-publishing]] — two-phase publish behind a confirmation popup; text · thread · image modes
 - [[link-slots]] — named `(text,url)` link slots, the file footer, the publish guard
-- [[image-card-capture]] — html2canvas branded-PNG generation + sizing
+- [[image-card-capture]] — html2canvas branded-JPEG generation (slug-named) + sizing
 - [[invariants-and-traps]] — the non-negotiables, the landmines, tests, style
 - [[secrets]] — where credentials live; the LinkedIn scrub; the wiki rule
 
@@ -35,7 +35,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[publishing]] — `publishing.py`: `PLATFORMS` registry + prepare/publish module reference
 - [[thread-split]] — `thread_split.py`: pure long-article → editable thread splitter
 - [[post-base]] — `post.py`: the adapter base class + override contract
-- [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto)
+- [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto); clickable link facets via `build_rich_text`
 - [[x-adapter]] — `post_x.PostX` (tweepy v1+v2)
 - [[facebook-adapter]] — `post_fb.PostFB` (Graph API Page posts; wired, text/image only); includes the non-expiring Page-token steps
 - [[instagram-adapter]] — PLANNED: rides the FB Graph token; IG-must-be-last ordering, JPEG-only + GitHub-raw image constraints

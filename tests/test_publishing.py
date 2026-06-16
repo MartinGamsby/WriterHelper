@@ -1,3 +1,4 @@
+import base64
 import os
 
 import pytest
@@ -116,24 +117,59 @@ def test_publish_text_rejects_over_limit(fr, fake_x):
     assert "281" in result["error"]
 
 
+def test_image_filename_is_slug_named_jpg(fr):
+    fr.set_title("Mon Titre")
+    assert publishing.image_filename(fr) == "richTextArea_mon-titre_fr1.jpg"
+
+
+def test_save_capture_writes_the_name_publishing_expects(pair, tmp_path, monkeypatch):
+    # Close the producer↔consumer loop: webapi.save_capture must write exactly the
+    # file publishing.image_filename() will later look for.
+    from webapi import Api
+    monkeypatch.chdir(tmp_path)
+    fr = pair.fr()
+    fr.set_title("Mon Titre")
+    data_url = "data:image/jpeg;base64," + base64.b64encode(b"jpgbytes").decode()
+    name = Api(pair).save_capture("fr", 1, data_url)
+    assert name == publishing.image_filename(fr) == "richTextArea_mon-titre_fr1.jpg"
+    assert (tmp_path / name).read_bytes() == b"jpgbytes"
+
+
 def test_publish_image_requires_captured_png(fr, fake_x, tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)  # no richTextArea_fr1.png here
+    monkeypatch.chdir(tmp_path)  # no capture here
+    fr.set_title("Titre")
     fr.set_facets(["dev"])
     result = publishing.publish(fr, "x", "image", "Titre")
     assert result["ok"] is False
-    assert "richTextArea_fr1.png" in result["error"]
+    assert publishing.image_filename(fr) in result["error"]
 
 
 def test_publish_image_attaches_page_one(fr, fake_x, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "richTextArea_fr1.png").write_bytes(b"png")
     fr.set_title("Titre")
     fr.set_content("contenu")
     fr.set_facets(["dev"])
+    (tmp_path / publishing.image_filename(fr)).write_bytes(b"jpg")
     result = publishing.publish(fr, "x", "image", "Titre")
     assert result["ok"] is True
-    assert FakePoster.last["image"] == "richTextArea_fr1.png"
+    assert FakePoster.last["image"] == publishing.image_filename(fr)
     assert "contenu" in FakePoster.last["alt"]
+
+
+def test_publish_image_resolves_by_current_article_slug(fr, fake_x, tmp_path, monkeypatch):
+    # A capture exists, but for a DIFFERENT article (different slug) — it must NOT
+    # be picked up for the current one. This is the "right article" guarantee.
+    monkeypatch.chdir(tmp_path)
+    fr.set_title("Premier")
+    fr.set_facets(["dev"])
+    (tmp_path / "richTextArea_autre-article_fr1.jpg").write_bytes(b"jpg")
+    result = publishing.publish(fr, "x", "image", "Premier")
+    assert result["ok"] is False                       # nothing grabbed for "premier"
+    # Grab for the current article → now it publishes.
+    (tmp_path / publishing.image_filename(fr)).write_bytes(b"jpg")
+    result = publishing.publish(fr, "x", "image", "Premier")
+    assert result["ok"] is True
+    assert FakePoster.last["image"] == "richTextArea_premier_fr1.jpg"
 
 
 # ========================================================================================
@@ -158,13 +194,13 @@ def test_publish_facebook_text_records_facebook_link(fr, fake_fb):
 
 def test_publish_facebook_image_attaches_card(fr, fake_fb, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "richTextArea_fr1.png").write_bytes(b"png")
     fr.set_title("Titre")
     fr.set_content("contenu")
     fr.set_facets(["dev"])
+    (tmp_path / publishing.image_filename(fr)).write_bytes(b"jpg")
     result = publishing.publish(fr, "facebook", "image", "Titre")
     assert result["ok"] is True
-    assert FakePoster.last["image"] == "richTextArea_fr1.png"
+    assert FakePoster.last["image"] == publishing.image_filename(fr)
 
 
 # ========================================================================================
@@ -205,24 +241,25 @@ def test_publish_thread_empty_message_blocked(fr, fake_x):
 
 
 def test_publish_thread_grabbed_image_requires_captured_png(fr, fake_x, tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)  # no richTextArea_fr1.png here
+    monkeypatch.chdir(tmp_path)  # no capture here
+    fr.set_title("Titre")
     fr.set_facets(["dev"])
     result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
                                 {"number": False, "image": "grabbed"})
     assert result["ok"] is False
-    assert "richTextArea_fr1.png" in result["error"]
+    assert publishing.image_filename(fr) in result["error"]
 
 
 def test_publish_thread_attaches_grabbed_card_to_first(fr, fake_x, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "richTextArea_fr1.png").write_bytes(b"png")
     fr.set_title("Titre")
     fr.set_content("contenu")
     fr.set_facets(["dev"])
+    (tmp_path / publishing.image_filename(fr)).write_bytes(b"jpg")
     result = publishing.publish(fr, "x", "thread", "Un\n---\nDeux",
                                 {"number": False, "image": "grabbed"})
     assert result["ok"] is True
-    assert FakePoster.last_thread["image"] == "richTextArea_fr1.png"
+    assert FakePoster.last_thread["image"] == publishing.image_filename(fr)
     # The grabbed card carries the whole article, so its alt text is the full text.
     assert "contenu" in FakePoster.last_thread["alt"]
 

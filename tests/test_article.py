@@ -216,6 +216,62 @@ def test_local_image_skips_hook(fr, monkeypatch):
     assert "imageThumb:" not in fr.content_md()
 
 
+def test_failed_data_image_is_dropped_never_persisted(fr, monkeypatch):
+    # A dropped/opened image is a data: URL. If the site hook can't self-host it,
+    # the raw blob must NOT survive in the post — drop it instead.
+    monkeypatch.setattr(localize, "localize_file", lambda *a, **k: (None, None))
+
+    fr.set_date("2026-06-13")
+    fr.set_title("Un Titre")
+    fr.set_excerpt_img("data:image/png;base64,AAAA" + "B" * 5000)
+
+    assert fr.excerpt_image == ""
+    assert fr.image_thumb == ""
+    md = fr.content_md()
+    assert "data:" not in md                                 # blob never persisted
+    # ...and the re-save scrubbed it from disk too.
+    on_disk = os.path.join(fr.get_posts_folder(), fr.content_file.last_filename)
+    assert "data:" not in open(on_disk, encoding="utf-8").read()
+
+
+def test_failed_data_image_retries_once(fr, monkeypatch):
+    # The hook fails transiently (cold start); the retry should win.
+    results = iter([(None, None),
+                    ("/assets/posts/x.header.webp", "/assets/posts/x.thumb.webp")])
+    calls = []
+
+    def flaky(md_path, **kwargs):
+        calls.append(md_path)
+        return next(results)
+
+    monkeypatch.setattr(localize, "localize_file", flaky)
+    fr.set_date("2026-06-13")
+    fr.set_title("Un Titre")
+    fr.set_excerpt_img("data:image/png;base64,AAAA")
+
+    assert len(calls) == 2                                   # one retry
+    assert fr.excerpt_image == "/assets/posts/x.header.webp"
+    assert fr.image_thumb == "/assets/posts/x.thumb.webp"
+
+
+def test_failed_remote_url_is_left_in_place(fr, monkeypatch):
+    # A small http(s) URL that fails to localize is kept (it still renders) — and
+    # is NOT retried, unlike a data: blob.
+    calls = []
+
+    def fail(md_path, **kwargs):
+        calls.append(md_path)
+        return None, None
+
+    monkeypatch.setattr(localize, "localize_file", fail)
+    fr.set_date("2026-06-13")
+    fr.set_title("Un Titre")
+    fr.set_excerpt_img("https://blob.example/preview.jpg")
+
+    assert len(calls) == 1                                   # no retry for remote URLs
+    assert fr.excerpt_image == "https://blob.example/preview.jpg"
+
+
 def test_image_thumb_round_trips(fr):
     astro = (
         '---\n'

@@ -11,17 +11,27 @@ working; step on a trap and you waste an hour.
   [[auto-save-and-pull-ui]].
 - **UI is pull-based**: no push. After any mutation JS re-fetches `get_state(hl)`. A new
   field must be added to BOTH `get_state` (Python) and the JS module's `apply()`.
-- **PNG naming is load-bearing**: `richTextArea_<hl><N>.png`. `capture.js` →
-  `save_capture` writes it; `publishing` reads `richTextArea_<hl>1.png` for image mode.
-  Change one side, change both. See [[image-card-capture]].
+- **Capture naming is load-bearing AND identity-bearing**:
+  `richTextArea_<slug>_<hl><N>.jpg` (JPEG). The name comes from the single source of
+  truth `publishing.capture_filename(article, page)`; `capture.js` → `save_capture`
+  writes it, `publishing` reads page 1 via `image_filename` for image mode. **Slug-naming
+  is the "right article" guarantee** — publishing resolves the current article's slug, so
+  a stale grab from another post isn't found. Change one side, change both. See
+  [[image-card-capture]].
 - **`hl` thread**: the same `hl` string flows model → INI filenames
-  (`settings_<hl>.ini`, `settings_bsky_<hl>.ini`, `settings_x_<hl>.ini`) → PNG name →
+  (`settings_<hl>.ini`, `settings_bsky_<hl>.ini`, `settings_x_<hl>.ini`) → capture name →
   atproto `langs=[hl]`. Keep it consistent.
 - **Publish is two-phase + guarded**: `prepare_post` has no side effects; only `publish`
   sends. `publish` refuses an existing-link slot, a no-facet article, and re-checks the
   char limit / PNG existence. See [[social-publishing]].
 - **Translate is one-way, fills only empties**: `translate(hl)` aborts if the
   destination has content. See [[machine-translation]].
+- **A `data:` image must never be left persisted**: a dropped/opened image enters as a
+  `data:` URL ([[image-card-capture]] / [[astro-format]]) and is fine as *input*, but if
+  the self-host hook can't turn it into `…header.webp`, `_localize_excerpt_image` retries
+  once and then **drops** it (clears + re-saves) rather than commit a 100KB+ base64 blob
+  into the post. A plain remote http(s) URL that fails is left in place (small, still
+  renders). See [[astro-format]].
 - **`change_article` splits on `---` into 3-or-4 parts**: frontmatter / body / optional
   footer. Anything else fails parse silently (`Couldn't parse the md file`).
 - **Facets are mandatory (authoring-side)**: `publish` refuses a no-facet article;

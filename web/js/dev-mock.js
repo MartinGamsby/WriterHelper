@@ -63,7 +63,7 @@
             translate: async () => true,
             clear_link: async () => true,
             open_url: async (url) => { console.log('open_url', url); return true; },
-            save_capture: async (hl, page) => `richTextArea_${hl}${page}.png`,
+            save_capture: async (hl, page) => `richTextArea_demo_${hl}${page}.jpg`,
             prepare_post: async (hl, platform) => ({
                 platform,
                 label: platform === 'x' ? 'X / Twitter' : 'Bluesky',
@@ -74,7 +74,7 @@
                 fits: true,
                 suggested_mode: "text",
                 title: "My demo article",
-                image_file: `richTextArea_${hl}1.png`,
+                image_file: `richTextArea_demo_${hl}1.jpg`,
                 image_exists: false,
                 image_data_url: "",
                 facets_ok: store[hl].facets.length > 0,

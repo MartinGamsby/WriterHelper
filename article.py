@@ -213,14 +213,33 @@ class ArticleModel:
     def _localize_excerpt_image(self):
         """If the image is a remote URL, self-host it via the site hook and store
         the returned local image/thumbnail paths (the file is already rewritten;
-        we just keep the model in sync so later edits don't re-hot-link)."""
+        we just keep the model in sync so later edits don't re-hot-link).
+
+        A dropped/opened image arrives as a `data:` URL — fine as input, but it
+        must NEVER be left persisted: a failed self-host would otherwise commit a
+        100KB+ base64 blob into the post. The hook can fail transiently (node/sharp
+        cold start, a momentary file lock), so for a `data:` value we retry once
+        and, if it still fails, drop the image and re-save rather than persist the
+        blob. A plain remote http(s) URL that fails is left in place (it's small
+        and still renders)."""
         if not localize.is_remote(self.excerpt_image):
             return
-        md_name = self.content_file.get_date_slug(self.get_slug(), self.date) + ".md"
-        image, thumb = localize.localize_file(os.path.join(self.get_posts_folder(), md_name))
+        is_data = self.excerpt_image.startswith("data:")
+        md_path = os.path.join(
+            self.get_posts_folder(),
+            self.content_file.get_date_slug(self.get_slug(), self.date) + ".md")
+        image, thumb = localize.localize_file(md_path)
+        if not image and is_data:
+            image, thumb = localize.localize_file(md_path)   # one retry; the blob is at stake
         if image:
             self.excerpt_image = image
             self.image_thumb = thumb
+        elif is_data:
+            print("localize: could not self-host dropped image; dropping it so the "
+                  "post never carries a base64 blob")
+            self.excerpt_image = ""
+            self.image_thumb = ""
+            self.updated()
 
     def set_green(self, checked):
         if self.green != checked:

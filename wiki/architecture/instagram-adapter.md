@@ -12,7 +12,7 @@ bytes itself, then returns the post URL only *after* publishing. That forces thi
 order, with IG done **after** every other platform:
 
 ```
-1. Render the square card as JPEG  (see constraint #1)
+1. Square + Grab the card  → richTextArea_<slug>_<hl>1.jpg (already JPEG, see #1)
 2. Push that image to the site repo (see constraint #2 — push only, no deploy needed)
 3. Create the IG media container (image_url = the public raw URL) → publish
 4. Take the returned IG post URL → write it into the article's Link footer
@@ -23,15 +23,15 @@ Why last: the image must be public **before** step 3, and the IG post URL doesn'
 **until** step 3 — so the article's final push (step 5) can only happen afterwards. Do FB
 / X / Bluesky first; finish with Instagram.
 
-## Constraint #1 — Instagram only accepts JPEG
+## Constraint #1 — Instagram only accepts JPEG (now satisfied by the grab)
 
 The Content Publishing API rejects PNG and **WebP** `image_url`s — JPEG only, ≤ 8 MB,
-aspect ratio 4:5 → 1.91:1 (square 1:1 is fine). This breaks the obvious reuse:
-- the grabbed text card is a **PNG** (`richTextArea_<hl>1.png`, [[image-card-capture]]);
-- the self-hosted site image is **WebP** (`<slug>.header.webp`, [[astro-format]]).
-
-Neither is a valid IG source as-is. The adapter (or a prep step) must **convert the
-square card to JPEG** and publish *that*. Ref:
+aspect ratio 4:5 → 1.91:1 (square 1:1 is fine). The grab now writes **JPEG** directly
+(`richTextArea_<slug>_<hl>1.jpg`, [[image-card-capture]]), so the captured card is a valid
+IG source as-is — use the **Square** sizing button before grabbing. (The self-hosted site
+image is still **WebP** `<slug>.header.webp` and is *not* IG-valid; use the grabbed card.)
+The capture being slug-named is also the guarantee you commit the **right article's**
+image, not a stale leftover. Ref:
 <https://developers.facebook.com/docs/instagram-platform/content-publishing/>.
 
 ## Constraint #2 — the public URL can be a GitHub raw URL (no deploy)

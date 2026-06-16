@@ -31,6 +31,24 @@ def post(self, msg, image_local_url, alt_text):
   into `_post_url(uri)`.
 - Returns the rendered web URL (handle + post id), not the raw `at://` URI.
 
+## Clickable links (rich-text facets)
+
+Bluesky renders a bare URL as **plain, un-clickable text** unless the post record
+carries link *facets*. `_send` runs the message through module-level `build_rich_text(msg)`
+first, so every post (single **and** thread) gets clickable links for free:
+
+- `build_rich_text(msg)` scans for `https?://…` URLs (`_URL_RE`). **No URL → returns the
+  plain string unchanged** (non-link posts behave exactly as before). One or more URLs →
+  returns an `atproto.client_utils.TextBuilder` interleaving `.text(...)` runs and
+  `.link(url, url)` facets. Both `send_post` and `send_image` accept `str | TextBuilder`.
+- `_trim_url` strips trailing sentence punctuation (`.,;:!?'"`) the regex swallowed, and
+  drops a trailing `)]}` **only when unbalanced** — so `…/Foo_(bar)` Wikipedia links keep
+  their inner parens.
+- `TextBuilder` computes facet ranges as **UTF-8 byte offsets**, so multi-byte text
+  before a URL (FR accents, arrows) keeps the link aligned. Covered by `test_post_bsky.py`.
+- This is the only adapter with link facets: X auto-links URLs server-side, and Facebook
+  Graph posts do too — no equivalent needed there.
+
 ## post_thread() — the reply chain
 
 `post_thread(messages, image_local_url, alt_text) → [url]` logs in once, then posts each

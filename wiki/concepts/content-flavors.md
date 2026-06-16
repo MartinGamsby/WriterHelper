@@ -9,7 +9,7 @@ delegate. The fifth, `content_md`, is the saved file via [[serializers]] — not
 |---|---|---|---|
 | `content_md` | `serializers.serialize` | No | The saved [[astro-format]] file. Always. |
 | `content_md_rich` | `post_content_only.md` → `markdown.markdown` | Yes | Base for the other HTML flavors; rich preview |
-| `content_md_separators` | `content_md_rich` + decoration | Yes | The image card (`.card-frame`), captured to PNG ([[image-card-capture]]) |
+| `content_md_separators` | `content_md_rich` + decoration | Yes | The image card (`.card-frame`), captured to JPEG ([[image-card-capture]]) |
 | `content_md_separators_br` | `content_md_rich` + `<br/>` + hashtags | Yes | Source of social-post text (`rendering.plain_text` strips it for the char count, see [[social-publishing]]) |
 | `content_short` | `post_title_only.md` + hashtags | Yes | Title-only fallback rendering |
 

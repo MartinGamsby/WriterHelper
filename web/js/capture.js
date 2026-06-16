@@ -1,5 +1,8 @@
 // Card sizing helpers + html2canvas page-by-page capture.
-// Output contract (unchanged from QML): richTextArea_<hl><N>.png, N starting at 1.
+// Output contract: JPEG named by article slug (richTextArea_<slug>_<hl><N>.jpg,
+// N from 1) — the filename is built server-side in publishing.capture_filename, so
+// a capture is tied to the article it was grabbed for. JPEG so it also serves as the
+// Instagram asset.
 "use strict";
 
 const Capture = {
@@ -42,15 +45,19 @@ const Capture = {
         const pages = this.pageCount(hl);
         const viewH = scroll.clientHeight;
 
+        let firstName = '';
         for (let p = 1; p <= pages; p++) {
             content.style.marginTop = `${-(p - 1) * viewH}px`;
             page.textContent = p;
             page.classList.toggle('hidden', pages === 1);
-            const canvas = await html2canvas(frame, { backgroundColor: null, scale: 1 });
-            await API.save_capture(hl, p, canvas.toDataURL('image/png'));
+            // White background: JPEG has no alpha, so a null bg would render black.
+            const canvas = await html2canvas(frame, { backgroundColor: '#ffffff', scale: 1 });
+            const name = await API.save_capture(hl, p, canvas.toDataURL('image/jpeg', 0.92));
+            if (p === 1) { firstName = name; }
         }
         this.layoutPages(hl);
-        App.toast(`Saved ${pages} image${pages > 1 ? 's' : ''} (richTextArea_${hl}1.png…)`);
+        // Show the actual filename so it's clear WHICH article was grabbed.
+        App.toast(`Saved ${pages} image${pages > 1 ? 's' : ''} → ${firstName}`);
     },
 
     // ====================================================================================

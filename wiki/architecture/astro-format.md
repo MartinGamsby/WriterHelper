@@ -95,6 +95,15 @@ branch exists in the model. Browse reads the file in Python (`webapi.open_image`
 `localize.file_to_data_url`); drag-drop reads it in JS and calls
 `set_field('excerpt_image', <data url>)`. See [[web-ui]], [[webapi-bridge]].
 
+**Failure handling — the blob must never persist.** `set_excerpt_img` saves *first* (the
+data URL hits the file) and only *then* localizes, so a hook failure would otherwise
+leave a 100KB+ base64 blob committed to the post. Because the hook can fail transiently
+(node/sharp cold start, a momentary file lock), `_localize_excerpt_image` retries once
+for a `data:` value and, if it still fails, **clears the image and re-saves** so the
+markdown stays clean — better a missing preview image than a blob in git. A plain remote
+http(s) URL that fails is left in place (small, still renders). This is an invariant —
+see [[invariants-and-traps]].
+
 ### Rendering the saved image back (card preview)
 
 Once self-hosted, `image:` is a site-absolute `/assets/posts/<slug>.header.webp`

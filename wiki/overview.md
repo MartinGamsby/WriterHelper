@@ -37,7 +37,7 @@ graph TD
     SER --> CF
     CF --> POSTS[(src/content/blog/hl/YYYY-MM-DD-slug.md)]
     FR --> REND[rendering.py: card/social flavors]
-    WEB -- html2canvas --> PNG[(richTextArea_hl_N.png)]
+    WEB -- html2canvas --> PNG[(richTextArea_slug_hl_N.jpg)]
     WEB -- prepare_post/publish --> PUB[publishing.py]
     PUB --> PB[post_bsky.PostBsky]
     PUB --> PX[post_x.PostX]

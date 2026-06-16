@@ -32,7 +32,12 @@ reference.
   text-card PNG (`image_filename`); `"article"` = the post's own header image as a local
   file (`rendering.excerpt_image_file`, self-hosted on save). Grabbed alt text = full
   plain text; article alt text = the title.
-- `image_filename(article)` → `richTextArea_<hl>1.png` (the load-bearing PNG name).
+- `capture_filename(article, page)` → `richTextArea_<slug>_<hl><page>.jpg` — the single
+  source of truth for the capture name (used by both `webapi.save_capture` and here).
+  Slug-named so the capture is tied to its article (the "right article" guarantee);
+  JPEG so it doubles as the IG asset ([[instagram-adapter]]).
+- `image_filename(article)` → `capture_filename(article, 1)`, the page-1 file image mode
+  attaches / IG would commit.
 - `_post_error(p, exc)` / `_log_post_exc(p, exc)` — the adapter call in `publish`/
   `_publish_thread` is wrapped in `try/except`: an auth/network failure becomes a normal
   `{ok: False, error}` (via `_post_error`, which special-cases X's `client-not-enrolled`

@@ -14,11 +14,18 @@ inputs; colors from the green/black checkboxes via `Editor.restyleCard`.
 
 ## Output naming (load-bearing contract)
 
-`richTextArea_<hl><N>.png`, `<N>` 1-indexed, written to CWD. `capture.js` paginates by
-translating `.card-content` up one viewport (`marginTop`) per page and re-capturing;
-each page is sent to `webapi.save_capture(hl, page, dataURL)` ([[webapi-bridge]]). Page 1
-(`richTextArea_<hl>1.png`) is what image-mode [[social-publishing]] attaches. Don't
-rename without updating both producer and consumer.
+`richTextArea_<slug>_<hl><N>.jpg`, `<N>` 1-indexed, written to CWD. **JPEG** (so it
+doubles as the Instagram asset, [[instagram-adapter]]) and **named by the article's
+slug** so a capture is tied to the article it was grabbed for — image-mode publishing
+resolves the *current* article's slug, so a stale grab from a different post (or an
+edited title → new slug) simply isn't found. `capture.js` produces the JPEG data URL
+(`toDataURL('image/jpeg', 0.92)`, white bg since JPEG has no alpha) and paginates by
+translating `.card-content` up one viewport (`marginTop`) per page; each page is sent to
+`webapi.save_capture(hl, page, dataURL)` ([[webapi-bridge]]), which builds the filename
+via the single source of truth `publishing.capture_filename(article, page)`. Page 1
+(`image_filename(article)`) is what image-mode [[social-publishing]] attaches. Don't
+rename without updating producer (`capture.js`/`save_capture`) and consumer
+(`publishing`) together.
 
 ```mermaid
 sequenceDiagram

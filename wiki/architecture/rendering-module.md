@@ -8,7 +8,7 @@ callers can use either. No Qt, no state of its own.
 
 - `content_md_rich(article)` — markdown→HTML via the `markdown` library + link/paragraph
   styling.
-- `content_md_separators(article)` — the styled image-card HTML (captured to PNG,
+- `content_md_separators(article)` — the styled image-card HTML (captured to JPEG,
   [[image-card-capture]]).
 - `content_md_separators_br(article)` — the social-post HTML (`<br/>` decoration +
   hashtags).

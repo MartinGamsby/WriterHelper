@@ -46,9 +46,19 @@ PLATFORMS = {
 
 
 # ========================================================================================
+def capture_filename(article, page):
+    """The captured card file for `page` (1-indexed). Named by the article's
+    **slug** (+ hl) so a capture is tied to the article it was grabbed for: the
+    publish/commit step resolves the CURRENT article's slug, so a stale grab from a
+    different article simply isn't found (and editing the title changes the slug, so
+    an out-of-date grab no longer matches). JPEG, so it doubles as the Instagram
+    asset ([[instagram-adapter]])."""
+    return f"richTextArea_{article.get_slug()}_{article.hl}{page}.jpg"
+
+
 def image_filename(article):
-    """Page 1 of the captured card — what the image fallback attaches."""
-    return f"richTextArea_{article.hl}1.png"
+    """Page 1 of the captured card — what image mode attaches / IG would commit."""
+    return capture_filename(article, 1)
 
 
 # ========================================================================================
