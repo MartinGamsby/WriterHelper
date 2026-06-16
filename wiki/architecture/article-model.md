@@ -48,6 +48,10 @@ mirrors), `set_draft(bool)`.
 
 - `open_last_article()` / `open_article()` (file dialog) / `open_prev_article()` /
   `open_next_article()` — scan/walk `posts_folder` `.md` files, load via `change_article`.
+  `open_adjacent_article` locates the current post in the **sorted** `.md` listing
+  **case-insensitively** (`get_slug()` lowercases the title, but a hand-written/migrated
+  file can keep mixed case — e.g. `a-PhD-in-your-pocket.md` — and a case-sensitive match
+  would leave navigation stuck on it), then steps ±1.
 - `new_article(copy_current=False)` — clears state; resets `translation_key`. With
   `copy_current=True` ("Make V2"): keeps content, title suffixed " V2", seeds the "Based
   on" link to `get_post_url()`, keeps `facets`/`draft`.

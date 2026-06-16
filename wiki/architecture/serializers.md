@@ -30,6 +30,12 @@ fields are controlled vocabularies or slugs and need no escaping.
 Astro body/footer split takes the footer as whatever follows the **last** `\n---\n`, so
 a markdown horizontal rule inside the body isn't mistaken for the footer.
 
+Footer links (`_iter_footer_links`) split the block at each `- [` and parse each entry
+independently, so a target that isn't an `http` URL or that spans lines round-trips
+instead of being dropped (legacy Bluesky slots hold the multi-line post text). Per-entry
+the target runs to the entry's final `)`, preserving a `)` inside a URL. See
+[[link-slots]].
+
 ## Twin resolution (Astro)
 
 `_resolve_astro_twin` → `_find_twin_file(folder, key)`:

@@ -49,6 +49,28 @@ first, so every post (single **and** thread) gets clickable links for free:
 - This is the only adapter with link facets: X auto-links URLs server-side, and Facebook
   Graph posts do too — no equivalent needed there.
 
+## Link-preview card (external embed)
+
+Optional, opt-in via a popup checkbox ([[social-publishing]]). When `post`/`post_thread`
+receive an `embed_url`, `_send` builds an `app.bsky.embed.external` card and passes it as
+`send_post(..., embed=...)`. Module-level `fetch_external_card(client, url)` does the work:
+
+- GETs `url` (browser-ish UA), parses OpenGraph `og:title`/`og:description`/`og:image`
+  with BeautifulSoup, uploads the thumbnail via `client.upload_blob(bytes).blob` (a real
+  `BlobRef` — the `External` model rejects anything else), returns
+  `models.AppBskyEmbedExternal.Main`.
+- **YouTube** links (`youtube_id` matches watch/shorts/youtu.be/embed/live) skip image
+  scraping and use `https://img.youtube.com/vi/<id>/hqdefault.jpg` directly — reliable,
+  and Bluesky renders the card as a playable video.
+- **Fail-soft**: any fetch/parse/upload error → returns None (logged to stderr); a missing
+  card must never block the post. A failed thumb still yields a text-only card.
+- A post's embed slot holds **either** an image **or** an external card. `_send` honours
+  `embed_url` only when no image is attached; in a thread the card rides the **first**
+  post and only if that post has no image. Covered by `test_post_bsky.py`.
+
+The candidate URL is chosen upstream in `publishing.embed_candidate` ([[publishing]]):
+a YouTube/YouTube Shorts [[link-slots]] wins, else the first URL in the message.
+
 ## post_thread() — the reply chain
 
 `post_thread(messages, image_local_url, alt_text) → [url]` logs in once, then posts each

@@ -17,17 +17,24 @@ reference.
   | `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only, no threads |
 
 - `prepare_post(article, platform_key) → dict` — NO side effects; fills the popup
-  (includes `facets_ok` and the thread seed `thread_text`/`thread_count`/`separator`,
-  [[thread-split]]).
+  (includes `facets_ok`, the thread seed `thread_text`/`thread_count`/`separator`
+  ([[thread-split]]), and `embed_url` — the Bluesky link-card candidate, `""` for other
+  platforms since they auto-unfurl).
+- `embed_candidate(article, message="") → url` — the URL a Bluesky link-preview card
+  would point at: a `YouTube`/`YouTube Shorts` [[link-slots]] wins (deliberate, and
+  rendered as a video card), else the first http(s) URL in `message` (trailing
+  punctuation trimmed). `""` when neither exists.
 - `publish(article, platform_key, mode, message, options=None) → {ok, url, error}` — the
-  only method with side effects: guards (existing link, mandatory facet), then by `mode`
-  posts via `poster.post(...)` (text/image) or delegates to `_publish_thread`; stores the
-  URL via `set_link` (re-saves the footer), opens it with `webbrowser.open`.
-- `_publish_thread(article, p, message, opts)` — splits `message` on `---`
+  only method with side effects: guards (existing link, mandatory facet), computes the
+  optional `embed_url` (`opts["embed"]` true **and** platform is `bluesky`), then by
+  `mode` posts via `poster.post(..., embed_url=)` (text; image mode omits it — the image
+  owns the embed slot) or delegates to `_publish_thread`; stores the URL via `set_link`
+  (re-saves the footer), opens it with `webbrowser.open`.
+- `_publish_thread(article, p, message, opts, embed_url=None)` — splits `message` on `---`
   ([[thread-split]]), optionally numbers, rejects any over-limit segment, resolves the
-  image via `_resolve_image`, calls `poster.post_thread(...)`; stores `urls[0]` as the
-  slot guard, returns `{...,urls}`. `opts = {"number": bool, "image":
-  "none"|"grabbed"|"article"}`.
+  image via `_resolve_image`, calls `poster.post_thread(..., embed_url=)`; stores `urls[0]`
+  as the slot guard, returns `{...,urls}`. `opts = {"number": bool, "image":
+  "none"|"grabbed"|"article", "embed": bool}`.
 - `_resolve_image(article, source)` → `(local_path, error)`. `"grabbed"` = the captured
   text-card PNG (`image_filename`); `"article"` = the post's own header image as a local
   file (`rendering.excerpt_image_file`, self-hosted on save). Grabbed alt text = full

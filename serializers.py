@@ -11,7 +11,12 @@ import rendering
 DEFAULT_TAGS = "Gamsblurb"
 FACETS = ["dev", "physics", "fiction", "music", "ideas"]
 
-_LINK_RE = r'\[([^\[]+)]\(\s*(http[s]?://.+)\s*\)'
+# A footer link slot is one `- [name](target)` list item. The target is captured up
+# to the entry's final `)` and MAY span multiple lines: legacy Bluesky slots hold the
+# post *text* (a multi-line value) instead of a URL, and that data must round-trip,
+# not be silently dropped on the next auto-save. Lazy `.+?` anchored to end-of-entry
+# keeps a trailing `)` inside a URL (Wikipedia-style `…/Foo_(bar)`) intact.
+_FOOTER_ENTRY_RE = re.compile(r'-\s*\[([^\[\]]+)\]\(\s*(.+?)\s*\)\s*$', re.S)
 
 
 def _yaml_dq(value) -> str:
@@ -93,10 +98,20 @@ def _frontmatter(text):
     return data if isinstance(data, dict) else None
 
 
+def _iter_footer_links(footer_text):
+    """Yield (name, target) for each `- [name](target)` footer entry. Splits the
+    block at each list item that opens a link, so a multi-line target stays attached
+    to its own entry instead of being merged with the next link."""
+    for entry in re.split(r'\n(?=\s*-\s*\[)', footer_text.strip()):
+        m = _FOOTER_ENTRY_RE.match(entry.strip())
+        if m:
+            yield m.group(1), m.group(2)
+
+
 def _load_footer(article, footer_text):
     article.links = []
     if footer_text:
-        for name, url in re.findall(_LINK_RE, footer_text):
+        for name, url in _iter_footer_links(footer_text):
             article.set_link(name, url)
 
 

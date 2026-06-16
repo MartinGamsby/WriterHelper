@@ -45,10 +45,24 @@ preview cards — `martingamsby.com/<hl>`, NOT the real platform handle), and th
 image (`article_image_exists` — a local file is attachable; `article_image_data_url` —
 for the preview).
 
+## Link-preview card (Bluesky only)
+
+Bluesky leaves a posted URL as plain text and shows no preview unless the post carries an
+`app.bsky.embed.external` card; X/Facebook unfurl links themselves, so this is
+**Bluesky-only**. `prepare_post` returns `embed_url` — the candidate
+(`publishing.embed_candidate`): a `YouTube`/`YouTube Shorts` [[link-slots]] URL wins
+(rendered as a playable video card), else the first URL in the post text. When it's set,
+the popup shows an **opt-in-by-default** checkbox **"Add link preview card → \<host\>"** in
+**text** and **thread** modes (hidden in image mode — an attached image owns the post's
+single embed slot). The card is built at publish time by
+`post_bsky.fetch_external_card` ([[bluesky-adapter]]); a fetch failure posts plain rather
+than blocking. The preview dock shows a mock card (`▶` for video links).
+
 ## `publish(article, platform_key, mode, message, options=None) → {ok, url, error}`
 
-The only method with side effects. `options` carries thread choices
-`{"number": bool, "image": "none"|"grabbed"|"article"}`.
+The only method with side effects. `options` carries thread choices + the embed flag
+`{"number": bool, "image": "none"|"grabbed"|"article", "embed": bool}` (embed honoured
+only for Bluesky, and only without an image on that post).
 1. No facet → refused (facets are mandatory).
 2. Existing link for the slot → `{ok: False, url: existing, error}`. (Clear it to re-post.)
 3. `mode == "thread"` → `_publish_thread`: split `message` on `---`, optionally number,

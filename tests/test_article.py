@@ -86,6 +86,36 @@ def test_new_both_articles_does_not_delete_previous_posts(pair):
     assert f"{today}-en-existing.md" in os.listdir(en.get_posts_folder())
 
 
+def test_next_navigation_is_case_insensitive(pair):
+    """Navigation must step past a post whose on-disk filename keeps mixed case that
+    get_slug() would lowercase (e.g. 'a-PhD-in-your-pocket'). Regression: the old
+    case-sensitive filename match left navigation stuck on such a post (only the EN
+    column hit it — the FR twin's slug happened to be all-lowercase)."""
+    en = pair.en()
+    folder = en.get_posts_folder()
+
+    def write(name, title, date, key):
+        with open(os.path.join(folder, name), "w", encoding="utf-8") as f:
+            f.write('---\ntitle: "%s"\ndate: %s\ntranslationKey: %s\n'
+                    'facets: [dev]\ntags: [Gamsblurb]\n---\n\nBody.\n'
+                    % (title, date, key))
+
+    write("2024-09-14-a-PhD-in-your-pocket.md", "A PhD in your pocket",
+          "2024-09-14", "2024-09-14-a-phd-in-your-pocket")
+    write("2024-09-15-ai-for-president.md", "AI for president",
+          "2024-09-15", "2024-09-15-ai-for-president")
+
+    # Sit on the mixed-case post without auto-saving a lowercase duplicate.
+    en.title = "A PhD in your pocket"
+    en.date = "2024-09-14"
+
+    en.open_next_article()
+    assert en.title == "AI for president"
+
+    en.open_prev_article()
+    assert en.title == "A PhD in your pocket"
+
+
 # ========================================================================================
 def test_links_upsert_and_footer(fr):
     fr.set_link("Source", "https://a.example")
@@ -140,8 +170,55 @@ def test_title_with_quotes_is_escaped_and_round_trips(fr):
     assert fr.title == 'I just watched "the Martian" - saving a stranded astronaut'
 
 
+def test_multiline_footer_link_is_preserved(fr):
+    """A footer link slot whose target spans multiple lines and isn't an http URL
+    (legacy Bluesky slots hold the post text, not a URL) must round-trip, not be
+    silently dropped on load + re-save. Regression for the burnout.md post."""
+    astro = (
+        '---\n'
+        'title: "Burnout"\n'
+        'date: 2024-09-12\n'
+        'translationKey: 2024-09-12-burnout\n'
+        'facets: [ideas]\n'
+        'tags: [Gamsblurb]\n'
+        '---\n'
+        '\n'
+        "Je crois qu'il n'existe aucun moyen de prévenir le burnout.\n"
+        '\n'
+        '---\n'
+        '\n'
+        '- [X/Twitter](https://x.com/MartinGamsby/status/1834401418406400140)\n'
+        "- [Bluesky](Je crois qu'il n'existe aucun moyen de prévenir le burnout.\n"
+        '\n'
+        'Parce que personne ne pense que ça peut leur arriver.)\n'
+    )
+    assert fr.change_article(astro, "2024-09-12", change_ref=False)
+    assert fr.get_link("X/Twitter") == \
+        "https://x.com/MartinGamsby/status/1834401418406400140"
+    assert fr.get_link("Bluesky") == (
+        "Je crois qu'il n'existe aucun moyen de prévenir le burnout.\n\n"
+        "Parce que personne ne pense que ça peut leur arriver.")
+    # And it survives the re-save the parser performs.
+    assert "[Bluesky]" in fr.content_md()
+
+
+def test_footer_url_with_parens_round_trips(fr):
+    """A URL containing balanced parens (Wikipedia-style) keeps its trailing `)`."""
+    url = "https://en.wikipedia.org/wiki/Foo_(bar)"
+    fr.set_title("Un Titre")
+    fr.set_content("Corps.")
+    fr.set_link("Source", url)
+    saved = fr.content_md()
+    fr.new_article()
+    assert fr.change_article(saved, "2026-06-13", change_ref=False)
+    assert fr.get_link("Source") == url
+
+
 def test_astro_serialize_golden(fr):
     fr.set_date("2026-06-13")
+    # translationKey is minted from the EN twin's date (falling back to the FR slug
+    # while EN is untitled); pin it so the golden doesn't drift to today's date.
+    fr.ref.set_date("2026-06-13")
     fr.set_title("Un Titre")
     fr.set_content("Corps.")
     fr.set_facets(["dev", "ideas"])

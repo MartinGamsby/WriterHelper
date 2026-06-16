@@ -35,7 +35,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[publishing]] — `publishing.py`: `PLATFORMS` registry + prepare/publish module reference
 - [[thread-split]] — `thread_split.py`: pure long-article → editable thread splitter
 - [[post-base]] — `post.py`: the adapter base class + override contract
-- [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto); clickable link facets via `build_rich_text`
+- [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto); clickable link facets + optional external link-preview card (`fetch_external_card`, YouTube-aware)
 - [[x-adapter]] — `post_x.PostX` (tweepy v1+v2)
 - [[facebook-adapter]] — `post_fb.PostFB` (Graph API Page posts; wired, text/image only); includes the non-expiring Page-token steps
 - [[instagram-adapter]] — PLANNED: rides the FB Graph token; IG-must-be-last ordering, JPEG-only + GitHub-raw image constraints

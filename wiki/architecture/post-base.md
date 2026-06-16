@@ -56,9 +56,13 @@ Always one `[Access]` section; field names come from the subclass's `access` dic
 
 ## post() contract
 
-`post(msg, image_local_url, alt_text) → str` (the public URL). `msg` = text body,
-`image_local_url` = local file path or None, `alt_text` = image alt where supported
-(Bluesky yes; X v2 currently doesn't attach it).
+`post(msg, image_local_url, alt_text, embed_url=None) → str` (the public URL). `msg` =
+text body, `image_local_url` = local file path or None, `alt_text` = image alt where
+supported (Bluesky yes; X v2 currently doesn't attach it). `embed_url` requests an
+external link-preview card; only [[bluesky-adapter]] acts on it (X/Facebook auto-unfurl
+links, so they accept and ignore it). `post_thread` takes the same `embed_url` (card on
+the first post). The base/PostX/PostFB signatures all carry it so the `publishing.py` call
+site stays uniform.
 
 ## See also
 - [[bluesky-adapter]] · [[x-adapter]] · [[publishing]] · [[social-publishing]]

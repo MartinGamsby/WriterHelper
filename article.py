@@ -374,24 +374,26 @@ class ArticleModel:
         self.open_adjacent_article(to_previous=True)
 
     def open_adjacent_article(self, to_previous):
+        folder = self.get_posts_folder()
         last_filename = self.content_file.get_date_slug(self.get_slug(), self.date) + ".md"
-        found_last_filename = False
-        next_filename = ""
-        if os.path.isfile(os.path.join(self.get_posts_folder(), last_filename)):
-            files = os.listdir(self.get_posts_folder())
-            if to_previous:
-                files.reverse()
-            for f in files:
-                if found_last_filename:
-                    next_filename = f
-                    break
-                if f == last_filename:
-                    found_last_filename = True
-        else:
+        files = sorted(f for f in os.listdir(folder)
+                       if f.endswith(".md") and os.path.isfile(os.path.join(folder, f)))
+        # The on-disk filename may differ in CASE from the slug-derived name: get_slug()
+        # lowercases the title, but a hand-written/migrated file can keep mixed case
+        # (e.g. "a-PhD-in-your-pocket.md"). Windows' filesystem is case-insensitive, so
+        # match the current file case-insensitively — otherwise navigation gets stuck on
+        # such a post and can't step to the neighbour.
+        lowered = [f.lower() for f in files]
+        try:
+            idx = lowered.index(last_filename.lower())
+        except ValueError:
             print("Current file not found")
-        if next_filename:
+            return
+        nxt = idx - 1 if to_previous else idx + 1
+        if 0 <= nxt < len(files):
+            next_filename = files[nxt]
             print("Next", next_filename)
-            self.load_file(os.path.join(self.get_posts_folder(), next_filename))
+            self.load_file(os.path.join(folder, next_filename))
 
     # ====================================================================================
     def change_article(self, file_contents, old_date, change_ref=True):
