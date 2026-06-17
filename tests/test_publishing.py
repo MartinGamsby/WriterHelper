@@ -4,6 +4,7 @@ import os
 import pytest
 
 import publishing
+import rendering
 from publishing import Platform
 
 
@@ -64,6 +65,16 @@ def test_prepare_short_content_suggests_text(fr, monkeypatch):
     assert info["max_length"] == 280
     assert info["facets_ok"] is True
     assert info["article_image_exists"] is False    # no excerpt image set
+
+
+def test_plain_text_separates_paragraphs_with_blank_line(fr):
+    fr.set_title("Titre")
+    fr.set_content("Premier paragraphe.\n\nDeuxième paragraphe.")
+    text = rendering.plain_text(fr)
+    assert "Premier paragraphe." in text and "Deuxième paragraphe." in text
+    # A blank line between paragraphs, and they're never mashed onto one line.
+    assert "Premier paragraphe.\n\nDeuxième paragraphe." in text
+    assert "paragraphe.Deuxième" not in text and "paragraphe. Deuxième" not in text
 
 
 def test_prepare_flags_missing_facet(fr):

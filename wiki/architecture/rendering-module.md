@@ -14,7 +14,11 @@ callers can use either. No Qt, no state of its own.
   hashtags).
 - `content_short(article)` — title-only + hashtags.
 - `plain_text(article)` — BeautifulSoup-stripped text, no hashtags — the exact post
-  text used for the [[social-publishing]] char count.
+  text used for the [[social-publishing]] char count. **Paragraphs are separated by a
+  blank line**: `<br/>`s are converted to newlines before stripping (else `get_text()`
+  drops them and paragraphs run together — visible on Facebook, which renders the message
+  literally), then 3+ newlines collapse to one blank line. The thread splitter prefers
+  these paragraph boundaries.
 - `footer_md(article)` — `- [text](url)` lines for non-empty links ([[link-slots]]).
 - `hashtags(article)`, `categories(article)` (legacy-only), `excerpt_image_file`
   (resolves the excerpt image to a **local filesystem path**, or "" when remote/data/not

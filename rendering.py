@@ -136,10 +136,20 @@ def categories(article) -> str:
 
 # ========================================================================================
 def plain_text(article) -> str:
-    """The exact text a social post would contain (HTML stripped, no hashtags)."""
-    soup = BeautifulSoup(content_md_separators_br(article, add_tags=False),
-                         features="html.parser")
-    return soup.get_text()
+    """The exact text a social post would contain (HTML stripped, no hashtags).
+
+    Paragraphs are separated by a **blank line** (two newlines): `<br/>` tags and
+    block boundaries are turned into newlines before the text is extracted, then
+    runs of 3+ newlines are collapsed to one blank line. Without this,
+    `BeautifulSoup.get_text()` drops the `<br/>`s and paragraphs run together on a
+    single line — which is how Facebook (and any platform that renders the message
+    text literally) would show them. The thread splitter also prefers these
+    paragraph boundaries (`thread_split._chunk`)."""
+    html = re.sub(r'<br\s*/?>', '\n',
+                  content_md_separators_br(article, add_tags=False), flags=re.IGNORECASE)
+    text = BeautifulSoup(html, features="html.parser").get_text()
+    text = "\n".join(line.strip() for line in text.splitlines())
+    return re.sub(r'\n{3,}', '\n\n', text).strip()
 
 
 # ========================================================================================
