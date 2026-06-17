@@ -15,8 +15,10 @@ const Publish = {
         this.drafts = {
             text: this.info.text,
             image: this.info.title,
+            image_caption: this.info.text,   // Instagram caption (image-only, full text)
             thread: this.info.thread_text,
         };
+        this.igImageUrl = '';   // set once the IG step-1 image push makes it public
         this.render();
     },
 
@@ -60,6 +62,9 @@ const Publish = {
             });
             return;
         }
+
+        // Instagram has its own image-only, two-step (push image → publish) flow.
+        if (i.platform === 'instagram') { this.renderInstagram(); return; }
 
         modal.innerHTML = `
         <h3>Publish to ${i.label} — ${this.hl.toUpperCase()}</h3>
@@ -140,6 +145,159 @@ const Publish = {
         document.getElementById('pub-cancel').addEventListener('click', () => this.close());
         document.getElementById('pub-go').addEventListener('click', () => this.send());
         this.validate();
+    },
+
+    // ====================================================================================
+    // Instagram is a special case: image-only, and the image must be PUBLIC before the
+    // API call (IG fetches it server-side). So it's an explicit two-step flow — (1) push
+    // the grabbed card to the site repo, (2) create the post — each with its own button
+    // and feedback. It must also be the LAST platform you publish to (the post URL only
+    // exists after publishing).
+    renderInstagram() {
+        const i = this.info;
+        const modal = document.getElementById('modal');
+        this.igImageUrl = '';
+
+        const canPush = i.image_exists && i.ig_repo_found;
+        const repoWarn = i.ig_repo_found ? '' :
+            `<p class="warn">Can't find the martingamsby.com checkout above the posts
+             folder — the image push (step 1) won't work until that's fixed.</p>`;
+
+        modal.innerHTML = `
+        <h3>Publish to Instagram — ${this.hl.toUpperCase()}</h3>
+        <p class="hint">Instagram is image-only and should be your <b>last</b> publish
+           step. Use the <b>Square</b> sizing on the card before grabbing.</p>
+        ${repoWarn}
+        <div class="pub-cols">
+          <div class="pub-controls">
+            <label class="ig-field">Caption
+              <textarea id="pub-text" rows="7"></textarea>
+            </label>
+            <div class="pub-meta"><span id="pub-count"></span></div>
+            <ol class="ig-steps">
+              <li class="ig-step">
+                <div class="ig-step-head">
+                  <b>1 · Push image to the site</b>
+                  <button id="ig-push" ${canPush ? '' : 'disabled'}>Push image</button>
+                </div>
+                <div class="ig-step-status" id="ig-push-status">${i.image_exists
+                    ? 'Ready to push the grabbed card so Instagram can fetch it.'
+                    : '<span class="warn">No grabbed card yet — Square + Grab it first.</span>'}</div>
+              </li>
+              <li class="ig-step">
+                <div class="ig-step-head">
+                  <b>2 · Publish to Instagram</b>
+                  <button id="ig-go" class="primary" disabled>Publish</button>
+                </div>
+                <div class="ig-step-status" id="ig-go-status">Push the image first.</div>
+              </li>
+            </ol>
+            <p class="warn hidden" id="pub-warn"></p>
+            <div class="modal-buttons"><button id="pub-cancel">Cancel</button></div>
+          </div>
+          <div class="pub-preview">
+            <div class="pv-label">Preview — what you'll post</div>
+            <div id="pub-preview-body"></div>
+          </div>
+        </div>`;
+
+        const textarea = document.getElementById('pub-text');
+        textarea.value = this.drafts.image_caption;
+        textarea.addEventListener('input', () => {
+            this.drafts.image_caption = textarea.value;
+            this.igValidate();
+        });
+        const pushBtn = document.getElementById('ig-push');
+        if (pushBtn) { pushBtn.addEventListener('click', () => this.pushIgImage()); }
+        document.getElementById('ig-go').addEventListener('click', () => this.sendInstagram());
+        document.getElementById('pub-cancel').addEventListener('click', () => this.close());
+        this.igValidate();
+    },
+
+    // Caption length + step-2 gating (image pushed AND caption fits + non-empty).
+    igValidate() {
+        const i = this.info;
+        const text = document.getElementById('pub-text').value;
+        const count = document.getElementById('pub-count');
+        count.textContent = `${text.length} / ${i.max_length}`;
+        count.classList.toggle('over', text.length > i.max_length);
+        document.getElementById('ig-go').disabled =
+            !(this.igImageUrl && text.length > 0 && text.length <= i.max_length);
+        this.renderIgPreview(text);
+    },
+
+    renderIgPreview(text) {
+        const i = this.info;
+        const host = document.getElementById('pub-preview-body');
+        host.className = '';
+        host.innerHTML = this.postCard({
+            body: text, image: i.image_exists ? i.image_data_url : null,
+            missing: !i.image_exists, count: text.length, over: text.length > i.max_length });
+    },
+
+    // Step 1: stage + git-push the grabbed JPEG; stream the per-step log into the card.
+    async pushIgImage() {
+        const btn = document.getElementById('ig-push');
+        const status = document.getElementById('ig-push-status');
+        btn.disabled = true;
+        status.innerHTML = '<span class="ig-busy">Pushing image to the site repo…</span>';
+
+        let result;
+        try {
+            result = await API.publish_instagram_image(this.hl);
+        } catch (e) {
+            result = { ok: false, log: [],
+                       error: 'Image push failed: ' + (e && e.message ? e.message : e) };
+        }
+
+        const lines = (result.log || [])
+            .map(l => `<div class="ig-log-line">✓ ${this.escapeHtml(l)}</div>`).join('');
+        if (result.ok) {
+            this.igImageUrl = result.public_url;
+            status.innerHTML = lines +
+                `<div class="ig-log-line ok">Public URL: ${this.escapeHtml(result.public_url)}</div>`;
+            document.getElementById('ig-go-status').textContent =
+                'Image is public — ready to publish.';
+            btn.textContent = 'Re-push image';
+        } else {
+            status.innerHTML = lines +
+                `<div class="ig-log-line err">✗ ${this.escapeHtml(result.error || 'Push failed.')}</div>`;
+        }
+        btn.disabled = false;
+        this.igValidate();
+    },
+
+    // Step 2: create the IG post from the now-public image URL + caption.
+    async sendInstagram() {
+        const go = document.getElementById('ig-go');
+        const warn = document.getElementById('pub-warn');
+        go.disabled = true;
+        go.textContent = 'Publishing…';
+
+        let result;
+        try {
+            result = await API.publish(this.hl, 'instagram', 'image',
+                document.getElementById('pub-text').value, { image_url: this.igImageUrl });
+        } catch (e) {
+            result = { ok: false, error: 'Publish failed: ' + (e && e.message ? e.message : e) };
+        }
+
+        if (result.ok) {
+            await App.refresh(this.hl);
+            const modal = document.getElementById('modal');
+            modal.innerHTML = `
+            <h3>Published to Instagram ✓</h3>
+            <p><a href="${result.url}">${result.url}</a></p>
+            <p class="hint">The Instagram link is saved into the article — commit + push
+               the post so the site carries it too.</p>
+            <div class="modal-buttons"><button id="pub-cancel">Close</button></div>`;
+            document.getElementById('pub-cancel').addEventListener('click', () => this.close());
+        } else {
+            warn.textContent = result.error;
+            warn.classList.remove('hidden');
+            go.textContent = 'Publish';
+            this.igValidate();
+        }
     },
 
     mode() {

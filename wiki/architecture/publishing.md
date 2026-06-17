@@ -15,7 +15,14 @@ reference.
   | `bluesky` | Bluesky | `Bluesky` | 300 | `PostBsky(hl)` ([[bluesky-adapter]]) |
   | `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
   | `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only, no threads |
+  | `instagram` | Instagram | `Instagram` | 2200 | `PostIG(hl)` ([[instagram-adapter]]) — image-only, two-step (stage → publish) |
 
+- `stage_instagram_image(article) → {ok, public_url, log, error}` — Instagram **step 1**:
+  resolves the grabbed JPEG + the site repo ([[martingamsby-site]] via
+  `localize.find_repo_root`), then delegates to `site_push.stage_and_push_image` to copy
+  it into `public/assets/ig/<slug>.<hl>.jpg`, git-push it, and return the **public raw
+  URL**. Called by the `webapi.publish_instagram_image` bridge method; the popup hands the
+  URL back to `publish(...)`. See [[instagram-adapter]].
 - `prepare_post(article, platform_key) → dict` — NO side effects; fills the popup
   (includes `facets_ok`, the thread seed `thread_text`/`thread_count`/`separator`
   ([[thread-split]]), and `embed_url` — the Bluesky link-card candidate, `""` for other
@@ -29,7 +36,12 @@ reference.
   optional `embed_url` (`opts["embed"]` true **and** platform is `bluesky`), then by
   `mode` posts via `poster.post(..., embed_url=)` (text; image mode omits it — the image
   owns the embed slot) or delegates to `_publish_thread`; stores the URL via `set_link`
-  (re-saves the footer), opens it with `webbrowser.open`.
+  (re-saves the footer), opens it with `webbrowser.open`. **Instagram** is intercepted
+  right after the guards → `_publish_instagram` (image-only, no text/thread/embed).
+- `_publish_instagram(article, p, caption, opts)` — posts the already-public image
+  (`opts["image_url"]` from `stage_instagram_image`) + `caption` via `PostIG.post(...,
+  image_url=)`; requires the URL (else "push the image first"), rejects an over-2200
+  caption, stores the permalink in the `Instagram` slot. See [[instagram-adapter]].
 - `_publish_thread(article, p, message, opts, embed_url=None)` — splits `message` on `---`
   ([[thread-split]]), optionally numbers, rejects any over-limit segment, resolves the
   image via `_resolve_image`, calls `poster.post_thread(..., embed_url=)`; stores `urls[0]`

@@ -13,7 +13,9 @@ the UI: the Facebook link slot is a Publish button on **both** languages
 ## Config
 
 `settings_fb_<hl>.ini` — `[Access]` with `PageId` (the Page's numeric id) and `Token` (a
-**long-lived Page access token**). See [[secrets]].
+**long-lived Page access token**). See [[secrets]]. **[[instagram-adapter]] reuses this
+same file**, reading the shared `Token` plus an extra `IgUserId` field — the IG Business
+account id linked to the Page.
 
 The token needs the `pages_manage_posts` permission. A short-lived user token won't
 work — you need the **non-expiring Page token**. **This token/permission step is the

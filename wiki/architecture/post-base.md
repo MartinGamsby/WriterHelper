@@ -1,9 +1,10 @@
 # Post base class (`post.py`)
 
 `Post` is the inheritance base for new platform adapters. `PostBsky`
-([[bluesky-adapter]]), `PostX` ([[x-adapter]]), and `PostFB` ([[facebook-adapter]])
-inherit it. (`PostFB` predated the base and was rewritten onto it; it skips the optional
-`post_thread` override — text/image only.)
+([[bluesky-adapter]]), `PostX` ([[x-adapter]]), `PostFB` ([[facebook-adapter]]), and
+`PostIG` ([[instagram-adapter]]) inherit it. (`PostFB` predated the base and was rewritten
+onto it; it skips the optional `post_thread` override — text/image only. `PostIG` is
+image-only and takes a **public `image_url`** instead of a local upload — see below.)
 
 ## Class shape
 
@@ -63,6 +64,11 @@ external link-preview card; only [[bluesky-adapter]] acts on it (X/Facebook auto
 links, so they accept and ignore it). `post_thread` takes the same `embed_url` (card on
 the first post). The base/PostX/PostFB signatures all carry it so the `publishing.py` call
 site stays uniform.
+
+`PostIG` ([[instagram-adapter]]) adds an `image_url=None` kwarg and **ignores
+`image_local_url`/`embed_url`**: Instagram fetches a public image URL server-side rather
+than accepting a local upload, so `publishing._publish_instagram` calls
+`post(msg=caption, image_url=<public URL>)` after a separate step makes that URL public.
 
 ## See also
 - [[bluesky-adapter]] · [[x-adapter]] · [[publishing]] · [[social-publishing]]

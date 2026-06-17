@@ -83,9 +83,21 @@ only for Bluesky, and only without an image on that post).
 | `bluesky` | Bluesky | `Bluesky` | 300 | `PostBsky(hl)` ([[bluesky-adapter]]) |
 | `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
 | `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only |
+| `instagram` | Instagram | `Instagram` | 2200 | `PostIG(hl)` ([[instagram-adapter]]) — image-only, two-step |
 
 `make_poster` imports the adapter lazily, so a missing/broken adapter doesn't break
 import and tests can monkeypatch the registry.
+
+## Instagram — the exception (image-only, two-step)
+
+Instagram doesn't fit the three-modes shape: it's **image-only**, and its image must be
+**public before** the API call (Meta fetches it server-side). So `js/publish.js` gives it
+its own panel — an editable caption (full text, ≤ 2200) over two explicit buttons:
+**(1) Push image** (`publish_instagram_image` → `stage_instagram_image` git-pushes the
+grabbed JPEG to the site and returns a public raw URL, streaming the steps into the card)
+and **(2) Publish** (unlocked once the URL exists; `publish(...,"image",caption,
+{image_url})`). It must be the **last** platform you publish to. Full design:
+[[instagram-adapter]].
 
 ## The popup (`js/publish.js`)
 

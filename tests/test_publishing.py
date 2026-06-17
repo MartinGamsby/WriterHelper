@@ -25,6 +25,16 @@ class FakePoster:
         return ["https://fake.example/post/%d" % (n + 1) for n in range(len(messages))]
 
 
+class FakeIGPoster:
+    """Instagram poster stand-in: takes a PUBLIC image_url (not a local file)."""
+    def __init__(self, hl):
+        self.hl = hl
+
+    def post(self, msg, image_local_url=None, alt_text=None, embed_url=None, image_url=None):
+        FakeIGPoster.last = {"msg": msg, "image_url": image_url, "alt": alt_text}
+        return "https://www.instagram.com/p/FAKE/"
+
+
 @pytest.fixture
 def fake_x(monkeypatch):
     monkeypatch.setitem(publishing.PLATFORMS, "x",
@@ -47,6 +57,14 @@ def fake_bsky(monkeypatch):
                         Platform("bluesky", "Bluesky", "Bluesky", 300, FakePoster))
     monkeypatch.setattr(publishing.webbrowser, "open", lambda url: None)
     return publishing.PLATFORMS["bluesky"]
+
+
+@pytest.fixture
+def fake_ig(monkeypatch):
+    monkeypatch.setitem(publishing.PLATFORMS, "instagram",
+                        Platform("instagram", "Instagram", "Instagram", 2200, FakeIGPoster))
+    monkeypatch.setattr(publishing.webbrowser, "open", lambda url: None)
+    return publishing.PLATFORMS["instagram"]
 
 
 # ========================================================================================
@@ -365,3 +383,99 @@ def test_publish_thread_article_image_missing_is_reported(fr, fake_x):
                                 {"number": False, "image": "article"})
     assert result["ok"] is False
     assert "image" in result["error"].lower()
+
+
+# ========================================================================================
+# Instagram (image-only, two-step: stage image -> publish)
+def test_instagram_is_registered_image_only_with_caption_limit():
+    p = publishing.PLATFORMS["instagram"]
+    assert (p.label, p.link_name, p.max_length) == ("Instagram", "Instagram", 2200)
+
+
+def test_prepare_instagram_exposes_repo_flag_and_dest(fr, monkeypatch):
+    monkeypatch.chdir(os.path.dirname(fr.get_posts_folder()))
+    fr.set_title("Mon Titre")
+    fr.set_content("Court.")
+    fr.set_facets(["dev"])
+    info = publishing.prepare_post(fr, "instagram")
+    assert info["label"] == "Instagram"
+    assert info["max_length"] == 2200
+    assert info["ig_image_dest"] == "mon-titre.fr.jpg"
+    assert "ig_repo_found" in info       # temp posts folder isn't a site checkout
+    assert info["ig_repo_found"] is False
+
+
+def test_publish_instagram_requires_pushed_image_url(fr, fake_ig):
+    fr.set_title("Titre")
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "instagram", "image", "Une légende", {})
+    assert result["ok"] is False
+    assert "step 1" in result["error"].lower()
+
+
+def test_publish_instagram_posts_with_public_url_and_records_link(fr, fake_ig):
+    fr.set_title("Titre")
+    fr.set_facets(["dev"])
+    url = "https://raw.githubusercontent.com/u/r/main/public/assets/ig/titre.fr.jpg"
+    result = publishing.publish(fr, "instagram", "image", "Une légende",
+                                {"image_url": url})
+    assert result["ok"] is True
+    assert result["url"] == "https://www.instagram.com/p/FAKE/"
+    assert FakeIGPoster.last == {"msg": "Une légende", "image_url": url, "alt": "Une légende"}
+    assert fr.get_link("Instagram") == result["url"]
+
+
+def test_publish_instagram_rejects_over_limit_caption(fr, fake_ig):
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "instagram", "image", "x" * 2201,
+                                {"image_url": "https://x/y.jpg"})
+    assert result["ok"] is False
+    assert "2201" in result["error"]
+
+
+def test_publish_instagram_guard_blocks_double_post(fr, fake_ig):
+    fr.set_facets(["dev"])
+    fr.set_link("Instagram", "https://www.instagram.com/p/OLD/")
+    result = publishing.publish(fr, "instagram", "image", "x",
+                                {"image_url": "https://x/y.jpg"})
+    assert result["ok"] is False
+    assert result["url"] == "https://www.instagram.com/p/OLD/"
+
+
+def test_publish_instagram_blocks_without_facet(fr, fake_ig):
+    fr.set_title("Sans facette")          # no facet → mandatory rule blocks the post
+    result = publishing.publish(fr, "instagram", "image", "x",
+                                {"image_url": "https://x/y.jpg"})
+    assert result["ok"] is False
+    assert "facet" in result["error"].lower()
+
+
+def test_stage_instagram_image_missing_capture_is_reported(fr, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)           # no grabbed card in this CWD
+    fr.set_title("Titre")
+    fr.set_facets(["dev"])
+    result = publishing.stage_instagram_image(fr)
+    assert result["ok"] is False
+    assert "Grab" in result["error"]
+
+
+def test_stage_instagram_image_stages_via_site_push(fr, tmp_path, monkeypatch):
+    # A grabbed card exists and the site repo is found → delegate to site_push with the
+    # repo, the capture, and the slug.hl.jpg dest name.
+    monkeypatch.chdir(tmp_path)
+    fr.set_title("Mon Titre")
+    fr.set_facets(["dev"])
+    (tmp_path / publishing.image_filename(fr)).write_bytes(b"jpg")
+    monkeypatch.setattr(publishing.localize, "find_repo_root", lambda start: "/site")
+    captured = {}
+
+    def fake_stage(repo, local_image, dest_name, commit_msg):
+        captured.update(repo=repo, dest_name=dest_name, commit_msg=commit_msg)
+        return {"ok": True, "public_url": "https://raw/x.jpg", "log": [], "error": ""}
+
+    monkeypatch.setattr(publishing.site_push, "stage_and_push_image", fake_stage)
+    result = publishing.stage_instagram_image(fr)
+    assert result["public_url"] == "https://raw/x.jpg"
+    assert captured["repo"] == "/site"
+    assert captured["dest_name"] == "mon-titre.fr.jpg"
+    assert "mon-titre" in captured["commit_msg"]

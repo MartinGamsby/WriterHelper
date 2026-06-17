@@ -11,6 +11,13 @@
         en: { facets: [], draft: false },
     };
 
+    // A stand-in square "grabbed card" so the Instagram preview + step 1 are exercisable.
+    const SAMPLE_IMG = "data:image/svg+xml," + encodeURIComponent(
+        "<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'>"
+        + "<rect width='600' height='600' fill='#2e6b3e'/>"
+        + "<text x='50%' y='50%' fill='#ade6b9' font-size='44' font-family='sans-serif' "
+        + "text-anchor='middle'>Demo card</text></svg>");
+
     const sample = (hl) => ({
         hl,
         title: hl === 'fr' ? "Mon article de démo" : "My demo article",
@@ -33,6 +40,8 @@
         length_short: "Short",
         links: [
             { name: "X/Twitter", url: "", publish: "x" },
+            { name: "Facebook", url: "", publish: "facebook" },
+            { name: "Instagram", url: "", publish: "instagram" },
             { name: "Bluesky", url: "", publish: "bluesky" },
             { name: "Source", url: "", publish: "" },
         ],
@@ -64,24 +73,58 @@
             clear_link: async () => true,
             open_url: async (url) => { console.log('open_url', url); return true; },
             save_capture: async (hl, page) => `richTextArea_demo_${hl}${page}.jpg`,
-            prepare_post: async (hl, platform) => ({
-                platform,
-                label: platform === 'x' ? 'X / Twitter' : 'Bluesky',
-                max_length: platform === 'x' ? 280 : 300,
-                existing_url: "",
-                text: "My demo article:\nA paragraph of demo content.\nAnother bold one.",
-                text_length: 63,
-                fits: true,
-                suggested_mode: "text",
-                title: "My demo article",
-                image_file: `richTextArea_demo_${hl}1.jpg`,
-                image_exists: false,
-                image_data_url: "",
-                facets_ok: store[hl].facets.length > 0,
-                embed_url: platform === 'bluesky'
-                    ? "https://www.youtube.com/watch?v=dQw4w9WgXcQ" : "",
+            prepare_post: async (hl, platform) => {
+                const meta = ({
+                    x: { label: 'X / Twitter', max: 280 },
+                    bluesky: { label: 'Bluesky', max: 300 },
+                    facebook: { label: 'Facebook', max: 63206 },
+                    instagram: { label: 'Instagram', max: 2200 },
+                })[platform] || { label: platform, max: 280 };
+                const isIg = platform === 'instagram';
+                return {
+                    platform,
+                    label: meta.label,
+                    max_length: meta.max,
+                    existing_url: "",
+                    text: "My demo article:\nA paragraph of demo content.\nAnother bold one.",
+                    text_length: 63,
+                    fits: true,
+                    suggested_mode: "text",
+                    separator: "---",
+                    thread_text: "My demo article:\nA paragraph of demo content.\n---\nAnother bold one.",
+                    thread_count: 2,
+                    author: `MartinGamsby.com/${hl}`,
+                    title: "My demo article",
+                    image_file: `richTextArea_demo_${hl}1.jpg`,
+                    // Instagram needs a grabbed card to push (step 1); fake one so the
+                    // flow is exercisable in the browser harness.
+                    image_exists: isIg,
+                    image_data_url: isIg ? SAMPLE_IMG : "",
+                    article_image_exists: false,
+                    article_image_data_url: "",
+                    facets_ok: store[hl].facets.length > 0,
+                    embed_url: platform === 'bluesky'
+                        ? "https://www.youtube.com/watch?v=dQw4w9WgXcQ" : "",
+                    ig_repo_found: true,
+                    ig_image_dest: `my-demo-article.${hl}.jpg`,
+                };
+            },
+            publish: async (hl, platform) => ({
+                ok: true,
+                url: platform === 'instagram'
+                    ? "https://www.instagram.com/p/DEMO123/"
+                    : "https://bsky.app/profile/demo/post/123",
+                error: "",
             }),
-            publish: async () => ({ ok: true, url: "https://bsky.app/profile/demo/post/123", error: "" }),
+            publish_instagram_image: async (hl) => ({
+                ok: true,
+                public_url: "https://raw.githubusercontent.com/MartinGamsby/"
+                    + `martingamsby.com/main/public/assets/ig/my-demo-article.${hl}.jpg`,
+                log: [`Copied image -> public/assets/ig/my-demo-article.${hl}.jpg`,
+                      `Committed: IG image: my-demo-article (${hl})`,
+                      "Pushed to origin — image is now public"],
+                error: "",
+            }),
         },
     };
 })();

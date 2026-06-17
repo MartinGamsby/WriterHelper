@@ -7,7 +7,9 @@ import sys
 import traceback
 import webbrowser
 
+import localize
 import rendering
+import site_push
 import thread_split
 
 # Bluesky is the only platform we hand an explicit link-preview card to (X/Facebook
@@ -45,12 +47,21 @@ def _make_fb(hl):
     return PostFB(hl)
 
 
+def _make_ig(hl):
+    from post_ig import PostIG
+    return PostIG(hl)
+
+
 PLATFORMS = {
     "bluesky": Platform("bluesky", "Bluesky", "Bluesky", 300, _make_bsky),
     "x": Platform("x", "X / Twitter", "X/Twitter", 280, _make_x),
     # Facebook posts allow ~63k chars, so a post always "fits" as text (thread mode
     # is offered by the popup but PostFB has no post_thread — text/image only).
     "facebook": Platform("facebook", "Facebook", "Facebook", 63206, _make_fb),
+    # Instagram is image-only and image-must-be-public: it's a two-step flow
+    # (stage_instagram_image, then publish) — 2200 is IG's caption limit.
+    # See [[instagram-adapter]].
+    "instagram": Platform("instagram", "Instagram", "Instagram", 2200, _make_ig),
 }
 
 
@@ -66,8 +77,33 @@ def capture_filename(article, page):
 
 
 def image_filename(article):
-    """Page 1 of the captured card — what image mode attaches / IG would commit."""
+    """Page 1 of the captured card — what image mode attaches / IG commits."""
     return capture_filename(article, 1)
+
+
+# ========================================================================================
+def _ig_image_dest(article):
+    """The IG source image's filename inside the site repo (slug + hl, JPEG)."""
+    return "%s.%s.jpg" % (article.get_slug(), article.hl)
+
+
+def stage_instagram_image(article) -> dict:
+    """Step 1 of an Instagram post: copy the grabbed card into the site repo and
+    git-push it so a public URL exists (IG fetches the image server-side, so it must be
+    reachable BEFORE the post). Returns site_push's `{ok, public_url, log, error}`; the
+    public_url is handed back to `publish(... mode="image", {"image_url": url})`.
+    See [[instagram-adapter]]."""
+    img = image_filename(article)
+    if not os.path.isfile(img):
+        return {"ok": False, "public_url": "", "log": [],
+                "error": "%s not found — use Square, then Grab the image card first." % img}
+    repo = localize.find_repo_root(article.get_posts_folder())
+    if not repo:
+        return {"ok": False, "public_url": "", "log": [],
+                "error": "Couldn't locate the martingamsby.com checkout above %s."
+                         % article.get_posts_folder()}
+    commit_msg = "IG image: %s (%s)" % (article.get_slug(), article.hl)
+    return site_push.stage_and_push_image(repo, img, _ig_image_dest(article), commit_msg)
 
 
 # ========================================================================================
@@ -95,7 +131,7 @@ def prepare_post(article, platform_key) -> dict:
     # un-numbered (counters are stamped at publish) but split with room reserved for
     # them, so turning numbering on never pushes a segment over the limit.
     segments = thread_split.split_text(text, p.max_length, number=True)
-    return {
+    info = {
         "platform": p.key,
         "label": p.label,
         "max_length": p.max_length,
@@ -126,6 +162,13 @@ def prepare_post(article, platform_key) -> dict:
         # slot, else a URL in the text). The popup shows a checkbox when this is set.
         "embed_url": embed_candidate(article, text) if p.key == "bluesky" else "",
     }
+    if p.key == "instagram":
+        # The IG popup needs to know it can locate the site repo (step 1 = push the
+        # image there) and what the pushed file will be called. `text` is the default
+        # caption; `image_*` (the grabbed card) is the required, only attachable image.
+        info["ig_repo_found"] = bool(localize.find_repo_root(article.get_posts_folder()))
+        info["ig_image_dest"] = _ig_image_dest(article)
+    return info
 
 
 # ========================================================================================
@@ -201,6 +244,11 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
         return {"ok": False, "url": existing,
                 "error": "A %s link already exists. Clear it to re-post." % p.label}
 
+    # Instagram is image-only and needs its image already public (step 1); it carries no
+    # text/thread modes and no link card, so it gets its own short path.
+    if p.key == "instagram":
+        return _publish_instagram(article, p, message, opts)
+
     # Optional Bluesky link-preview card (None = plain post, as before).
     embed_url = (embed_candidate(article, message)
                  if opts.get("embed") and p.key == "bluesky" else None) or None
@@ -227,6 +275,31 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
 
     try:
         url = send()
+    except Exception as exc:  # auth/network failure must reach the UI, not just the console
+        _log_post_exc(p, exc)
+        return {"ok": False, "url": "", "error": _post_error(p, exc)}
+
+    article.set_link(p.link_name, url)
+    webbrowser.open(url)
+    return {"ok": True, "url": url, "error": ""}
+
+
+# ========================================================================================
+def _publish_instagram(article, p, caption, opts) -> dict:
+    """Post the (already-public) image + caption to Instagram. The public image URL
+    comes from the prior stage_instagram_image step, handed back in
+    `opts["image_url"]`. IG is image-only, so `caption` is the whole text."""
+    image_url = opts.get("image_url")
+    if not image_url:
+        return {"ok": False, "url": "",
+                "error": "Push the Instagram image to the site first (step 1)."}
+    if len(caption) > p.max_length:
+        return {"ok": False, "url": "",
+                "error": "Caption is %d characters; %s allows %d."
+                         % (len(caption), p.label, p.max_length)}
+    try:
+        url = p.make_poster(article.hl).post(msg=caption, image_url=image_url,
+                                             alt_text=caption)
     except Exception as exc:  # auth/network failure must reach the UI, not just the console
         _log_post_exc(p, exc)
         return {"ok": False, "url": "", "error": _post_error(p, exc)}

@@ -28,6 +28,7 @@ The meta column exposes these slots, language-conditional (from `LINK_SLOTS` in
 | X/Twitter | both | publish button → popup ([[social-publishing]]) |
 | LinkedIn | EN | text field ([[linkedin-adapter]] is broken/unused) |
 | Facebook | both | publish button → popup ([[facebook-adapter]]) |
+| Instagram | both | publish button → popup; image-only, two-step ([[instagram-adapter]]) |
 | Bluesky | both | publish button → popup |
 | YouTube | both | text field; preferred Bluesky link-card source ([[social-publishing]]) |
 | YouTube Shorts | both | text field; Bluesky link-card source |

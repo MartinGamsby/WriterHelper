@@ -38,7 +38,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto); clickable link facets + optional external link-preview card (`fetch_external_card`, YouTube-aware)
 - [[x-adapter]] — `post_x.PostX` (tweepy v1+v2)
 - [[facebook-adapter]] — `post_fb.PostFB` (Graph API Page posts; wired, text/image only); includes the non-expiring Page-token steps
-- [[instagram-adapter]] — PLANNED: rides the FB Graph token; IG-must-be-last ordering, JPEG-only + GitHub-raw image constraints
+- [[instagram-adapter]] — `post_ig.PostIG` (Graph API, reuses the FB token + `IgUserId`); image-only, IG-must-be-last, two-step auto-push of the JPEG to a public GitHub-raw URL (`site_push.py`)
 - [[linkedin-adapter]] — `post_linkedin.py` (BROKEN, do not import)
 - [[legacy-qt-ui]] — the superseded PySide6/QML stack (do not run now)
 

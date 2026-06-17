@@ -278,6 +278,19 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 .pv-embed b { color: var(--ink); }
 .pv-embed span { display: block; margin-top: 2px; word-break: break-all; }
 
+/* ---------- publish: Instagram two-step flow ---------- */
+.ig-field { display: block; font-size: 13px; font-weight: 600; color: #556; }
+.ig-field textarea { margin-top: 4px; font-weight: 400; }
+.ig-steps { list-style: none; padding: 0; margin: 10px 0 0; display: flex;
+    flex-direction: column; gap: 10px; }
+.ig-step { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.ig-step-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ig-step-status { font-size: 12px; color: #667; margin-top: 6px; }
+.ig-log-line { font-size: 12px; color: #486; line-height: 1.5; word-break: break-all; }
+.ig-log-line.ok { color: var(--green-dark); font-weight: 600; }
+.ig-log-line.err { color: #c22; font-weight: 600; }
+.ig-busy { color: #667; font-style: italic; }
+
 /* thread: stacked cards joined by a connector line */
 .pv-thread { display: flex; flex-direction: column; gap: 0; }
 .pv-thread .pv-post { position: relative; margin-bottom: 14px; }

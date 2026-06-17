@@ -17,6 +17,7 @@ LINK_SLOTS = [
     {"name": "X/Twitter", "hls": ["fr", "en"], "publish": "x"},
     {"name": "LinkedIn", "hls": ["en"]},
     {"name": "Facebook", "hls": ["fr", "en"], "publish": "facebook"},
+    {"name": "Instagram", "hls": ["fr", "en"], "publish": "instagram"},
     {"name": "Bluesky", "hls": ["fr", "en"], "publish": "bluesky"},
     {"name": "YouTube", "hls": ["fr", "en"]},
     {"name": "YouTube Shorts", "hls": ["fr", "en"]},
@@ -169,6 +170,13 @@ class Api:
         name = publishing.PLATFORMS[platform].link_name
         self._article(hl).set_link(name, "")
         return True
+
+    def publish_instagram_image(self, hl):
+        """Instagram step 1: copy the grabbed card into the site repo and git-push it
+        so a public URL exists (IG fetches the image server-side). Returns
+        {ok, public_url, log, error}; the popup then calls publish(... {image_url}).
+        See [[instagram-adapter]]."""
+        return publishing.stage_instagram_image(self._article(hl))
 
     # ====================================================================================
     def save_capture(self, hl, page, data_url):

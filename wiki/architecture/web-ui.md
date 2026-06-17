@@ -38,7 +38,8 @@ row: checklist sidebar | FR meta | FR content | EN content | EN meta. Columns ar
 - `js/meta.js` — builds + wires the meta column; renders link slots, attaches publish
   buttons.
 - `js/capture.js` — sizing helpers + html2canvas pagination ([[image-card-capture]]).
-- `js/publish.js` — the confirmation popup ([[social-publishing]]).
+- `js/publish.js` — the confirmation popup ([[social-publishing]]); Instagram gets its
+  own image-only, two-step (push image → publish) panel ([[instagram-adapter]]).
 - `js/dev-mock.js` + `dev.html` — browser-only dev harness (fake bridge); never loaded
   by the real app (and `dev.html` must stay UTF-8, [[invariants-and-traps]]).
 
@@ -64,8 +65,8 @@ webp ([[astro-format]]); `Meta.wireImage` wires both. `app.js` swallows file-dro
 outside a `.img-drop` zone so a stray drop can't navigate the webview to the file. Facets/Draft are pair-shared → handlers persist then `refreshAll`
 so BOTH columns reflect the change; the Facets section flags red until ≥1 is picked
 (facets are mandatory, [[social-publishing]]). Link slots render one `.link-row` each;
-slots with `publish` (`x`/`bluesky`) get a button opening `Publish.open`; rows update in
-place and aren't overwritten while focused.
+slots with `publish` (`x`/`facebook`/`instagram`/`bluesky`) get a button opening
+`Publish.open`; rows update in place and aren't overwritten while focused.
 
 ## Theme (`style.css`)
 
