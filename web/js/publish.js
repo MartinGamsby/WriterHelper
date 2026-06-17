@@ -156,7 +156,10 @@ const Publish = {
     renderInstagram() {
         const i = this.info;
         const modal = document.getElementById('modal');
-        this.igImageUrl = '';
+        // A reopened popup whose image is already committed+pushed skips straight to
+        // step 2 — no redundant re-push. The public URL comes back from prepare_post.
+        const pushed = !!i.ig_image_pushed;
+        this.igImageUrl = pushed ? (i.ig_public_url || '') : '';
 
         const canPush = i.image_exists && i.ig_repo_found;
         const repoWarn = i.ig_repo_found ? '' :
@@ -178,18 +181,20 @@ const Publish = {
               <li class="ig-step">
                 <div class="ig-step-head">
                   <b>1 · Push image to the site</b>
-                  <button id="ig-push" ${canPush ? '' : 'disabled'}>Push image</button>
+                  <button id="ig-push" ${canPush ? '' : 'disabled'}>${pushed ? 'Re-push image' : 'Push image'}</button>
                 </div>
-                <div class="ig-step-status" id="ig-push-status">${i.image_exists
-                    ? 'Ready to push the grabbed card so Instagram can fetch it.'
-                    : '<span class="warn">No grabbed card yet — Square + Grab it first.</span>'}</div>
+                <div class="ig-step-status" id="ig-push-status">${pushed
+                    ? '<span class="ig-ok">✓ Already pushed — re-push only if you changed the card.</span>'
+                    : (i.image_exists
+                        ? 'Ready to push the grabbed card so Instagram can fetch it.'
+                        : '<span class="warn">No grabbed card yet — Square + Grab it first.</span>')}</div>
               </li>
               <li class="ig-step">
                 <div class="ig-step-head">
                   <b>2 · Publish to Instagram</b>
                   <button id="ig-go" class="primary" disabled>Publish</button>
                 </div>
-                <div class="ig-step-status" id="ig-go-status">Push the image first.</div>
+                <div class="ig-step-status" id="ig-go-status">${pushed ? 'Image is public — ready to publish.' : 'Push the image first.'}</div>
               </li>
             </ol>
             <p class="warn hidden" id="pub-warn"></p>

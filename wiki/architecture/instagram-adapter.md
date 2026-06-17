@@ -40,6 +40,13 @@ own image-only panel with two explicit, feedback-bearing steps ([[social-publish
 
 Caption defaults to the **full plain text** (≤ **2200**, IG's caption limit), editable.
 
+**Reopening is idempotent.** `prepare_post` runs `site_push.image_status` (read-only: the
+dest file exists, is **byte-identical** to the current grabbed card, and is tracked +
+committed + not ahead of origin) and returns `ig_image_pushed` / `ig_public_url`. When the
+image is already public the popup pre-fills the URL and jumps straight to step 2 — so
+Cancel → reopen doesn't force a redundant re-push (the byte-compare means a *re-grabbed*,
+changed card correctly still needs a push).
+
 ## Constraint #1 — Instagram only accepts JPEG (satisfied by the grab)
 
 The Content Publishing API rejects PNG and **WebP** `image_url`s — JPEG only, ≤ 8 MB,

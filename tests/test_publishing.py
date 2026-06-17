@@ -403,6 +403,23 @@ def test_prepare_instagram_exposes_repo_flag_and_dest(fr, monkeypatch):
     assert info["ig_image_dest"] == "mon-titre.fr.jpg"
     assert "ig_repo_found" in info       # temp posts folder isn't a site checkout
     assert info["ig_repo_found"] is False
+    assert info["ig_image_pushed"] is False
+    assert info["ig_public_url"] == ""
+
+
+def test_prepare_instagram_reports_already_pushed_image(fr, tmp_path, monkeypatch):
+    # An already-staged+pushed card is surfaced so the popup skips the redundant re-push.
+    monkeypatch.chdir(tmp_path)
+    fr.set_title("Mon Titre")
+    fr.set_facets(["dev"])
+    (tmp_path / publishing.image_filename(fr)).write_bytes(b"jpg")
+    monkeypatch.setattr(publishing.localize, "find_repo_root", lambda start: "/site")
+    monkeypatch.setattr(publishing.site_push, "image_status",
+                        lambda repo, dest, img: {"pushed": True,
+                                                 "public_url": "https://raw/x.jpg"})
+    info = publishing.prepare_post(fr, "instagram")
+    assert info["ig_image_pushed"] is True
+    assert info["ig_public_url"] == "https://raw/x.jpg"
 
 
 def test_publish_instagram_requires_pushed_image_url(fr, fake_ig):

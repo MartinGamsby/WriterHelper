@@ -11,6 +11,12 @@
         en: { facets: [], draft: false },
     };
 
+    // Tracks whether the IG image has been "pushed" this session, so reopening the
+    // popup demonstrates skipping step 1 (mirrors site_push.image_status on the backend).
+    const igPushed = { fr: false, en: false };
+    const igUrl = (hl) => "https://raw.githubusercontent.com/MartinGamsby/"
+        + `martingamsby.com/main/public/assets/ig/my-demo-article.${hl}.jpg`;
+
     // A stand-in square "grabbed card" so the Instagram preview + step 1 are exercisable.
     const SAMPLE_IMG = "data:image/svg+xml," + encodeURIComponent(
         "<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'>"
@@ -107,6 +113,8 @@
                         ? "https://www.youtube.com/watch?v=dQw4w9WgXcQ" : "",
                     ig_repo_found: true,
                     ig_image_dest: `my-demo-article.${hl}.jpg`,
+                    ig_image_pushed: isIg && igPushed[hl],
+                    ig_public_url: (isIg && igPushed[hl]) ? igUrl(hl) : "",
                 };
             },
             publish: async (hl, platform) => ({
@@ -116,15 +124,17 @@
                     : "https://bsky.app/profile/demo/post/123",
                 error: "",
             }),
-            publish_instagram_image: async (hl) => ({
-                ok: true,
-                public_url: "https://raw.githubusercontent.com/MartinGamsby/"
-                    + `martingamsby.com/main/public/assets/ig/my-demo-article.${hl}.jpg`,
-                log: [`Copied image -> public/assets/ig/my-demo-article.${hl}.jpg`,
-                      `Committed: IG image: my-demo-article (${hl})`,
-                      "Pushed to origin — image is now public"],
-                error: "",
-            }),
+            publish_instagram_image: async (hl) => {
+                igPushed[hl] = true;   // a later prepare_post now reports it as pushed
+                return {
+                    ok: true,
+                    public_url: igUrl(hl),
+                    log: [`Copied image -> public/assets/ig/my-demo-article.${hl}.jpg`,
+                          `Committed: IG image: my-demo-article (${hl})`,
+                          "Pushed to origin — image is now public"],
+                    error: "",
+                };
+            },
         },
     };
 })();

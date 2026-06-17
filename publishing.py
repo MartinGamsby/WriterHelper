@@ -163,11 +163,18 @@ def prepare_post(article, platform_key) -> dict:
         "embed_url": embed_candidate(article, text) if p.key == "bluesky" else "",
     }
     if p.key == "instagram":
-        # The IG popup needs to know it can locate the site repo (step 1 = push the
-        # image there) and what the pushed file will be called. `text` is the default
-        # caption; `image_*` (the grabbed card) is the required, only attachable image.
-        info["ig_repo_found"] = bool(localize.find_repo_root(article.get_posts_folder()))
+        # The IG popup needs to know it can locate the site repo (step 1 = push the image
+        # there), what the pushed file will be called, and whether that image is ALREADY
+        # pushed — so reopening the popup skips straight to publish instead of forcing a
+        # redundant re-push. `text` is the default caption; `image_*` (the grabbed card)
+        # is the required, only attachable image.
+        repo = localize.find_repo_root(article.get_posts_folder())
+        info["ig_repo_found"] = bool(repo)
         info["ig_image_dest"] = _ig_image_dest(article)
+        status = (site_push.image_status(repo, _ig_image_dest(article), img)
+                  if repo and img_exists else {"pushed": False, "public_url": ""})
+        info["ig_image_pushed"] = status["pushed"]
+        info["ig_public_url"] = status["public_url"]
     return info
 
 

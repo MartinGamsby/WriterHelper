@@ -4,6 +4,7 @@
 # call ([[instagram-adapter]]); a raw URL is public the moment it's pushed, with no
 # GitHub Actions deploy wait. Pure helper: copy the file into public/assets/ig/,
 # commit JUST that file, push the branch, and build the raw URL from `origin`.
+import filecmp
 import os
 import re
 import shutil
@@ -49,6 +50,38 @@ def raw_url(repo, rel_path):
     branch = current_branch(repo) or "main"
     return "https://raw.githubusercontent.com/%s/%s/%s" % (
         slug, branch, rel_path.replace(os.sep, "/"))
+
+
+# ====================================================================================
+def _is_pushed(repo, rel_path):
+    """True if `rel_path` is tracked, matches HEAD (committed, no working-tree change),
+    and isn't an unpushed local commit. Read-only. The origin compare is best-effort: if
+    the remote-tracking ref is missing it falls back to tracked+committed."""
+    if _git(repo, "ls-files", "--error-unmatch", "--", rel_path).returncode != 0:
+        return False
+    if _git(repo, "diff", "--quiet", "HEAD", "--", rel_path).returncode != 0:
+        return False
+    branch = current_branch(repo)
+    if branch:
+        ahead = _git(repo, "rev-list", "--count", "origin/%s..HEAD" % branch, "--", rel_path)
+        if ahead.returncode == 0:
+            return ahead.stdout.strip() in ("", "0")
+    return True
+
+
+def image_status(repo, dest_name, local_image) -> dict:
+    """Read-only: is `local_image` already staged+pushed at public/assets/ig/<dest_name>?
+    Returns `{pushed, public_url}`. `pushed` requires the dest file to exist, be
+    byte-identical to the current grabbed card (so a stale or changed card isn't mistaken
+    for the live one), and be committed + pushed. Lets the IG popup skip step 1 on a
+    reopen instead of forcing a redundant re-push ([[instagram-adapter]])."""
+    rel_path = os.path.join(IG_ASSET_SUBDIR, dest_name)
+    public_url = raw_url(repo, rel_path) or ""
+    dest_abs = os.path.join(repo, rel_path)
+    if not (os.path.isfile(local_image) and os.path.isfile(dest_abs)
+            and filecmp.cmp(local_image, dest_abs, shallow=False)):
+        return {"pushed": False, "public_url": public_url}
+    return {"pushed": _is_pushed(repo, rel_path), "public_url": public_url}
 
 
 # ====================================================================================

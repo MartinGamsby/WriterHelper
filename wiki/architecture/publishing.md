@@ -22,7 +22,10 @@ reference.
   `localize.find_repo_root`), then delegates to `site_push.stage_and_push_image` to copy
   it into `public/assets/ig/<slug>.<hl>.jpg`, git-push it, and return the **public raw
   URL**. Called by the `webapi.publish_instagram_image` bridge method; the popup hands the
-  URL back to `publish(...)`. See [[instagram-adapter]].
+  URL back to `publish(...)`. `prepare_post` also exposes `ig_image_pushed` /
+  `ig_public_url` (read-only `site_push.image_status`: dest exists, byte-identical to the
+  grabbed card, committed + pushed) so a reopened popup skips step 1. See
+  [[instagram-adapter]].
 - `prepare_post(article, platform_key) → dict` — NO side effects; fills the popup
   (includes `facets_ok`, the thread seed `thread_text`/`thread_count`/`separator`
   ([[thread-split]]), and `embed_url` — the Bluesky link-card candidate, `""` for other
