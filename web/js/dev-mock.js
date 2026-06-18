@@ -7,9 +7,21 @@
     // pull-based refresh (facets are pair-shared, so writes mirror to the twin).
     const ALL_FACETS = ['dev', 'physics', 'fiction', 'music', 'ideas'];
     const store = {
-        fr: { facets: [], draft: false },   // start with NO facet to show the required state
-        en: { facets: [], draft: false },
+        fr: { facets: [], draft: false, tags: "Gamsblurb,Demo" },
+        en: { facets: [], draft: false, tags: "Gamsblurb,Demo" },
     };
+
+    // A stand-in vocabulary so the tag picker is exercisable in the browser harness.
+    const SUGGEST = {
+        fr: { matching: ['Développement Logiciel', 'Programmation', 'Code'],
+              popular: ['Santé', 'Fiction', 'Motivation', 'Science', 'Apprentissage'] },
+        en: { matching: ['Software Development', 'Programming', 'Code'],
+              popular: ['Health', 'Fiction', 'Motivation', 'Science', 'Learning'] },
+    };
+    const PAIR = { Health: 'Santé', Santé: 'Health', Programming: 'Programmation',
+        Programmation: 'Programming', Code: 'Code', Fiction: 'Fiction',
+        Motivation: 'Motivation', Science: 'Science', Learning: 'Apprentissage',
+        Apprentissage: 'Learning' };
 
     // Tracks whether the IG image has been "pushed" this session, so reopening the
     // popup demonstrates skipping step 1 (mirrors site_push.image_status on the backend).
@@ -29,7 +41,7 @@
         title: hl === 'fr' ? "Mon article de démo" : "My demo article",
         content: "A paragraph of demo content.\n\nAnother **bold** one.",
         date: "2026-06-11",
-        tags: "Gamsblurb,Demo",
+        tags: store[hl].tags,
         excerpt_image: "",
         excerpt_image_local: "",
         posts_folder: "C:/demo/_posts",
@@ -69,6 +81,27 @@
                 return true;
             },
             set_link: async () => true,
+            tag_suggestions: async (hl) => {
+                const applied = new Set(store[hl].tags.split(',').map(t => t.trim()));
+                const drop = (list) => list.filter(t => !applied.has(t));
+                const matching = drop(SUGGEST[hl].matching);
+                const mset = new Set(matching);
+                return { matching, popular: drop(SUGGEST[hl].popular).filter(t => !mset.has(t)) };
+            },
+            toggle_tag: async (hl, label) => {
+                // Toggle on both sides (pairing) using the demo PAIR map.
+                const other = hl === 'fr' ? 'en' : 'fr';
+                const otherLabel = PAIR[label] || label;
+                const toggle = (h, lbl) => {
+                    const tags = store[h].tags.split(',').map(t => t.trim()).filter(Boolean);
+                    const i = tags.indexOf(lbl);
+                    if (i >= 0) { tags.splice(i, 1); } else { tags.push(lbl); }
+                    store[h].tags = tags.join(',');
+                };
+                toggle(hl, label);
+                toggle(other, otherLabel);
+                return store[hl].tags;
+            },
             new_article: async () => true,
             new_both_articles: async () => true,
             open_article: async () => true,

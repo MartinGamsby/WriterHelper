@@ -7,6 +7,8 @@ import localize
 import rendering
 import publishing
 import serializers
+import tag_index
+import tag_vocab
 from articles import ArticlesModel
 
 # Link slots shown in the meta panel, in footer order. "publish" marks slots
@@ -107,6 +109,40 @@ class Api:
     def set_link(self, hl, name, url):
         self._article(hl).set_link(name, url)
         return True
+
+    # ====================================================================================
+    def tag_suggestions(self, hl):
+        """Tag chips for the picker, as ready-to-insert `hl` labels. `matching` ranks
+        the controlled vocabulary by co-occurrence with THIS article's facets (the
+        deterministic "from the checked facets" signal); `popular` is the overall
+        frequency fallback. The two lists are disjoint (matching wins), and tags already
+        on the article are excluded. See [[tag-suggestions]]."""
+        a = self._article(hl)
+        folder = a.get_posts_folder()
+        applied = {tag_vocab.canonical_label(t, hl) for t in tag_vocab.split(a.tags)}
+        matching = tag_index.matching(folder, hl, a.facets, exclude=applied)
+        popular = tag_index.popular(folder, hl, exclude=applied | set(matching))
+        return {"matching": matching, "popular": popular}
+
+    def toggle_tag(self, hl, label):
+        """Add or remove one tag (by `hl` label) on the current article, then return the
+        updated tag string. Pairing onto the twin is handled by set_tags. Idempotent on
+        the concept: toggling any label of a concept already present removes it."""
+        a = self._article(hl)
+        current = tag_vocab.split(a.tags)
+        target_cid = tag_vocab.concept_id(label)
+        kept, removed = [], False
+        for t in current:
+            same = (tag_vocab.concept_id(t) == target_cid if target_cid
+                    else t.strip().casefold() == label.strip().casefold())
+            if same:
+                removed = True            # drop it (toggle off)
+            else:
+                kept.append(t)
+        if not removed:
+            kept.append(tag_vocab.canonical_label(label, hl))
+        a.set_tags(tag_vocab.join(kept))
+        return a.tags
 
     # ====================================================================================
     def new_article(self, hl, copy_current=False):

@@ -27,6 +27,9 @@ Domain language for WriterHelper. One line each; deeper treatment is linked.
 - **updated()** — `ArticleModel.updated()` — a plain method (not a Qt signal) every setter calls on real change; it re-saves the `.md`. See [[auto-save-and-pull-ui]].
 - **delete_last** — `ArticleModel` flag (default True); when True, saving a new filename deletes the previously-saved file (rename-by-delete-and-write). Forced False around load/new transitions. See [[auto-save-and-pull-ui]].
 - **DEFAULT_TAGS / Gamsblurb** — `DEFAULT_TAGS = "Gamsblurb"` (in `article.py`): the seed tag and the site's house category, always present.
+- **tag** — a per-article label (stored as one comma-separated string). Unlike a [[glossary]] facet, a tag is free-er and language-specific (`Health`/`Santé`), but the popular/reused ones now belong to a controlled bilingual vocabulary and stay matched across the FR/EN pair. See [[tag-vocabulary]].
+- **tag concept** — one entry in the controlled vocabulary (`tag_vocab.py`): an `{en, fr}` pair (equal for language-neutral tags); its **id is the English label**. Raw labels (casing/typo/synonym/leak variants) fold onto a concept case-insensitively. See [[tag-vocabulary]].
+- **tag picker** — the suggestion chips under the Tags input: `matching` (tags co-occurring with this article's facets) + `popular` (overall frequency). Backed by `tag_index.py` + `webapi.tag_suggestions`/`toggle_tag`. See [[tag-vocabulary]].
 
 ## See also
 - [[overview]] — the system in one screen

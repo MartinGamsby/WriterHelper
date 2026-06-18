@@ -10,6 +10,7 @@ import filemanager
 import localize
 import rendering
 import serializers
+import tag_vocab
 
 DEFAULT_TAGS = "Gamsblurb"
 
@@ -199,6 +200,37 @@ class ArticleModel:
         if self.tags != text:
             self.tags = text
             self.updated()
+            self._mirror_tags_to_ref()
+
+    def _mirror_tags_to_ref(self):
+        """Keep the FR/EN twin's *controlled-vocabulary* tags matched (the same way
+        set_facets mirrors facets). Each canonical concept on this side is ensured —
+        in the twin's own language — on the ref; the ref's non-vocabulary one-off tags
+        are left alone. The edited side is authoritative for the shared concept set, so
+        adding/removing a vocab tag on either language follows on the other. Writes the
+        ref directly (not via set_tags) so the two sides can't mirror each other forever.
+        See [[bilingual-pairing]]."""
+        if self.ref is None:
+            return
+        want = tag_vocab.concepts_in(self.tags)        # ordered concept ids on this side
+        want_set = set(want)
+        rebuilt, seen = [], set()
+        for t in tag_vocab.split(self.ref.tags):
+            cid = tag_vocab.concept_id(t)
+            if cid is None:
+                rebuilt.append(t)                      # keep the twin's own one-off tags
+            elif cid in want_set and cid not in seen:
+                rebuilt.append(tag_vocab.label(cid, self.ref.hl))   # normalize to twin label
+                seen.add(cid)
+            # else: a vocab tag this side dropped, or a duplicate -> drop it
+        for cid in want:                               # append concepts the twin still lacks
+            if cid not in seen:
+                rebuilt.append(tag_vocab.label(cid, self.ref.hl))
+                seen.add(cid)
+        new_ref = tag_vocab.join(rebuilt)
+        if new_ref != self.ref.tags:
+            self.ref.tags = new_ref
+            self.ref.updated()
 
     def get_excerpt_img(self):
         return self.excerpt_image

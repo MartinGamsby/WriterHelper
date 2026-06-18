@@ -24,6 +24,8 @@ doesn't introspect the bridge object.) See [[invariants-and-traps]].
 | `get_state(hl)` | dict | Everything the UI renders for one language (below). |
 | `set_field(hl, field, value)` | True | Routes to the `ArticleModel` setter. Fields: title, content, date, tags, excerpt_image, posts_folder, website_url, **facets** (list), **draft** (bool), green, black. facets/draft are pair-shared. |
 | `set_link(hl, name, url)` | True | Upsert a link slot. |
+| `tag_suggestions(hl)` | `{matching, popular}` | Tag-picker chips: `matching` = vocabulary ranked by co-occurrence with this article's facets, `popular` = overall frequency; disjoint, exclude applied + house tag. From `tag_index.py`. See [[tag-vocabulary]]. |
+| `toggle_tag(hl, label)` | tags str | Add/remove one tag (idempotent per concept) via `set_tags`, so the twin pairs. |
 | `new_article(hl, copy_current=False)` | True | copy_current=True → "Make V2". |
 | `new_both_articles(hl, copy_current=False)` | True | |
 | `open_article(hl)` | bool | Native file dialog via `window.create_file_dialog`. |

@@ -14,6 +14,9 @@ Pair-shared fields mirror onto `ref` and save both sides:
 - `set_facets(list)` — the `facets` ([[glossary]] door tags) cleaned + mirrored.
 - `set_draft(bool)` — the `draft` flag mirrored.
 - `date` — mirrored (twins share a date).
+- `set_tags(str)` — the *controlled-vocabulary* tags mirrored at the concept level (each
+  concept ensured in the twin's own language; one-off tags stay per-side). See
+  [[tag-vocabulary]].
 
 ## On-disk pairing: `translationKey` (sticky, stamped on both)
 

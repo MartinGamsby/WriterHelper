@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8753", "--directory", "web"],
       "port": 8753
+    },
+    {
+      "name": "site-dist",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8754", "--directory", "C:/Users/Martin/Documents/GitHub/martingamsby.com/dist"],
+      "port": 8754
     }
   ]
 }

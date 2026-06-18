@@ -184,6 +184,19 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 .link-row .publish-btn { padding: 4px; }
 .link-row input { flex: 1; min-width: 0; }
 
+/* Tag picker: suggestion chips under the Tags input. */
+.tag-suggest { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+.tag-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.tag-row-label { font-size: 11px; font-weight: 600; color: var(--green-dark);
+    opacity: .8; text-transform: uppercase; letter-spacing: .03em; margin-right: 2px; }
+.tag-chip {
+    margin: 0; padding: 2px 8px; font-size: 12px; line-height: 1.5;
+    background: var(--panel, #fff); color: var(--green-dark);
+    border: 1px solid var(--border); border-radius: 11px; cursor: pointer;
+}
+.tag-chip::before { content: "+ "; opacity: .55; }
+.tag-chip:hover { background: var(--accent); border-color: var(--green-strip); }
+
 .facets-grid { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .facets-grid label { display: flex; align-items: center; gap: 4px; font-size: 13px; }
 .req { color: #c22; }

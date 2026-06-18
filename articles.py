@@ -1,6 +1,7 @@
 # The FR/EN article pair and cross-language operations. No Qt.
 from deep_translator import GoogleTranslator
 
+import tag_vocab
 from article import ArticleModel
 
 
@@ -50,9 +51,25 @@ class ArticlesModel:
         if src.content:
             dst.set_content(GoogleTranslator(source=hl, target=dst_hl).translate(src.content))
         if src.tags:
-            dst.set_tags(GoogleTranslator(source=hl, target=dst_hl).translate(src.tags))
+            dst.set_tags(self._translate_tags(src.tags, hl, dst_hl))
         if src.get_excerpt_img():
             dst.set_excerpt_img(src.get_excerpt_img())
         if src.get_date():
             dst.set_date(src.get_date())
         return True
+
+    # ====================================================================================
+    @staticmethod
+    def _translate_tags(tag_string, src_hl, dst_hl):
+        """Translate a tag string into `dst_hl`. Controlled-vocabulary tags get their
+        exact paired label (deterministic — `Learn`→`Apprentissage`, not Google's
+        `Apprendre`); one-off tags fall back to Google so nothing is lost. This is what
+        keeps the popular/reused tags matched across the pair. See [[tag-vocabulary]]."""
+        out = []
+        for t in tag_vocab.split(tag_string):
+            cid = tag_vocab.concept_id(t)
+            if cid is not None:
+                out.append(tag_vocab.label(cid, dst_hl))
+            else:
+                out.append(GoogleTranslator(source=src_hl, target=dst_hl).translate(t))
+        return tag_vocab.join(out)

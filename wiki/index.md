@@ -19,6 +19,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[image-card-capture]] — html2canvas branded-JPEG generation (slug-named) + sizing
 - [[invariants-and-traps]] — the non-negotiables, the landmines, tests, style
 - [[secrets]] — where credentials live; the LinkedIn scrub; the wiki rule
+- [[tag-vocabulary]] — controlled bilingual tags: `tag_vocab.py` vocabulary, FR↔EN pairing in `set_tags`, the facet-aware picker (`tag_index.py`), and the `migrate_tags.py` normalizer
 
 ## Architecture (the code map)
 - [[model-layer]] — the Qt-free split overview (`article`/`rendering`/`articles`/`publishing`/`serializers`)

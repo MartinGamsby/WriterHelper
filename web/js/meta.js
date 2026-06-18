@@ -33,6 +33,7 @@ const Meta = {
         <div class="setting">
             <div class="setting-name">Tags</div>
             <input id="tags-${hl}" data-field="tags">
+            <div class="tag-suggest" id="tag-suggest-${hl}"></div>
         </div>
         <div class="setting" id="facet-setting-${hl}">
             <div class="setting-name">Facets <span class="req" title="At least one is required">*</span></div>
@@ -86,6 +87,15 @@ const Meta = {
         });
         document.getElementById(`draft-${hl}`).addEventListener('change', (e) =>
             refreshBoth(() => API.set_field(hl, 'draft', e.target.checked)));
+
+        // Tag picker: clicking a suggestion chip toggles that tag on the article.
+        // Pairing onto the twin happens in set_tags, so refresh BOTH columns. Delegated
+        // so it survives the chips being re-rendered from tag_suggestions in apply().
+        document.getElementById(`tag-suggest-${hl}`).addEventListener('click', (e) => {
+            const chip = e.target.closest('.tag-chip');
+            if (!chip) { return; }
+            refreshBoth(() => API.toggle_tag(hl, chip.dataset.tag));
+        });
     },
 
     // ====================================================================================
@@ -129,6 +139,7 @@ const Meta = {
     apply(hl, s) {
         App.setValue(`img-${hl}`, s.excerpt_image);
         App.setValue(`tags-${hl}`, s.tags);
+        this.renderTagSuggestions(hl);
 
         this.renderFacets(hl, s.all_facets || [], s.facets || []);
         const draft = document.getElementById(`draft-${hl}`);
@@ -139,6 +150,30 @@ const Meta = {
         if (s.excerpt_image_local) { preview.src = s.excerpt_image_local; }
 
         this.applyLinks(hl, s.links);
+    },
+
+    // ====================================================================================
+    // Tag picker chips. `matching` (tags that co-occur with this article's facets) is
+    // shown first, then `popular` (overall frequency); the two are disjoint and exclude
+    // tags already on the article (the backend handles both). Clicking a chip toggles
+    // the tag — wired once, delegated, in wire(). Fire-and-forget: the backend index is
+    // cached, and a failure (e.g. mid-boot) just leaves the chips empty.
+    async renderTagSuggestions(hl) {
+        const box = document.getElementById(`tag-suggest-${hl}`);
+        if (!box) { return; }
+        let sug;
+        try { sug = await API.tag_suggestions(hl); }
+        catch (e) { return; }
+        const esc = (s) => String(s).replace(/[&<>"]/g,
+            c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const row = (label, tags) => (tags && tags.length)
+            ? `<div class="tag-row"><span class="tag-row-label">${label}</span>`
+              + tags.map(t =>
+                  `<button type="button" class="tag-chip" data-tag="${esc(t)}">${esc(t)}</button>`
+              ).join('')
+              + `</div>`
+            : '';
+        box.innerHTML = row('Matching', sug.matching) + row('Popular', sug.popular);
     },
 
     // ====================================================================================

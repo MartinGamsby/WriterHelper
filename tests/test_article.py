@@ -4,6 +4,7 @@ import filemanager
 import localize
 import rendering
 import serializers
+import tag_vocab
 from articles import ArticlesModel
 
 
@@ -532,3 +533,54 @@ def test_hashtags_skip_gamsblurb_and_accents(fr):
 def test_translate_refuses_nonempty_destination(pair):
     pair.en().set_content("already there")
     assert pair.translate("fr") is False
+
+
+# ========================================================================================
+# Pair-aware tags: controlled-vocabulary tags stay matched across FR/EN.
+def test_set_tags_mirrors_vocab_tag_to_twin_in_its_language(pair):
+    fr, en = pair.fr(), pair.en()
+    en.set_tags("Health,Learning,Gamsblurb")
+    # The FR twin carries the SAME concepts, each in French (order is twin-stable, so
+    # compare the set).
+    assert set(tag_vocab.split(fr.tags)) == {"Santé", "Apprentissage", "Gamsblurb"}
+
+
+def test_set_tags_preserves_twins_own_one_off_tags(pair):
+    fr, en = pair.fr(), pair.en()
+    fr.set_tags("Schtroumpf,Santé")          # one FR-only one-off + one vocab tag
+    en.set_tags("Health,Motivation")         # editing EN should not nuke FR's one-off
+    assert "Schtroumpf" in tag_vocab.split(fr.tags)        # kept
+    assert "Santé" in tag_vocab.split(fr.tags)             # still matched (Health)
+    assert "Motivation" in tag_vocab.split(fr.tags)        # newly mirrored
+
+
+def test_removing_a_vocab_tag_removes_it_from_the_twin(pair):
+    fr, en = pair.fr(), pair.en()
+    en.set_tags("Health,Motivation")
+    assert "Motivation" in tag_vocab.split(fr.tags)
+    en.set_tags("Health")                    # drop Motivation on EN
+    assert "Motivation" not in tag_vocab.split(fr.tags)
+    assert "Santé" in tag_vocab.split(fr.tags)
+
+
+def test_mirror_is_idempotent_and_does_not_loop(pair):
+    fr, en = pair.fr(), pair.en()
+    en.set_tags("Health,Gamsblurb")
+    fr_after_first = fr.tags
+    fr.set_tags(fr.tags)                      # re-setting the mirrored value is a no-op
+    assert fr.tags == fr_after_first
+
+
+def test_translate_uses_vocab_for_known_tags(pair, monkeypatch):
+    # Stub the network translator so the test is deterministic and offline; the vocab
+    # path must NOT call it for known concepts.
+    import articles
+    monkeypatch.setattr(articles, "GoogleTranslator",
+                        lambda *a, **k: type("T", (), {"translate": staticmethod(lambda s: s)})())
+    fr = pair.fr()
+    fr.set_title("Bonjour")
+    fr.set_content("Du contenu.")
+    fr.set_tags("Santé,Apprendre,Gamsblurb")
+    pair.translate("fr")
+    # EN twin gets the exact paired English labels, not a raw machine translation.
+    assert tag_vocab.split(pair.en().tags) == ["Health", "Learning", "Gamsblurb"]
