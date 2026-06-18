@@ -115,6 +115,7 @@
                     ig_image_dest: `my-demo-article.${hl}.jpg`,
                     ig_image_pushed: isIg && igPushed[hl],
                     ig_public_url: (isIg && igPushed[hl]) ? igUrl(hl) : "",
+                    ig_repo_image_data_url: (isIg && igPushed[hl]) ? SAMPLE_IMG : "",
                 };
             },
             publish: async (hl, platform) => ({

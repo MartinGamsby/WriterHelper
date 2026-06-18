@@ -175,6 +175,13 @@ def prepare_post(article, platform_key) -> dict:
                   if repo and img_exists else {"pushed": False, "public_url": ""})
         info["ig_image_pushed"] = status["pushed"]
         info["ig_public_url"] = status["public_url"]
+        # The image ACTUALLY sitting in the repo (what Instagram will fetch), as a data
+        # URL — so the popup can show it next to the current card and the operator can
+        # catch a stale/changed image. "" when nothing is staged for this post yet.
+        dest_abs = (os.path.join(repo, site_push.IG_ASSET_SUBDIR, _ig_image_dest(article))
+                    if repo else "")
+        info["ig_repo_image_data_url"] = (rendering.data_url(dest_abs)
+                                          if dest_abs and os.path.isfile(dest_abs) else "")
     return info
 
 

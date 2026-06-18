@@ -162,6 +162,21 @@ const Publish = {
         this.igImageUrl = pushed ? (i.ig_public_url || '') : '';
 
         const canPush = i.image_exists && i.ig_repo_found;
+
+        // The image actually committed in the repo (what IG will fetch), shown so the
+        // operator can confirm it's the one they want — or spot that it's stale.
+        const repoImg = i.ig_repo_image_data_url;
+        const sameAsCard = repoImg && repoImg === i.image_data_url;
+        let repoCap, repoCls;
+        if (!repoImg) { repoCap = repoCls = ''; }
+        else if (pushed) { repoCls = 'ig-ok'; repoCap = '✓ In the repo now — exactly what Instagram will fetch.'; }
+        else if (sameAsCard) { repoCls = 'warn'; repoCap = '⚠ Matches your card, but this commit isn’t pushed yet — push to make it public.'; }
+        else { repoCls = 'warn'; repoCap = '⚠ Older image in the repo for this post — it differs from your current card; push to replace it.'; }
+        const repoImgBlock = repoImg
+            ? `<div class="ig-repo-img"><img src="${repoImg}" alt="image currently in the site repo">
+                 <div class="ig-repo-cap ${repoCls}">${repoCap}</div></div>`
+            : '';
+
         const repoWarn = i.ig_repo_found ? '' :
             `<p class="warn">Can't find the martingamsby.com checkout above the posts
              folder — the image push (step 1) won't work until that's fixed.</p>`;
@@ -188,6 +203,7 @@ const Publish = {
                     : (i.image_exists
                         ? 'Ready to push the grabbed card so Instagram can fetch it.'
                         : '<span class="warn">No grabbed card yet — Square + Grab it first.</span>')}</div>
+                ${repoImgBlock}
               </li>
               <li class="ig-step">
                 <div class="ig-step-head">

@@ -47,6 +47,13 @@ image is already public the popup pre-fills the URL and jumps straight to step 2
 Cancel → reopen doesn't force a redundant re-push (the byte-compare means a *re-grabbed*,
 changed card correctly still needs a push).
 
+**Show what's actually in the repo.** `prepare_post` also returns
+`ig_repo_image_data_url` — the image currently committed at the dest path (what IG will
+fetch), as a data URL. The popup renders it under step 1 with a state-aware caption:
+green "✓ in the repo now" when pushed, or a warning when it's there but **differs from the
+current card** (operator re-grabbed) or isn't pushed yet — so a stale/changed image is
+caught by eye before posting.
+
 ## Constraint #1 — Instagram only accepts JPEG (satisfied by the grab)
 
 The Content Publishing API rejects PNG and **WebP** `image_url`s — JPEG only, ≤ 8 MB,
@@ -88,13 +95,41 @@ media id** so the operator sets the Instagram link by hand rather than blindly r
 ## Config — reuses `settings_fb_<hl>.ini`
 
 `[Access]` gains `IgUserId` (the IG **Business account** id, *not* the Page id) alongside
-the existing `PageId` + long-lived `Token`. The token needs `instagram_basic` +
-`instagram_content_publish` (on top of FB's `pages_manage_posts`) and an IG
-Business/Creator account linked to the Page. Get the long-lived Page token exactly as in
-[[facebook-adapter]]; read `IgUserId` from
-`GET /{page-id}?fields=instagram_business_account`. If IG runs against an FB file that
-predates the `IgUserId` line, `get_ig_user_id()` returns the `<TODO>` default and the API
-call fails clearly — add the line. See [[secrets]].
+the existing `PageId` + long-lived `Token`. If IG runs against an FB file that predates the
+`IgUserId` line, `get_ig_user_id()` returns the `<TODO>` default and the API call fails
+clearly — add the line. The file is git-ignored ([[secrets]]).
+
+```ini
+[Access]
+PageId = 1234567890
+Token = EAA...the-long-lived-page-token...
+IgUserId = 17841400000000000
+```
+
+### Setup (one-time, both `fr` and `en` files)
+
+You manage the Page + own the app, so this works in the app's **Development mode** — no
+App Review. Prereq: the Instagram account is **Business or Creator** and **linked to the
+Facebook Page** (Instagram app → Settings → *Account type and tools* → switch to
+Business/Creator; then link it to the Page). Then, in
+[**Graph API Explorer**](https://developers.facebook.com/tools/explorer):
+
+1. **Pick the app + permissions.** Select your Business app and add scopes
+   `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`,
+   `instagram_content_publish` (+ `public_profile`). **Generate Access Token**, approve.
+2. **Long-lived user token** (≈60 days): `GET
+   /oauth/access_token?grant_type=fb_exchange_token&client_id=<APP_ID>&client_secret=<APP_SECRET>&fb_exchange_token=<SHORT_TOKEN>`.
+3. **`PageId` + `Token`**: `GET /me/accounts` → each Page's numeric **`id`** (→ `PageId`)
+   and its per-Page **`access_token`** (→ `Token`, the effectively non-expiring Page token).
+4. **`IgUserId`**: `GET /{page-id}?fields=instagram_business_account` → the returned
+   `instagram_business_account.id` is `IgUserId`. (Empty means the IG account isn't linked
+   to the Page yet — fix the prereq above.)
+5. Put `PageId`, `Token`, `IgUserId` into **both** `settings_fb_fr.ini` and
+   `settings_fb_en.ini` (same Page/IG account → same values in both).
+
+Sanity-check the token in **Tools → Access Token Debugger**: scopes include
+`instagram_content_publish` and Expires shows *Never*. Same Page-token mechanics as
+[[facebook-adapter]] (full walk-through there).
 
 ## Cross-posting to Facebook — don't rely on it (myth)
 
