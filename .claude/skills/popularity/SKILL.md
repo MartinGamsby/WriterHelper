@@ -51,6 +51,44 @@ python popularity.py worklist                                  # everything
 python popularity.py bsky <url>      # -> {"likes":N,"reposts":N,"replies":N,"quotes":N}
 ```
 
+**X/Twitter — deterministic via `javascript_tool` (preferred; do NOT eyeball
+`get_page_text`).** X's `get_page_text` does *not* reliably surface the like/repost bar,
+and the visible UI rounds ("1.2K"). Instead read X's own `aria-label`s, which carry the
+**exact, un-abbreviated** counts. `navigate` to the `url`, then run this self-polling
+extractor with `javascript_tool` (it waits for hydration, prefers the per-button labels,
+and falls back to the action-bar group label so high-engagement posts — whose `bookmark`
+button label format changes — still parse):
+
+**Critical: read the FOCAL tweet, not the first `<article>`.** When the status is a *reply*,
+X renders the parent post (someone else's, often with far higher counts) *above* yours, and
+`querySelector('article')` would grab the parent. Select the article that links to the
+**exact status ID from the URL** instead. (Symptom of getting this wrong: a wildly
+out-of-character viral number on what's actually a reply.)
+
+```js
+await (async () => {
+  const num=(s)=>{if(s==null)return null;const m=String(s).replace(/,/g,'').match(/([\d.]+)\s*([KM]?)/i);if(!m)return null;let v=parseFloat(m[1]);if(/k/i.test(m[2]))v*=1e3;if(/m/i.test(m[2]))v*=1e6;return Math.round(v);};
+  const idm=location.pathname.match(/status\/(\d+)/);const id=idm?idm[1]:null;
+  const focal=()=>{const arts=[...document.querySelectorAll('article')];if(id){for(const a of arts){if(a.querySelector('a[href*="/status/'+id+'"]'))return a;}}return arts[0]||null;};
+  const extract=()=>{const art=focal();if(!art)return{error:'no-article',url:location.href};
+    const lbl=(t)=>{const e=art.querySelector('[data-testid="'+t+'"]');return e?num(e.getAttribute('aria-label')):null;};
+    const g=art.querySelector('[role="group"][aria-label]');const gl=g?g.getAttribute('aria-label').replace(/,/g,''):'';
+    const G=(re)=>{const m=gl.match(re);return m?num(m[1]):null;};const pick=(a,b)=>a!=null?a:b;
+    return{url:location.href,replies:pick(lbl('reply'),G(/([\d.]+\s*[KM]?)\s*repl/i)),reposts:pick(lbl('retweet'),G(/([\d.]+\s*[KM]?)\s*repost/i)),likes:pick(lbl('like'),G(/([\d.]+\s*[KM]?)\s*like/i)),bookmarks:pick(lbl('bookmark'),G(/([\d.]+\s*[KM]?)\s*bookmark/i)),views:G(/([\d.]+\s*[KM]?)\s*view/i),raw:gl};};
+  for(let i=0;i<40;i++){const art=focal();if(art){const g=art.querySelector('[role="group"][aria-label]');if(g&&/view/i.test(g.getAttribute('aria-label')||''))return extract();}await new Promise(r=>setTimeout(r,150));}
+  return extract();
+})()
+```
+
+Batch it for speed: one `browser_batch` chains many `navigate`→`javascript_tool` pairs in
+a single round trip (the self-poll makes the sequencing safe). ~7–10 posts per batch works
+well; map each result back to its worklist row by order. **`views` is the primary X signal**
+(the operator's known signal is X.com English) — capture it plus likes/reposts/replies and
+bookmarks-when-shown. A `{"error":"no-article"}` result usually means the post was
+**deleted** (page text reads "this page doesn't exist") — verify with `get_page_text`, then
+treat it as a **gap**, not a 0. `twitter.com/user/status/<id>` URLs redirect fine to the
+logged-in post.
+
 **Every other platform — Claude-for-Chrome:** `navigate` to the `url`, then
 `get_page_text` / `read_page` (use `find` if a count is buried) and grab:
 

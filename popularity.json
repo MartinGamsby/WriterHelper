@@ -1,0 +1,1191 @@
+{
+  "snapshots": [
+    {
+      "date": "2026-06-18",
+      "readings": [
+        {
+          "key": "2009-11-09-train-your-brain",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1841898344492183606",
+          "metrics": {
+            "views": 45,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 2,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2009-11-15-the-house-contractor-vs-learning",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1842176075171799055",
+          "metrics": {
+            "views": 31,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2009-11-22-are-you-afraid",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1843782445025636372",
+          "metrics": {
+            "views": 52,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2009-11-29-start-to-finish",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1847262308273361249",
+          "metrics": {
+            "views": 25,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2010-02-07-the-big-advantage-of-school",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://bsky.app/profile/martingamsby.bsky.social/post/3lahccdfpnp2v",
+          "metrics": {
+            "likes": 2,
+            "reposts": 0,
+            "replies": 0,
+            "quotes": 0
+          }
+        },
+        {
+          "key": "2010-04-13-whatever-you-do-or-dream-you-can-do-begin-it-boldness-has-genius-power-and-magic-in-it",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1845589052399190463",
+          "metrics": {
+            "views": 27,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2016-03-01-goldfish",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1862673657174049144",
+          "metrics": {
+            "views": 19,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2016-07-01-web-5-0",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1864126526872068538",
+          "metrics": {
+            "views": 24,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2017-02-01-hasty-generalization",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1868841278030401874",
+          "metrics": {
+            "views": 22,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-08-22-english-ruined-my-life",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1833292391500878278",
+          "metrics": {
+            "views": 18,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-08-27-gandalf-reconciled-me-with-life",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1833471576450166916",
+          "metrics": {
+            "views": 17,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-08-28-wet-mattress",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1833947792802545784",
+          "metrics": {
+            "views": 22,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-08-29-shtandartization",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1834228519330603191",
+          "metrics": {
+            "views": 23,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-08-30-parents-are-adapting",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1837118962137542768",
+          "metrics": {
+            "views": 19,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-08-31-can-bitcoin-price-be-predicted-from-the-beginning",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1833214325416464651",
+          "metrics": {
+            "views": 14,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-01-alzheimers-can-be-prevented",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1837122315290567133",
+          "metrics": {
+            "views": 293,
+            "likes": 2,
+            "reposts": 1,
+            "replies": 1,
+            "bookmarks": 1
+          }
+        },
+        {
+          "key": "2024-09-02-falling-sensation",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1837304098112012785",
+          "metrics": {
+            "views": 19,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-03-im-afraid-of-soup",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1834599414683361562",
+          "metrics": {
+            "views": 26,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-05-sometimes-self-care-means-doing-the-things-youve-been-putting-off",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1837473412165333048",
+          "metrics": {
+            "views": 40,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-06-when-did-self-help-become-negative",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1837597566805897219",
+          "metrics": {
+            "views": 27,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 2,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-07-stop-hustling-enjoy-chores",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1847270722399338910",
+          "metrics": {
+            "views": 25,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-08-why-is-the-sky-blue-and-everything-else",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1847646873022058993",
+          "metrics": {
+            "views": 17,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-09-programming-a-love-hate-relationship-not-just-programming",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1833171814945583205",
+          "metrics": {
+            "views": 9,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-10-not-drop-out-of-school-use-google-instead",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1833675006506565947",
+          "metrics": {
+            "views": 11,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-12-burnout",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1834315300793205000",
+          "metrics": {
+            "views": 9,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-12-wisdom",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1834281699653325303",
+          "metrics": {
+            "views": 26,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-13-be-careful-what-you-wish-for",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1834655859005383102",
+          "metrics": {
+            "views": 16,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-14-a-PhD-in-your-pocket",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1834913441284231360",
+          "metrics": {
+            "views": 75,
+            "likes": 5,
+            "reposts": 0,
+            "replies": 2,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-15-ai-for-president-hear-me-out",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1835302173988597800",
+          "metrics": {
+            "views": 38,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-16-an-idea-you-can-apply-to-everything-from-20-years-of-learning",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1835761291383951494",
+          "metrics": {
+            "views": 1062,
+            "likes": 17,
+            "reposts": 0,
+            "replies": 2,
+            "bookmarks": 1
+          }
+        },
+        {
+          "key": "2024-09-17-the-secret-to-feeling-better-always-at-hand",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1836165173943386544",
+          "metrics": {
+            "views": 26,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-18-no-data-on-my-phone-this-morning-disaster",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1836573440062689330",
+          "metrics": {
+            "views": 46,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-23-100-days-until-january-1st",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1838180383071830047",
+          "metrics": {
+            "views": 71,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-23-it-or-software-do-you-know-the-difference",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1838260285460652229",
+          "metrics": {
+            "views": 67,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-24-do-you-suffer-from-thalassophobia",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1838728846775902671",
+          "metrics": {
+            "views": 31,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-25-a-moving-city",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/MartinGamsby_EN/status/1838938044948173155",
+          "metrics": {
+            "views": 79,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-27-meditation-is-easy-actually",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1839663528199733518",
+          "metrics": {
+            "views": 69,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-28-you-dont-know-what-you-dont-know-obviously",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1840070298269258159",
+          "metrics": {
+            "views": 49,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-09-30-the-most-fulfilling-thing-in-life",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1840730539944185908",
+          "metrics": {
+            "views": 60,
+            "likes": 3,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-01-amazon",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1841253829087494618",
+          "metrics": {
+            "views": 64,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-01-i-just-watched-the-martian-humanity-saving-a-stranded-astronaut",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1841174558306718172",
+          "metrics": {
+            "views": 45,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 3,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-02-being-a-parent-is-easy",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1841499043282710844",
+          "metrics": {
+            "views": 26,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-07-i-thought-i-didnt-have-a-dream-car",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1843287110826291480",
+          "metrics": {
+            "views": 33,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-09-the-centauri-ark-working-title",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1844501486413512904",
+          "metrics": {
+            "views": 24,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-11-vegetables-and-meat",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1844827933401121007",
+          "metrics": {
+            "views": 55,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-13-an-idiot-with-a-plan-will-beat-a-genius-without-a-plan",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1845471703247253647",
+          "metrics": {
+            "views": 35,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-15-could-dark-energy-simply-be-multiple-far-black-holes-quadrillions-of-years-old",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1846185434423984312",
+          "metrics": {
+            "views": 51,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-15-i-was-thinking-about-something-somewhat-that-the-other-day",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1846984991147778456",
+          "metrics": {
+            "views": 16,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-17-i-broke-my-50-day-streak",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1847044514705498185",
+          "metrics": {
+            "views": 47,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 3,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-19-freedom-35",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1847262308273361249",
+          "metrics": {
+            "views": 25,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-19-the-good-things-we-get-from-life-often-come-when-we-overcome-our-fears",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1847644585566105881",
+          "metrics": {
+            "views": 17,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-21-people-like-stories-for-different-reasons-what-makes-a-story-compelling-to-you",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1848447408809631890",
+          "metrics": {
+            "views": 16,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-22-puffy-head-bird-legs",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1848872158061335039",
+          "metrics": {
+            "views": 22,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-25-if-i-were-to-have-a-ted-talk",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1849818219780898849",
+          "metrics": {
+            "views": 29,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-26-simple-is-not-always-better",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1850281346155139315",
+          "metrics": {
+            "views": 31,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-26-who-else-eats-kiwi-skin",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1861409726275174446",
+          "metrics": {
+            "views": 53,
+            "likes": 3,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-27-no-more-hiccup",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1850528641098121588",
+          "metrics": {
+            "views": 28,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-28-i-started-coding-a-video-game",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1851056332838736261",
+          "metrics": {
+            "views": 47,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-29-massive-layoff",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1851338266286702948",
+          "metrics": {
+            "views": 38,
+            "likes": 3,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-30-reduction-or-correction",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1851795911627702323",
+          "metrics": {
+            "views": 30,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-10-31-piano-for-15-years-vs-15-weeks-my-first-composition",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1851985714533081286",
+          "metrics": {
+            "views": 45,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-03-i-wrote-a-short-story",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1853054929935454630",
+          "metrics": {
+            "views": 58,
+            "likes": 3,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-04-just-a-few-hours-of-practice-easier-than-you-think",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1853428643520807301",
+          "metrics": {
+            "views": 23,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-04-the-musical-experience-week-1",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1853520965822472402",
+          "metrics": {
+            "views": 47,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-06-your-job-is-not-your-identity",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1854161632613773682",
+          "metrics": {
+            "views": 89,
+            "likes": 4,
+            "reposts": 0,
+            "replies": 2,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-11-literally-totally-transparent",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1855971609468670336",
+          "metrics": {
+            "views": 25,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-11-the-musical-experience-week-2",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1855983008655831129",
+          "metrics": {
+            "views": 67,
+            "likes": 3,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-14-randomly-beautiful",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1857217179491389757",
+          "metrics": {
+            "views": 29,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-17-behind-every-expert",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1858310254615842979",
+          "metrics": {
+            "views": 10,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-21-are-you-sick-injured",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1859591612877181094",
+          "metrics": {
+            "views": 24,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-23-coding-is-easy-really",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1860696256793706714",
+          "metrics": {
+            "views": 25,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-26-i-shaved-for-the-first-time-in-2-years",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1862190426297442317",
+          "metrics": {
+            "views": 50,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-11-26-reflections-on-life-health-and-code-martin-gamsby",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1861542067404455979",
+          "metrics": {
+            "views": 36,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-12-03-the-musical-experience-week-5",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1864487460660564191",
+          "metrics": {
+            "views": 30,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-12-05-dont-start-a-business-and-dont-start-coding",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1864850108849815792",
+          "metrics": {
+            "views": 37,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-12-06-i-like-walking-in-the-evening",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1865137019493515470",
+          "metrics": {
+            "views": 40,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-12-11-quantum-computing-is-now-a-reality",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1866852144021717103",
+          "metrics": {
+            "views": 19,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-12-12-stop-eating-crap-food-stop-normalizing-what-the-food-industry-wants",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1867215456936816642",
+          "metrics": {
+            "views": 16,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-12-13-uderzo-had-6-fingers",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://twitter.com/user/status/1867749298026230016",
+          "metrics": {
+            "views": 15,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2024-12-23-you-know-how-ai-is-really-bad-at-generating-text-in-images-and-videos",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1871171366969295341",
+          "metrics": {
+            "views": 77,
+            "likes": 2,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2025-01-07-would-you-rather",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1876765301762674695",
+          "metrics": {
+            "views": 39,
+            "likes": 3,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2025-06-24-a-love-hate-relationship",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1937644627823153358",
+          "metrics": {
+            "views": 68,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2025-06-28-10-years",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1939108829414694992",
+          "metrics": {
+            "views": 386,
+            "likes": 9,
+            "reposts": 1,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2025-07-01-the-important-thing-is-not-what-team-youre-on",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1939845751045333025",
+          "metrics": {
+            "views": 33,
+            "likes": 3,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2025-07-20-wow-it-might-be-mold",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/1946970035659964804",
+          "metrics": {
+            "views": 79,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2026-01-23-the-killer-feature-is-technical-debt",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/2014714900795335087?s=20",
+          "metrics": {
+            "views": 36,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2026-06-11-11-years",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/2065052720088723627",
+          "metrics": {
+            "views": 7,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2026-06-13-my-interverted-novel-now-available-on-amazon",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/2066859764957466926",
+          "metrics": {
+            "views": 56,
+            "likes": 4,
+            "reposts": 1,
+            "replies": 2,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2026-06-14-ai-hyp",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/2066557119139029105",
+          "metrics": {
+            "views": 13,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2026-06-15-ok",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/2066695479157526846",
+          "metrics": {
+            "views": 27,
+            "likes": 1,
+            "reposts": 0,
+            "replies": 1,
+            "bookmarks": 0
+          }
+        },
+        {
+          "key": "2026-06-17-make-the-piano-ghosts-less-intense",
+          "hl": "en",
+          "platform": "X/Twitter",
+          "url": "https://x.com/Martin_Gamsby/status/2067228510926565531",
+          "metrics": {
+            "views": 6,
+            "likes": 0,
+            "reposts": 0,
+            "replies": 0,
+            "bookmarks": 0
+          }
+        }
+      ]
+    }
+  ]
+}

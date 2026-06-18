@@ -42,6 +42,20 @@ overwriting a post's earlier reading rather than duplicating it.
 - **Everything else is browser-read** through the Claude-for-Chrome MCP using the
   operator's sessions (X likes/reposts/views, Medium claps, YouTube views, …). A number
   that's hidden/private/login-walled is a **gap**, never recorded as 0.
+- **X/Twitter is read deterministically, not by eyeballing.** `get_page_text` doesn't
+  surface the engagement bar and the visible UI rounds counts; instead a `javascript_tool`
+  snippet reads the **exact, un-abbreviated** numbers off X's `aria-label`s (per-button
+  `data-testid` labels, with the action-bar `role="group"` label as fallback for views and
+  for high-engagement posts where the bookmark-button label format changes). The snippet
+  self-polls for hydration so many `navigate`→extract pairs can be chained in one
+  `browser_batch`. **`views` is the primary X signal.** An `no-article` result means the
+  post was deleted ("this page doesn't exist") → a gap. The exact snippet lives in the
+  `/popularity` SKILL.md.
+  - **Reply trap (learned the hard way):** when a recorded link is a *reply* to someone
+    else's tweet, X renders the parent post above it; reading the first `<article>` grabs
+    the parent's (often much larger) counts. The extractor must pick the article whose
+    permalink matches the **status ID in the URL**. Symptom: an out-of-character viral
+    number on what is actually a reply.
 
 ## Ledger & summary
 
