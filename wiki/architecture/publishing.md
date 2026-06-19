@@ -38,8 +38,9 @@ reference.
 - `publish(article, platform_key, mode, message, options=None) → {ok, url, error}` — the
   only method with side effects: guards (existing link, mandatory facet), computes the
   optional `embed_url` (`opts["embed"]` true **and** platform is `bluesky`), then by
-  `mode` posts via `poster.post(..., embed_url=)` (text; image mode omits it — the image
-  owns the embed slot) or delegates to `_publish_thread`; stores the URL via `set_link`
+  `mode` posts via `poster.post(..., embed_url=)` (text; image mode resolves its
+  attachment via `_resolve_image(opts["image"]`, default `"grabbed"`) and omits the
+  embed — the image owns that slot) or delegates to `_publish_thread`; stores the URL via `set_link`
   (re-saves the footer), opens it with `webbrowser.open`. **Instagram** is intercepted
   right after the guards → `_publish_instagram` (image-only, no text/thread/embed).
 - `_publish_instagram(article, p, caption, opts)` — posts the already-public image
@@ -54,7 +55,7 @@ reference.
 - `_resolve_image(article, source)` → `(local_path, error)`. `"grabbed"` = the captured
   text-card PNG (`image_filename`); `"article"` = the post's own header image as a local
   file (`rendering.excerpt_image_file`, self-hosted on save). Grabbed alt text = full
-  plain text; article alt text = the title.
+  plain text; article alt text = the title. Used by **both** thread mode and image mode.
 - `capture_filename(article, page)` → `richTextArea_<slug>_<hl><page>.jpg` — the single
   source of truth for the capture name (used by both `webapi.save_capture` and here).
   Slug-named so the capture is tied to its article (the "right article" guarantee);

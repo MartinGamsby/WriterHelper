@@ -25,6 +25,7 @@ const Editor = {
                   placeholder="Write the content..."></textarea>
         <div class="row controls">
             <label>Font <input type="number" id="font-${hl}" value="14" min="4" max="64"></label>
+            <label>Margin <input type="number" id="margin-${hl}" value="9" min="0" max="200" step="1"></label>
             <label class="check"><input type="checkbox" id="green-${hl}" checked> G</label>
             <label class="check"><input type="checkbox" id="black-${hl}" checked> B</label>
             <label>W <input type="number" id="w-${hl}" value="640" min="320" max="1280" step="32"></label>
@@ -80,7 +81,7 @@ const Editor = {
         }
 
         // Card geometry is purely local — restyle without a backend round-trip
-        for (const id of [`font-${hl}`, `w-${hl}`, `h-${hl}`, `center-${hl}`]) {
+        for (const id of [`font-${hl}`, `margin-${hl}`, `w-${hl}`, `h-${hl}`, `center-${hl}`]) {
             document.getElementById(id).addEventListener('change', () => this.restyleCard(hl));
         }
 
@@ -126,12 +127,14 @@ const Editor = {
     restyleCard(hl) {
         const s = App.state[hl] || { green: true, black: true };
         const frame = document.getElementById(`card-${hl}`);
+        const inner = frame.querySelector('.card-inner');
         const content = document.getElementById(`card-content-${hl}`);
         const wm = document.getElementById(`wm-${hl}`);
         const page = document.getElementById(`page-${hl}`);
 
         frame.style.width = document.getElementById(`w-${hl}`).value + 'px';
         frame.style.height = document.getElementById(`h-${hl}`).value + 'px';
+        inner.style.inset = document.getElementById(`margin-${hl}`).value + 'px';
         content.style.fontSize = document.getElementById(`font-${hl}`).value + 'pt';
         content.style.textAlign =
             document.getElementById(`center-${hl}`).checked ? 'center' : 'left';
