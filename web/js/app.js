@@ -28,6 +28,42 @@ const App = {
         this._toastTimer = setTimeout(() => el.classList.add('hidden'), 4000);
     },
 
+    // A small yes/no dialog reusing the publish modal-overlay. Resolves true on
+    // confirm, false on cancel / overlay-click / Escape. `body` is trusted HTML
+    // (callers pass static markup, never user input).
+    confirm({ title, body, confirmLabel = 'OK', cancelLabel = 'Cancel', danger = false }) {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('modal-overlay');
+            const modal = document.getElementById('modal');
+            let settled = false;
+            const finish = (val) => {
+                if (settled) { return; }
+                settled = true;
+                overlay.removeEventListener('click', onOverlay);
+                document.removeEventListener('keydown', onKey);
+                modal.classList.remove('modal-narrow');
+                overlay.classList.add('hidden');
+                resolve(val);
+            };
+            const onOverlay = (e) => { if (e.target.id === 'modal-overlay') { finish(false); } };
+            const onKey = (e) => { if (e.key === 'Escape') { finish(false); } };
+
+            modal.classList.add('modal-narrow');
+            modal.innerHTML = `
+                <h3>${title}</h3>
+                ${body}
+                <div class="modal-buttons">
+                    <button id="confirm-ok" class="${danger ? 'danger' : 'primary'}">${confirmLabel}</button>
+                    <button id="confirm-cancel">${cancelLabel}</button>
+                </div>`;
+            overlay.classList.remove('hidden');
+            document.getElementById('confirm-ok').addEventListener('click', () => finish(true));
+            document.getElementById('confirm-cancel').addEventListener('click', () => finish(false));
+            overlay.addEventListener('click', onOverlay);
+            document.addEventListener('keydown', onKey);
+        });
+    },
+
     // ====================================================================================
     async refresh(hl) {
         const s = await API.get_state(hl);

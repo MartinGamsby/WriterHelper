@@ -229,6 +229,8 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
     overflow-y: auto;
     box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
 }
+#modal.modal-narrow { width: 460px; }
+#modal .confirm-note { color: #667; font-size: 12px; margin: 8px 0 0; }
 #modal h3 { margin: 0 0 10px; color: var(--green-dark); }
 #modal textarea { width: 100%; resize: vertical; line-height: 1.4; }
 .mode-row { display: flex; gap: 14px; align-items: center; margin-bottom: 4px; }

@@ -32,7 +32,9 @@ row: checklist sidebar | FR meta | FR content | EN content | EN meta. Columns ar
   clicks through `open_url` so the webview never navigates away.
 - `js/app.js` — boot, shared `state`, `debounce`, `setValue` (skips focused inputs),
   `refresh(hl)`/`refreshAll()`/`setField`/`setLink` (all re-fetch after mutating),
-  1s fr-CA clock, modal overlay-close, `toast`.
+  1s fr-CA clock, modal overlay-close, `toast`, and `confirm(...)` — a Promise-returning
+  yes/no dialog reusing the `#modal-overlay` (a `.modal-narrow` variant; resolves false on
+  Cancel / overlay-click / Escape), used by the multi-image grab guard ([[image-card-capture]]).
 - `js/editor.js` — builds + wires the content column; `restyleCard` replicates the card
   colors.
 - `js/meta.js` — builds + wires the meta column; renders link slots, attaches publish

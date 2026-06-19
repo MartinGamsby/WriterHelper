@@ -30,21 +30,40 @@ const Capture = {
     },
 
     // Center vertically when single page; show page number only when paginated.
+    // When it spans pages, the badge reads "1/N" so it's obvious in the editing
+    // preview that a Grab will produce N separate images.
     layoutPages(hl) {
         const { scroll, content, page } = this.els(hl);
         content.style.marginTop = '0px';
         const fits = this.fitsOnePage(hl);
+        const pages = this.pageCount(hl);
         scroll.classList.toggle('centered', fits);
         page.classList.toggle('hidden', fits);
-        page.textContent = '1';
+        page.textContent = pages > 1 ? `1/${pages}` : '1';
     },
 
     // ====================================================================================
     async grab(hl) {
         const { frame, scroll, content, page } = this.els(hl);
         const pages = this.pageCount(hl);
-        const viewH = scroll.clientHeight;
 
+        // A multi-page card grabs as several files (only page 1 is used when
+        // publishing a single image) — make that explicit before writing them.
+        if (pages > 1) {
+            const ok = await App.confirm({
+                title: 'Grab multiple images?',
+                body: `<p>This card's content spans <b>${pages} pages</b>, so <b>Grab</b> will
+                       save <b>${pages} separate images</b>. Only page&nbsp;1 is used when you
+                       publish a single image.</p>
+                       <p class="confirm-note">Tip: click <b>Adjust</b> (or lower the
+                       Margin / Font, or raise H) to fit everything on one image.</p>`,
+                confirmLabel: `Grab ${pages} images`,
+                cancelLabel: 'Cancel',
+            });
+            if (!ok) { return; }
+        }
+
+        const viewH = scroll.clientHeight;
         let firstName = '';
         for (let p = 1; p <= pages; p++) {
             content.style.marginTop = `${-(p - 1) * viewH}px`;

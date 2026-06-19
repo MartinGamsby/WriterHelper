@@ -30,10 +30,25 @@ via the single source of truth `publishing.capture_filename(article, page)`. Pag
 rename without updating producer (`capture.js`/`save_capture`) and consumer
 (`publishing`) together.
 
+## Multi-page guard + badge
+
+A card taller than one viewport grabs as **several** files, but only page 1 is used when
+publishing a single image — so a multi-page grab is made explicit two ways. (1) While
+editing, the `.card-page` badge reads **`1/N`** (not just `1`) whenever `pageCount > 1`,
+set in `layoutPages`. (2) `Capture.grab` **awaits `App.confirm`** ([[web-ui]]) before
+writing anything when `pageCount > 1` ("Grab N images" / Cancel); Cancel returns early and
+saves nothing. Single-page grabs are unchanged (no badge, no prompt). The most common
+cause of an unexpected `N`: the **Margin** control shrank the text area enough to overflow
+— **Adjust** re-fits because `fitsOnePage` already reflects the current margin.
+
 ```mermaid
 sequenceDiagram
     User->>Grab: click
     Grab->>capture.js: pageCount = ceil(contentH / viewH)
+    alt pageCount > 1
+        capture.js->>App.confirm: "Grab N images?"
+        App.confirm-->>capture.js: cancel ⇒ return (nothing saved)
+    end
     loop each page p
         capture.js->>card-content: marginTop = -(p-1)*viewH
         capture.js->>html2canvas: render(.card-frame)
