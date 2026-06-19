@@ -20,8 +20,6 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[invariants-and-traps]] — the non-negotiables, the landmines, tests, style
 - [[secrets]] — where credentials live; the LinkedIn scrub; the wiki rule
 - [[tag-vocabulary]] — controlled bilingual tags: `tag_vocab.py` vocabulary, FR↔EN pairing in `set_tags`, the facet-aware picker (`tag_index.py`), and the `migrate_tags.py` normalizer
-- [[popularity-tracking]] — `popularity.py` + the operator-run `/popularity` skill: footer [[link-slots]] → engagement numbers → append-only dated ledger (`popularity.json`); Bluesky scripted, the rest browser-read
-
 ## Architecture (the code map)
 - [[model-layer]] — the Qt-free split overview (`article`/`rendering`/`articles`/`publishing`/`serializers`)
 - [[article-model]] — `article.py`: state, setters, `updated()`, pairing, navigation, slug

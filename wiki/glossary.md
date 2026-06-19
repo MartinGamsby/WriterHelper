@@ -31,9 +31,6 @@ Domain language for WriterHelper. One line each; deeper treatment is linked.
 - **tag concept** — one entry in the controlled vocabulary (`tag_vocab.py`): an `{en, fr}` pair (equal for language-neutral tags); its **id is the English label**. Raw labels (casing/typo/synonym/leak variants) fold onto a concept case-insensitively. See [[tag-vocabulary]].
 - **tag picker** — the suggestion chips under the Tags input: `matching` (tags co-occurring with this article's facets) + `popular` (overall frequency). Backed by `tag_index.py` + `webapi.tag_suggestions`/`toggle_tag`. See [[tag-vocabulary]].
 
-- **popularity ledger** — `popularity.json` (WriterHelper repo root): an append-only list of dated **snapshots**, each a set of `{key, hl, platform, url, metrics}` **readings** of how a published post is performing on socials. Written by the operator-run `/popularity` sweep; never edited (it's the time series). See [[popularity-tracking]].
-- **reading / snapshot** — one platform engagement measurement for one post (`metrics` is a free dict: likes/reposts/views/claps/…); a snapshot is all readings from one sweep, stamped with the run date. See [[popularity-tracking]].
-
 ## See also
 - [[overview]] — the system in one screen
 - [[index]] — full page catalog
