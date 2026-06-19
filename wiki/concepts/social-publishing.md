@@ -30,7 +30,7 @@ to it but the user can override to any mode.
 moves/adds/removes `---` lines to control the breaks. A live per-segment readout shows
 `#i len/max` (red when over), accounting for the projected ` (i/n)` counter when numbering
 is on. Publish is blocked while any segment is over the limit. Controls:
-**Number posts (1/n)** (default on) and **Attach image to first post** (default on when
+**Number posts (1/n)** (default off) and **Attach image to first post** (default on when
 an image is available) with a source choice between the **article image** (the post's own
 header picture — the default, so a thread shows the real picture not the whole text on a
 card) and the **grabbed text card** (`richTextArea_<slug>_<hl>1.jpg`). Each source radio is
