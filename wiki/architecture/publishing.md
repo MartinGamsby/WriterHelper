@@ -16,6 +16,14 @@ reference.
   | `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
   | `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only, no threads |
   | `instagram` | Instagram | `Instagram` | 2200 | `PostIG(hl)` ([[instagram-adapter]]) — image-only, two-step (stage → publish) |
+  | `linkedin` | LinkedIn | `LinkedIn` | 3000 | `PostBridge(hl,"linkedin")` ([[post-bridge-adapter]]) — text/image only |
+  | `threads` | Threads | `Threads` | 500 | `PostBridge(hl,"threads")` ([[post-bridge-adapter]]) |
+  | `pinterest` | Pinterest | `Pinterest` | 500 | `PostBridge(hl,"pinterest")` ([[post-bridge-adapter]]) |
+  | `tiktok` | TikTok | `TikTok` | 2200 | `PostBridge(hl,"tiktok")` ([[post-bridge-adapter]]) |
+
+  Each `Platform` also carries `supports_thread` (False for Facebook, Instagram, and the
+  post-bridge platforms — none override `post_thread`); `prepare_post` reads it to suggest
+  **Image** instead of **Thread** for a too-long post.
 
 - `stage_instagram_image(article) → {ok, public_url, log, error}` — Instagram **step 1**:
   resolves the grabbed JPEG + the site repo ([[martingamsby-site]] via

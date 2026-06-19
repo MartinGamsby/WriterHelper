@@ -39,7 +39,8 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[x-adapter]] — `post_x.PostX` (tweepy v1+v2)
 - [[facebook-adapter]] — `post_fb.PostFB` (Graph API Page posts; wired, text/image only); includes the non-expiring Page-token steps
 - [[instagram-adapter]] — `post_ig.PostIG` (Graph API, reuses the FB token + `IgUserId`); image-only, IG-must-be-last, two-step auto-push of the JPEG to a public GitHub-raw URL (`site_push.py`)
-- [[linkedin-adapter]] — `post_linkedin.py` (BROKEN, do not import)
+- [[post-bridge-adapter]] — `post_bridge.PostBridge` (post-bridge.com aggregator); one API key → LinkedIn/Threads/Pinterest/TikTok, local image upload, text/image only, async URL via post-results polling
+- [[linkedin-adapter]] — `post_linkedin.py` (BROKEN native attempt; LinkedIn now posts via [[post-bridge-adapter]])
 - [[legacy-qt-ui]] — the superseded PySide6/QML stack (do not run now)
 
 ## Sources (external properties)

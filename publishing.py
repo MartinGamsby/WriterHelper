@@ -23,12 +23,16 @@ _EMBED_LINK_SLOTS = ("YouTube", "YouTube Shorts")
 
 # ========================================================================================
 class Platform:
-    def __init__(self, key, label, link_name, max_length, make_poster):
+    def __init__(self, key, label, link_name, max_length, make_poster,
+                 supports_thread=True):
         self.key = key
         self.label = label
         self.link_name = link_name      # the Link slot used as idempotence guard
         self.max_length = max_length
         self.make_poster = make_poster  # callable(hl) -> Post adapter
+        # Whether the adapter overrides post_thread (a native reply chain). When False,
+        # a too-long post is best offered as Image, not Thread.
+        self.supports_thread = supports_thread
 
 
 # ========================================================================================
@@ -52,16 +56,39 @@ def _make_ig(hl):
     return PostIG(hl)
 
 
+def _make_pb(platform):
+    """Factory for a post-bridge-backed platform (one API key, no per-platform app).
+    `platform` is the post-bridge platform string the adapter targets."""
+    def factory(hl):
+        from post_bridge import PostBridge
+        return PostBridge(hl, platform)
+    return factory
+
+
 PLATFORMS = {
     "bluesky": Platform("bluesky", "Bluesky", "Bluesky", 300, _make_bsky),
     "x": Platform("x", "X / Twitter", "X/Twitter", 280, _make_x),
-    # Facebook posts allow ~63k chars, so a post always "fits" as text (thread mode
-    # is offered by the popup but PostFB has no post_thread — text/image only).
-    "facebook": Platform("facebook", "Facebook", "Facebook", 63206, _make_fb),
+    # Facebook posts allow ~63k chars, so a post always "fits" as text (PostFB has no
+    # post_thread — text/image only).
+    "facebook": Platform("facebook", "Facebook", "Facebook", 63206, _make_fb,
+                         supports_thread=False),
     # Instagram is image-only and image-must-be-public: it's a two-step flow
     # (stage_instagram_image, then publish) — 2200 is IG's caption limit.
     # See [[instagram-adapter]].
-    "instagram": Platform("instagram", "Instagram", "Instagram", 2200, _make_ig),
+    "instagram": Platform("instagram", "Instagram", "Instagram", 2200, _make_ig,
+                          supports_thread=False),
+    # post-bridge-backed platforms ([[post-bridge-adapter]]): one shared API key, no
+    # per-platform developer app. Text/image only (no native reply chain → no Thread
+    # mode). max_length is each platform's caption ceiling. The grabbed card / article
+    # image attach via a LOCAL upload — no public-URL staging like the Meta IG path.
+    "linkedin": Platform("linkedin", "LinkedIn", "LinkedIn", 3000,
+                         _make_pb("linkedin"), supports_thread=False),
+    "threads": Platform("threads", "Threads", "Threads", 500,
+                        _make_pb("threads"), supports_thread=False),
+    "pinterest": Platform("pinterest", "Pinterest", "Pinterest", 500,
+                          _make_pb("pinterest"), supports_thread=False),
+    "tiktok": Platform("tiktok", "TikTok", "TikTok", 2200,
+                       _make_pb("tiktok"), supports_thread=False),
 }
 
 
@@ -139,8 +166,12 @@ def prepare_post(article, platform_key) -> dict:
         "text": text,
         "text_length": len(text),
         "fits": fits,
-        # A post that doesn't fit is best served as a thread; image stays available.
-        "suggested_mode": "text" if fits else "thread",
+        # A post that doesn't fit is best served as a thread where the adapter supports
+        # one; otherwise fall back to an image (the whole card as a picture).
+        "suggested_mode": ("text" if fits
+                           else "thread" if p.supports_thread else "image"),
+        # Lets the popup hide/disable the Thread radio for adapters without a reply chain.
+        "supports_thread": p.supports_thread,
         "thread_text": thread_split.join_for_edit(segments),
         "thread_count": len(segments),
         "separator": thread_split.SEPARATOR,

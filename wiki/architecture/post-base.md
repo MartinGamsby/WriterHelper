@@ -1,10 +1,13 @@
 # Post base class (`post.py`)
 
 `Post` is the inheritance base for new platform adapters. `PostBsky`
-([[bluesky-adapter]]), `PostX` ([[x-adapter]]), `PostFB` ([[facebook-adapter]]), and
-`PostIG` ([[instagram-adapter]]) inherit it. (`PostFB` predated the base and was rewritten
-onto it; it skips the optional `post_thread` override — text/image only. `PostIG` is
-image-only and takes a **public `image_url`** instead of a local upload — see below.)
+([[bluesky-adapter]]), `PostX` ([[x-adapter]]), `PostFB` ([[facebook-adapter]]),
+`PostIG` ([[instagram-adapter]]), and `PostBridge` ([[post-bridge-adapter]]) inherit it.
+(`PostFB` predated the base and was rewritten onto it; it skips the optional
+`post_thread` override — text/image only. `PostIG` is image-only and takes a **public
+`image_url`** instead of a local upload — see below. `PostBridge` posts via the
+post-bridge.com aggregator with one shared key — it overrides `config_filename` to a
+single hl-independent file and skips `post_thread`.)
 
 ## Class shape
 

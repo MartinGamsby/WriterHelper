@@ -20,8 +20,10 @@ Use LinkedIn's `/v2/shares` REST endpoint to post the article title + website UR
 
 ## Status
 
-Not imported anywhere; not referenced by QML. The LinkedIn link slot in the meta UI is a
-plain text field ([[link-slots]]), not a posting trigger.
+Not imported anywhere; not referenced by QML. **LinkedIn posting now goes through
+[[post-bridge-adapter]]** (the `linkedin` platform), so the LinkedIn link slot has a
+Publish button again — backed by post-bridge, not this file. This broken file stays only
+as dead history; reviving it natively isn't needed for posting.
 
 ## If revived
 

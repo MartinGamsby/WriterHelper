@@ -89,9 +89,16 @@ without an image on that post).
 | `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
 | `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only |
 | `instagram` | Instagram | `Instagram` | 2200 | `PostIG(hl)` ([[instagram-adapter]]) — image-only, two-step |
+| `linkedin` | LinkedIn | `LinkedIn` | 3000 | `PostBridge(hl,"linkedin")` ([[post-bridge-adapter]]) — text/image only |
+| `threads` | Threads | `Threads` | 500 | `PostBridge(hl,"threads")` ([[post-bridge-adapter]]) |
+| `pinterest` | Pinterest | `Pinterest` | 500 | `PostBridge(hl,"pinterest")` ([[post-bridge-adapter]]) |
+| `tiktok` | TikTok | `TikTok` | 2200 | `PostBridge(hl,"tiktok")` ([[post-bridge-adapter]]) |
 
 `make_poster` imports the adapter lazily, so a missing/broken adapter doesn't break
-import and tests can monkeypatch the registry.
+import and tests can monkeypatch the registry. Each `Platform` carries `supports_thread`;
+when it's False (Facebook, Instagram, and the post-bridge platforms), `prepare_post`
+suggests **Image** rather than **Thread** for a too-long post, and `prepare_post` returns
+`supports_thread` so the popup can hide the Thread radio.
 
 ## Instagram — the exception (image-only, two-step)
 
