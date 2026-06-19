@@ -49,7 +49,7 @@ html, body {
     flex-shrink: 0;
 }
 .col-meta { width: 280px; }
-.col-content { width: 640px; }
+.col-content { width: 680px; }
 
 #checklist {
     width: 190px;
@@ -142,15 +142,17 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 .card-scroll.centered { justify-content: center; }
 .card-content { line-height: 1.35; padding-right: 18px; }
 .card-content img { max-width: 240px; }
+/* Watermark + page badge anchor to the frame, NOT .card-inner, so the Margin
+   control moves only the text/image content and leaves these in the corner. */
 .card-watermark {
     position: absolute;
-    right: 27px;/* TODO: This is cropped, something is wrong. Is it because of the margins? (6px is still cropped) */
-    bottom: 0;
+    right: 15px;
+    bottom: 9px;
 }
 .card-page {
     position: absolute;
-    right: -5px;
-    bottom: -9px;
+    right: 4px;
+    bottom: 0;
     font-size: 12px;
 }
 

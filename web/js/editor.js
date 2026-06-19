@@ -46,9 +46,9 @@ const Editor = {
                 <div class="card-scroll">
                     <div class="card-content" id="card-content-${hl}"></div>
                 </div>
-                <div class="card-watermark" id="wm-${hl}"></div>
-                <div class="card-page hidden" id="page-${hl}">1</div>
             </div>
+            <div class="card-watermark" id="wm-${hl}"></div>
+            <div class="card-page hidden" id="page-${hl}">1</div>
         </div>
         <div class="preview br-preview" id="br-${hl}"></div>
         <pre class="preview md-preview" id="md-${hl}"></pre>`;

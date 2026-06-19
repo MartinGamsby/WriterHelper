@@ -47,12 +47,12 @@ row: checklist sidebar | FR meta | FR content | EN content | EN meta. Columns ar
 
 Header (length label, "<hl> Article", char/word counter), posts-folder + website-URL
 inputs, title + slug line, date-override checkbox/input, the content `<textarea>`, a
-controls row (Font / G / B / W / H / Center), the buttons row
+controls row (Font / Margin / G / B / W / H / Center), the buttons row
 (Grab/Adjust/Square/Portrait/Landscape/500x400), short-content preview, the `.card-frame`
 capture surface, then read-only previews of `content_md_separators_br` and `content_md`.
 Every `[data-field]` input debounce-saves on `input` and immediately on `change`. Font/
-W/H/Center are **local only** (`restyleCard`, no backend round-trip — card geometry isn't
-persisted).
+Margin/W/H/Center are **local only** (`restyleCard`, no backend round-trip — card geometry
+isn't persisted).
 
 ## Meta column (`meta.js`)
 

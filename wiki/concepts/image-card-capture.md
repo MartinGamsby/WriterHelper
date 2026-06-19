@@ -7,11 +7,13 @@ QML path still exists ([[legacy-qt-ui]]) but the web path is live.
 ## The surface
 
 `.card-frame` (id `card-<hl>`) holds an absolutely-positioned `.card-inner` → `.card-scroll`
-→ `.card-content` (the `content_md_separators` HTML, [[content-flavors]]), a
-`.card-watermark` (a per-`hl` `MartinGamsby.com/<hl>` watermark), and a `.card-page` badge.
-Frame width/height come from the W/H number inputs; the `.card-inner` `inset` (the margin
-around text + image, old `contentMargin`, default 9px) from the **Margin** number input;
-colors from the green/black checkboxes — all applied locally by `Editor.restyleCard`.
+→ `.card-content` (the `content_md_separators` HTML, [[content-flavors]]). The
+`.card-watermark` (a per-`hl` `MartinGamsby.com/<hl>` watermark) and the `.card-page` badge
+are **siblings of `.card-inner`, anchored to the frame corner** — so the Margin control
+moves only the text/image, never the watermark/badge. Frame width/height come from the W/H
+number inputs; the `.card-inner` `inset` (the margin around text + image, old
+`contentMargin`, default 9px) from the **Margin** number input; colors from the green/black
+checkboxes — all applied locally by `Editor.restyleCard`.
 
 ## Output naming (load-bearing contract)
 
