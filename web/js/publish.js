@@ -95,6 +95,17 @@ const Publish = {
                 <div class="hint">Edit the split: separate posts with a line containing only <code>${i.separator}</code>.</div>
                 <div id="pub-segs" class="pub-segs"></div>
             </div>
+            <div id="pub-image-controls" class="img-controls hidden">
+                <div class="img-row">
+                    <span class="hint">Image source:</span>
+                    <label class="check"><input type="radio" name="pub-img-mode-src" value="grabbed"
+                        ${i.image_exists ? 'checked' : 'disabled'}>
+                        grabbed text card${i.image_exists ? '' : ' (Grab first)'}</label>
+                    <label class="check"><input type="radio" name="pub-img-mode-src" value="article"
+                        ${i.image_exists ? '' : (i.article_image_exists ? 'checked' : '')} ${i.article_image_exists ? '' : 'disabled'}>
+                        article image${i.article_image_exists ? '' : ' (none)'}</label>
+                </div>
+            </div>
             <label class="check hidden" id="pub-embed-row" title="${i.embed_url}">
                 <input type="checkbox" id="pub-embed"> Add link preview card
                 <span class="hint" id="pub-embed-host"></span>
@@ -138,7 +149,8 @@ const Publish = {
                 '→ ' + this.linkHost(i.embed_url);
             embed.addEventListener('change', () => this.validate());
         }
-        for (const r of modal.querySelectorAll('input[name="pub-img-src"]')) {
+        for (const r of modal.querySelectorAll(
+                'input[name="pub-img-src"], input[name="pub-img-mode-src"]')) {
             r.addEventListener('change', () => this.validate());
         }
 
@@ -358,6 +370,21 @@ const Publish = {
             ? this.info.article_image_data_url : this.info.image_data_url;
     },
 
+    // Image-mode ("Title + image") source picker — same article-vs-grabbed choice as
+    // a thread's first-post image, but the image is mandatory here.
+    imageSource() {
+        const el = document.querySelector('input[name="pub-img-mode-src"]:checked');
+        return el ? el.value : 'none';
+    },
+    imageSourceData() {
+        return this.imageSource() === 'article'
+            ? this.info.article_image_data_url : this.info.image_data_url;
+    },
+    imageSourceExists() {
+        return this.imageSource() === 'article' ? this.info.article_image_exists
+            : this.imageSource() === 'grabbed' ? this.info.image_exists : false;
+    },
+
     // ====================================================================================
     validate() {
         const i = this.info;
@@ -368,6 +395,7 @@ const Publish = {
         const threadCtl = document.getElementById('pub-thread-controls');
 
         threadCtl.classList.toggle('hidden', mode !== 'thread');
+        document.getElementById('pub-image-controls').classList.toggle('hidden', mode !== 'image');
         count.classList.toggle('hidden', mode === 'thread');
 
         const embedRow = document.getElementById('pub-embed-row');
@@ -380,7 +408,7 @@ const Publish = {
             const over = text.length > i.max_length;
             count.classList.toggle('over', over);
             if (mode === 'image') {
-                go.disabled = over || !i.image_exists;
+                go.disabled = over || !this.imageSourceExists();
             } else {
                 go.disabled = over || text.length === 0;
             }
@@ -456,9 +484,10 @@ const Publish = {
 
         if (mode === 'image') {
             host.className = '';
+            const exists = this.imageSourceExists();
             host.innerHTML = this.postCard({
-                body: text, image: i.image_exists ? i.image_data_url : null,
-                missing: !i.image_exists, count: text.length, over: text.length > i.max_length });
+                body: text, image: exists ? this.imageSourceData() : null,
+                missing: !exists, count: text.length, over: text.length > i.max_length });
             return;
         }
 
@@ -495,6 +524,9 @@ const Publish = {
         if (mode === 'thread') {
             options.number = this.threadNumber();
             options.image = this.threadImage() ? this.threadImageSource() : 'none';
+        }
+        if (mode === 'image') {
+            options.image = this.imageSource();
         }
         if (this.embedAvailable(mode)) options.embed = this.embedEnabled(mode);
         const opts = Object.keys(options).length ? options : null;

@@ -271,11 +271,15 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
         return _publish_thread(article, p, message, opts, embed_url)
 
     if mode == "image":
-        img = image_filename(article)
-        if not os.path.isfile(img):
-            return {"ok": False, "url": "",
-                    "error": "%s not found — Grab the image card first." % img}
-        alt_text = rendering.plain_text(article)
+        # Default to the grabbed text card (the historical image-mode attachment); the
+        # popup can also pick the article's own header image.
+        source = opts.get("image", "grabbed")
+        img, error = _resolve_image(article, source)
+        if error:
+            return {"ok": False, "url": "", "error": error}
+        # The grabbed card carries the whole article as text, so its alt is the full
+        # plain text; the article header image is decorative, so use the title.
+        alt_text = rendering.plain_text(article) if source == "grabbed" else article.title
         # An attached image owns the post's embed slot, so no link card here.
         send = lambda: p.make_poster(article.hl).post(
             msg=message, image_local_url=img, alt_text=alt_text)

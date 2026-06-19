@@ -234,7 +234,7 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 .pub-controls > .hint { display: block; margin-bottom: 8px; }
 .pub-meta { display: flex; justify-content: space-between; margin: 6px 0; color: #667; font-size: 12px; }
 #pub-count.over { color: #c22; font-weight: 700; }
-.thread-controls { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.thread-controls, .img-controls { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
 .thread-controls .hint { color: #667; font-size: 12px; }
 .img-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .img-row .check { font-size: 13px; }

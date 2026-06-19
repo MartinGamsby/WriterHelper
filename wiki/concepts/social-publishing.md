@@ -12,8 +12,11 @@ A post is sent one of three ways, chosen by radio in the popup:
 - **text** — post the rendered plain text as one post.
 - **thread** — split the plain text into a reply chain of posts that each fit the limit
   ([[thread-split]]); the author can **edit where it splits** (see below).
-- **image** — post the **title** only, attaching `richTextArea_<slug>_<hl>1.jpg` (page 1 of the
-  captured card, [[image-card-capture]]).
+- **image** — post the **title** only, attaching an image. The attachment source is a
+  radio choice between the **grabbed text card** (`richTextArea_<slug>_<hl>1.jpg`, page 1
+  of the captured card, [[image-card-capture]] — the default) and the **article image**
+  (the post's own header picture). Same article-vs-grabbed pair offered for a thread's
+  first-post image; each radio is disabled until that image exists.
 
 The suggestion hinges on the **rendered plain-text length** vs the platform's char limit
 (not the `mini`/`medium` UI [[glossary]] length category): fits → `suggested_mode="text"`;
@@ -60,9 +63,10 @@ than blocking. The preview dock shows a mock card (`▶` for video links).
 
 ## `publish(article, platform_key, mode, message, options=None) → {ok, url, error}`
 
-The only method with side effects. `options` carries thread choices + the embed flag
-`{"number": bool, "image": "none"|"grabbed"|"article", "embed": bool}` (embed honoured
-only for Bluesky, and only without an image on that post).
+The only method with side effects. `options` carries thread choices, the image source,
+and the embed flag `{"number": bool, "image": "none"|"grabbed"|"article", "embed": bool}`
+(`image` is read in both thread and image modes; embed honoured only for Bluesky, and only
+without an image on that post).
 1. No facet → refused (facets are mandatory).
 2. Existing link for the slot → `{ok: False, url: existing, error}`. (Clear it to re-post.)
 3. `mode == "thread"` → `_publish_thread`: split `message` on `---`, optionally number,
@@ -70,8 +74,9 @@ only for Bluesky, and only without an image on that post).
    to the first post only; grabbed alt = full text, article alt = title), post the reply
    chain via `poster.post_thread`; the **first** post's URL becomes the slot guard
    (`urls[]` also returned). [[thread-split]]
-4. `mode == "image"` → requires the grabbed PNG on disk; posts `message` + that PNG, alt
-   text = full article plain text.
+4. `mode == "image"` → resolves the image source via `_resolve_image` (default `"grabbed"`
+   for back-compat); posts `message` + that image (grabbed alt = full article plain text,
+   article alt = title).
 5. `mode == "text"` → re-checks `len(message) <= max_length`; posts text only.
 6. On success → `set_link(slot, url)` (re-saves the footer, [[link-slots]]) +
    `webbrowser.open(url)`.
@@ -106,8 +111,9 @@ text, thread = `thread_text`, image = title), and renders a **two-column** modal
 left column holds the controls — three radio modes (text · thread · image) defaulted to
 `suggested_mode`, an **editable** textarea (switching modes swaps the remembered draft),
 the live `count / max_length` (text/image) or per-segment readout + Number/Image
-checkboxes (thread). Publish is disabled when over the limit, when text is empty, in
-image mode when the PNG is missing, or in thread mode when any segment is over. If
+checkboxes (thread), plus an **Image source** radio pair (grabbed card / article image)
+in image mode. Publish is disabled when over the limit, when text is empty, in image mode
+when the selected image source is missing, or in thread mode when any segment is over. If
 already posted, it shows the existing URL + a "Clear link (allow re-post)" button.
 
 ## The live preview dock (`renderPreview`)
@@ -117,8 +123,9 @@ The right column is a WYSIWYG **"what you'll post"** dock that re-renders on eve
 (avatar + `author` from `prepare_post` + body, `postCard`), approximating the end result
 — not platform-accurate:
 - **text** → one card with the full body.
-- **image** → one card with the title body + the captured PNG (or a "not grabbed yet"
-  placeholder). The image lives ONLY here now — it was removed from the controls column.
+- **image** → one card with the title body + the chosen image (grabbed card or article
+  header, via the same `imageSource`/`imageSourceData` helpers, or a "no image" placeholder
+  when the selected source doesn't exist yet).
 - **thread** → the segments rendered **exactly as sent** (with the ` (i/n)` counter when
   numbering is on, via `numberedSegments`), stacked as cards joined by a connector line;
   the chosen image (article header or grabbed card, `threadImageData`) attaches to the

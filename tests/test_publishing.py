@@ -196,6 +196,30 @@ def test_publish_image_attaches_page_one(fr, fake_x, tmp_path, monkeypatch):
     assert "contenu" in FakePoster.last["alt"]
 
 
+def test_publish_image_attaches_article_image(fr, fake_x, tmp_path):
+    # Image mode can attach the article's own header image instead of the grabbed card.
+    header = tmp_path / "header.webp"
+    header.write_bytes(b"webp")
+    fr.set_title("Titre")
+    fr.set_content("contenu")
+    fr.set_excerpt_img(str(header))   # absolute local path → resolves as the article image
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "x", "image", "Titre", {"image": "article"})
+    assert result["ok"] is True
+    assert FakePoster.last["image"] == str(header)
+    # The header image is decorative, so its alt text is the title (not the body).
+    assert FakePoster.last["alt"] == "Titre"
+
+
+def test_publish_image_article_source_missing_is_reported(fr, fake_x, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    fr.set_title("Titre")
+    fr.set_facets(["dev"])                 # no excerpt image set
+    result = publishing.publish(fr, "x", "image", "Titre", {"image": "article"})
+    assert result["ok"] is False
+    assert "image" in result["error"].lower()
+
+
 def test_publish_image_resolves_by_current_article_slug(fr, fake_x, tmp_path, monkeypatch):
     # A capture exists, but for a DIFFERENT article (different slug) — it must NOT
     # be picked up for the current one. This is the "right article" guarantee.

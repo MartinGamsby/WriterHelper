@@ -135,12 +135,13 @@
                     author: `MartinGamsby.com/${hl}`,
                     title: "My demo article",
                     image_file: `richTextArea_demo_${hl}1.jpg`,
-                    // Instagram needs a grabbed card to push (step 1); fake one so the
-                    // flow is exercisable in the browser harness.
-                    image_exists: isIg,
-                    image_data_url: isIg ? SAMPLE_IMG : "",
-                    article_image_exists: false,
-                    article_image_data_url: "",
+                    // Fake both a grabbed card and an article header image so every mode
+                    // (image source picker, thread first-post image, IG push) is
+                    // exercisable in the browser harness.
+                    image_exists: true,
+                    image_data_url: SAMPLE_IMG,
+                    article_image_exists: true,
+                    article_image_data_url: SAMPLE_IMG,
                     facets_ok: store[hl].facets.length > 0,
                     embed_url: platform === 'bluesky'
                         ? "https://www.youtube.com/watch?v=dQw4w9WgXcQ" : "",
