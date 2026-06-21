@@ -72,12 +72,16 @@ const Publish = {
           <div class="pub-controls">
             <div class="mode-row">
                 <label class="check"><input type="radio" name="pub-mode" value="text"> Text post</label>
-                <label class="check"><input type="radio" name="pub-mode" value="thread"> Thread</label>
+                ${i.supports_thread
+                    ? `<label class="check"><input type="radio" name="pub-mode" value="thread"> Thread</label>`
+                    : ''}
                 <label class="check"><input type="radio" name="pub-mode" value="image"> Title + image</label>
             </div>
             <span class="hint">${i.fits
                 ? 'fits as text'
-                : `too long for one post (${i.text_length}/${i.max_length}) — thread suggested`}</span>
+                : i.supports_thread
+                    ? `too long for one post (${i.text_length}/${i.max_length}) — thread suggested`
+                    : `too long for one post (${i.text_length}/${i.max_length}) — post as image`}</span>
             <textarea id="pub-text" rows="10"></textarea>
             <div id="pub-thread-controls" class="thread-controls hidden">
                 <label class="check"><input type="checkbox" id="pub-number"> Number posts (1/n)</label>

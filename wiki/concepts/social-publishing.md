@@ -97,8 +97,10 @@ without an image on that post).
 `make_poster` imports the adapter lazily, so a missing/broken adapter doesn't break
 import and tests can monkeypatch the registry. Each `Platform` carries `supports_thread`;
 when it's False (Facebook, Instagram, and the post-bridge platforms), `prepare_post`
-suggests **Image** rather than **Thread** for a too-long post, and `prepare_post` returns
-`supports_thread` so the popup can hide the Thread radio.
+suggests **Image** rather than **Thread** for a too-long post and returns
+`supports_thread`, which `js/publish.js` reads to **omit the Thread radio entirely** and
+to make the too-long hint read "post as image" (not "thread suggested"). So a no-thread
+platform never offers a mode its adapter can't fulfil.
 
 ## Instagram — the exception (image-only, two-step)
 

@@ -209,8 +209,13 @@ const Meta = {
                 row = document.createElement('div');
                 row.className = 'link-row';
                 row.dataset.slot = key;
+                // Buttons routed through post-bridge get a "(PB)" badge so it's clear
+                // they go through the third-party aggregator. See [[post-bridge-adapter]].
+                const pbBadge = slot.via === 'post-bridge'
+                    ? ` <span class="pb-badge" title="Posts via post-bridge.com">(PB)</span>`
+                    : '';
                 row.innerHTML = slot.publish
-                    ? `<button class="publish-btn">${slot.name}</button><input>`
+                    ? `<button class="publish-btn">${slot.name}${pbBadge}</button><input>`
                     : `<span class="link-label">${slot.name}</span><input>`;
                 const input = row.querySelector('input');
                 const save = App.debounce(() =>

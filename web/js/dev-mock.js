@@ -57,10 +57,14 @@
         title_color: "#ade6b9",
         length_short: "Short",
         links: [
-            { name: "X/Twitter", url: "", publish: "x" },
-            { name: "Facebook", url: "", publish: "facebook" },
-            { name: "Instagram", url: "", publish: "instagram" },
-            { name: "Bluesky", url: "", publish: "bluesky" },
+            { name: "X/Twitter", url: "", publish: "x", via: "" },
+            { name: "LinkedIn", url: "", publish: "linkedin", via: "post-bridge" },
+            { name: "Facebook", url: "", publish: "facebook", via: "" },
+            { name: "Instagram", url: "", publish: "instagram", via: "" },
+            { name: "Bluesky", url: "", publish: "bluesky", via: "" },
+            { name: "Threads", url: "", publish: "threads", via: "post-bridge" },
+            { name: "Pinterest", url: "", publish: "pinterest", via: "post-bridge" },
+            { name: "TikTok", url: "", publish: "tiktok", via: "post-bridge" },
             { name: "Source", url: "", publish: "" },
         ],
         content_md: "---\nlayout: post\ntitle: demo\n---\ndemo",
@@ -118,8 +122,15 @@
                     bluesky: { label: 'Bluesky', max: 300 },
                     facebook: { label: 'Facebook', max: 63206 },
                     instagram: { label: 'Instagram', max: 2200 },
+                    linkedin: { label: 'LinkedIn', max: 3000 },
+                    threads: { label: 'Threads', max: 500 },
+                    pinterest: { label: 'Pinterest', max: 500 },
+                    tiktok: { label: 'TikTok', max: 2200 },
                 })[platform] || { label: platform, max: 280 };
                 const isIg = platform === 'instagram';
+                // post-bridge platforms have no native reply chain → no Thread mode.
+                const supportsThread = !['facebook', 'instagram',
+                    'linkedin', 'threads', 'pinterest', 'tiktok'].includes(platform);
                 return {
                     platform,
                     label: meta.label,
@@ -129,6 +140,7 @@
                     text_length: 63,
                     fits: true,
                     suggested_mode: "text",
+                    supports_thread: supportsThread,
                     separator: "---",
                     thread_text: "My demo article:\nA paragraph of demo content.\n---\nAnother bold one.",
                     thread_count: 2,

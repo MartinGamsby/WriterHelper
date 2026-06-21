@@ -24,7 +24,7 @@ _EMBED_LINK_SLOTS = ("YouTube", "YouTube Shorts")
 # ========================================================================================
 class Platform:
     def __init__(self, key, label, link_name, max_length, make_poster,
-                 supports_thread=True):
+                 supports_thread=True, via=""):
         self.key = key
         self.label = label
         self.link_name = link_name      # the Link slot used as idempotence guard
@@ -33,6 +33,10 @@ class Platform:
         # Whether the adapter overrides post_thread (a native reply chain). When False,
         # a too-long post is best offered as Image, not Thread.
         self.supports_thread = supports_thread
+        # The aggregator the post is routed through, "" for a native direct adapter.
+        # "post-bridge" tags the buttons with a "(PB)" badge so the operator knows which
+        # platforms go through the third-party service. See [[post-bridge-adapter]].
+        self.via = via
 
 
 # ========================================================================================
@@ -82,13 +86,13 @@ PLATFORMS = {
     # mode). max_length is each platform's caption ceiling. The grabbed card / article
     # image attach via a LOCAL upload — no public-URL staging like the Meta IG path.
     "linkedin": Platform("linkedin", "LinkedIn", "LinkedIn", 3000,
-                         _make_pb("linkedin"), supports_thread=False),
+                         _make_pb("linkedin"), supports_thread=False, via="post-bridge"),
     "threads": Platform("threads", "Threads", "Threads", 500,
-                        _make_pb("threads"), supports_thread=False),
+                        _make_pb("threads"), supports_thread=False, via="post-bridge"),
     "pinterest": Platform("pinterest", "Pinterest", "Pinterest", 500,
-                          _make_pb("pinterest"), supports_thread=False),
+                          _make_pb("pinterest"), supports_thread=False, via="post-bridge"),
     "tiktok": Platform("tiktok", "TikTok", "TikTok", 2200,
-                       _make_pb("tiktok"), supports_thread=False),
+                       _make_pb("tiktok"), supports_thread=False, via="post-bridge"),
 }
 
 

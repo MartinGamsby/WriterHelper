@@ -58,9 +58,13 @@ class Api:
         slots = []
         for slot in LINK_SLOTS:
             if hl in slot["hls"]:
+                pub = slot.get("publish", "")
                 slots.append({"name": slot["name"],
                               "url": a.get_link(slot["name"]),
-                              "publish": slot.get("publish", "")})
+                              "publish": pub,
+                              # The aggregator a publish slot routes through ("post-bridge"
+                              # → a "(PB)" button badge), "" for native/non-publish slots.
+                              "via": publishing.PLATFORMS[pub].via if pub else ""})
         slots.append({"name": a.get_based_on_text(),
                       "url": a.get_link(a.get_based_on_text()), "publish": ""})
         return {

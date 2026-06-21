@@ -26,13 +26,21 @@ The meta column exposes these slots, language-conditional (from `LINK_SLOTS` in
 | Medium | FR | text field |
 | Typeshare | EN | text field |
 | X/Twitter | both | publish button → popup ([[social-publishing]]) |
-| LinkedIn | EN | text field ([[linkedin-adapter]] is broken/unused) |
+| LinkedIn | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
 | Facebook | both | publish button → popup ([[facebook-adapter]]) |
 | Instagram | both | publish button → popup; image-only, two-step ([[instagram-adapter]]) |
 | Bluesky | both | publish button → popup |
+| Threads | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
+| Pinterest | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
+| TikTok | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
 | YouTube | both | text field; preferred Bluesky link-card source ([[social-publishing]]) |
 | YouTube Shorts | both | text field; Bluesky link-card source |
 | Source | both | text field |
+
+A publish button whose platform routes through an aggregator shows a small **(PB)**
+badge after its name (post-bridge.com — `Platform.via == "post-bridge"`, surfaced as the
+slot's `via` in `get_state`, rendered by `meta.js`). Native direct adapters show no
+badge. See [[post-bridge-adapter]].
 | "Based on" / "Basé sur" | both | appended dynamically; label = `get_based_on_text()` |
 
 The "Based on" link is auto-seeded by `new_article(copy_current=True)` (the "Make V2"

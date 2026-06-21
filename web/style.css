@@ -184,6 +184,8 @@ button.danger { background: #f7e0e0; border-color: #d8a8a8; }
 .link-row { display: flex; gap: 6px; align-items: center; }
 .link-row .link-label, .link-row .publish-btn { width: 110px; flex-shrink: 0; font-size: 12px; }
 .link-row .publish-btn { padding: 4px; }
+/* "(PB)" badge on buttons routed through post-bridge.com (see [[post-bridge-adapter]]). */
+.pb-badge { font-size: 10px; font-weight: 600; opacity: .7; }
 .link-row input { flex: 1; min-width: 0; }
 
 /* Tag picker: suggestion chips under the Tags input. */
