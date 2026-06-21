@@ -31,8 +31,8 @@ The meta column exposes these slots, language-conditional (from `LINK_SLOTS` in
 | Instagram | both | publish button → popup; image-only, two-step ([[instagram-adapter]]) |
 | Bluesky | both | publish button → popup |
 | Threads | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
-| Pinterest | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
-| TikTok | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
+| Pinterest | both | publish button → popup; **(PB)**, image-required ([[post-bridge-adapter]]) |
+| TikTok | both | publish button → popup; **(PB)**, video-only → gated, paste URL ([[post-bridge-adapter]]) |
 | YouTube | both | text field; preferred Bluesky link-card source ([[social-publishing]]) |
 | YouTube Shorts | both | text field; Bluesky link-card source |
 | Source | both | text field |

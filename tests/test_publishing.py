@@ -123,6 +123,45 @@ def test_prepare_short_content_thread_is_single_segment(fr, monkeypatch):
     assert info["separator"] not in info["thread_text"]
 
 
+# ---- media requirements (Pinterest=image, TikTok=video) ---------------------------
+def test_prepare_image_required_platform_forces_image_mode(fr, monkeypatch):
+    # Pinterest pins need an image, so the suggestion is always image (never text/thread),
+    # even for short content that would otherwise "fit as text".
+    monkeypatch.chdir(os.path.dirname(fr.get_posts_folder()))
+    fr.set_title("Court")
+    fr.set_content("Très court.")
+    fr.set_facets(["dev"])
+    info = publishing.prepare_post(fr, "pinterest")
+    assert info["media"] == "image"
+    assert info["suggested_mode"] == "image"
+
+
+def test_prepare_video_platform_exposes_media(fr):
+    # TikTok is video-only; the popup gates on this flag.
+    info = publishing.prepare_post(fr, "tiktok")
+    assert info["media"] == "video"
+
+
+def test_publish_video_platform_refused(fr):
+    # WriterHelper authors no video, so a TikTok post is refused before any adapter call
+    # (no network), and no link is recorded.
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "tiktok", "image", "Peu importe")
+    assert result["ok"] is False
+    assert "video" in result["error"].lower()
+    assert fr.get_link("TikTok") == ""
+
+
+def test_publish_image_required_rejects_text_mode(fr):
+    # Pinterest requires an image: a text-mode call is refused (the guard runs before the
+    # adapter, so no network), and no link is recorded.
+    fr.set_facets(["dev"])
+    result = publishing.publish(fr, "pinterest", "text", "Mon message")
+    assert result["ok"] is False
+    assert "image" in result["error"].lower()
+    assert fr.get_link("Pinterest") == ""
+
+
 # ========================================================================================
 def test_publish_text_posts_and_records_link(fr, fake_x):
     fr.set_title("Court")

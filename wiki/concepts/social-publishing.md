@@ -23,6 +23,23 @@ The suggestion hinges on the **rendered plain-text length** vs the platform's ch
 doesn't fit → `suggested_mode="thread"`. `prepare_post` computes this; the popup defaults
 to it but the user can override to any mode.
 
+## Media requirements (`Platform.media`) — what each platform *needs*
+
+Beyond char limits, a platform constrains which modes are even valid. Each `Platform`
+carries `media`: `"any"` (text or image — Bluesky, X, Facebook, LinkedIn, Threads),
+`"image"` (an image is **mandatory** — Pinterest, Instagram), or `"video"` (a video is
+mandatory — TikTok). `prepare_post` returns it, and the popup acts on it:
+- **`"image"`** → only the **Title + image** mode is offered (Text/Thread radios omitted),
+  `suggested_mode` is forced to `image`, and Publish stays disabled until an image exists.
+- **`"video"`** → the popup shows a **gate** ("TikTok posts require a video") instead of a
+  composer: WriterHelper authors text + branded image cards, never video, so there's
+  nothing to post — the operator posts by hand and pastes the URL into the link slot.
+
+`publish()` re-checks both server-side (a `video` platform is refused; an `image` platform
+rejects a non-image mode) so a stray call fails cleanly rather than uploading a JPEG the
+platform would reject. Instagram's `media` is `"image"` too, but it keeps its own two-step
+panel ([[instagram-adapter]]) rather than the generic image mode.
+
 ## Editable split points (Thread mode)
 
 `prepare_post` returns `thread_text`: the auto-split segments joined by `---` lines
@@ -89,10 +106,10 @@ without an image on that post).
 | `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
 | `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only |
 | `instagram` | Instagram | `Instagram` | 2200 | `PostIG(hl)` ([[instagram-adapter]]) — image-only, two-step |
-| `linkedin` | LinkedIn | `LinkedIn` | 3000 | `PostBridge(hl,"linkedin")` ([[post-bridge-adapter]]) — text/image only |
-| `threads` | Threads | `Threads` | 500 | `PostBridge(hl,"threads")` ([[post-bridge-adapter]]) |
-| `pinterest` | Pinterest | `Pinterest` | 500 | `PostBridge(hl,"pinterest")` ([[post-bridge-adapter]]) |
-| `tiktok` | TikTok | `TikTok` | 2200 | `PostBridge(hl,"tiktok")` ([[post-bridge-adapter]]) |
+| `linkedin` | LinkedIn | `LinkedIn` | 3000 | `PostBridge(hl,"linkedin")` ([[post-bridge-adapter]]) — text/image |
+| `threads` | Threads | `Threads` | 500 | `PostBridge(hl,"threads")` ([[post-bridge-adapter]]) — text/image |
+| `pinterest` | Pinterest | `Pinterest` | 500 | `PostBridge(hl,"pinterest")` ([[post-bridge-adapter]]) — **image required** |
+| `tiktok` | TikTok | `TikTok` | 2200 | `PostBridge(hl,"tiktok")` ([[post-bridge-adapter]]) — **video-only, gated** |
 
 `make_poster` imports the adapter lazily, so a missing/broken adapter doesn't break
 import and tests can monkeypatch the registry. Each `Platform` carries `supports_thread`;

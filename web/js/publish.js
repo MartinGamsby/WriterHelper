@@ -66,22 +66,30 @@ const Publish = {
         // Instagram has its own image-only, two-step (push image → publish) flow.
         if (i.platform === 'instagram') { this.renderInstagram(); return; }
 
+        // A video-only platform (TikTok) can't be served — WriterHelper authors no video.
+        if (i.media === 'video') { this.renderUnsupportedVideo(); return; }
+
+        // Image-required platforms (Pinterest) offer only the Title + image mode.
+        const imageOnly = i.media === 'image';
+
         modal.innerHTML = `
         <h3>Publish to ${i.label} — ${this.hl.toUpperCase()}</h3>
         <div class="pub-cols">
           <div class="pub-controls">
             <div class="mode-row">
-                <label class="check"><input type="radio" name="pub-mode" value="text"> Text post</label>
-                ${i.supports_thread
+                ${imageOnly ? '' : `<label class="check"><input type="radio" name="pub-mode" value="text"> Text post</label>`}
+                ${(!imageOnly && i.supports_thread)
                     ? `<label class="check"><input type="radio" name="pub-mode" value="thread"> Thread</label>`
                     : ''}
                 <label class="check"><input type="radio" name="pub-mode" value="image"> Title + image</label>
             </div>
-            <span class="hint">${i.fits
-                ? 'fits as text'
-                : i.supports_thread
-                    ? `too long for one post (${i.text_length}/${i.max_length}) — thread suggested`
-                    : `too long for one post (${i.text_length}/${i.max_length}) — post as image`}</span>
+            <span class="hint">${imageOnly
+                ? `${i.label} requires an image — posts the title + image`
+                : i.fits
+                    ? 'fits as text'
+                    : i.supports_thread
+                        ? `too long for one post (${i.text_length}/${i.max_length}) — thread suggested`
+                        : `too long for one post (${i.text_length}/${i.max_length}) — post as image`}</span>
             <textarea id="pub-text" rows="10"></textarea>
             <div id="pub-thread-controls" class="thread-controls hidden">
                 <label class="check"><input type="checkbox" id="pub-number"> Number posts (1/n)</label>
@@ -161,6 +169,23 @@ const Publish = {
         document.getElementById('pub-cancel').addEventListener('click', () => this.close());
         document.getElementById('pub-go').addEventListener('click', () => this.send());
         this.validate();
+    },
+
+    // ====================================================================================
+    // A platform that REQUIRES a video (e.g. TikTok). WriterHelper authors text + branded
+    // image cards, never video, so there's nothing valid to post — explain that instead of
+    // showing a Publish button that can only fail.
+    renderUnsupportedVideo() {
+        const i = this.info;
+        const modal = document.getElementById('modal');
+        modal.innerHTML = `
+        <h3>Publish to ${i.label} — ${this.hl.toUpperCase()}</h3>
+        <p class="warn">${i.label} posts require a video.</p>
+        <p>WriterHelper produces text and branded image cards, not video, so it can't
+           publish to ${i.label} directly. Post there by hand, then paste the URL into the
+           ${i.label} link field to keep the article's footer complete.</p>
+        <div class="modal-buttons"><button id="pub-cancel">Close</button></div>`;
+        document.getElementById('pub-cancel').addEventListener('click', () => this.close());
     },
 
     // ====================================================================================

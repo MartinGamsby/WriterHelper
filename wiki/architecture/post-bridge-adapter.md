@@ -67,6 +67,16 @@ Base `https://api.post-bridge.com`, `Authorization: Bearer <key>`:
 `GET /v1/social-accounts` · `POST /v1/media/create-upload-url` (+ PUT signed URL) ·
 `POST /v1/posts` · `GET /v1/post-results?post_id=`.
 
+## Media requirements per platform
+
+The four wired platforms differ in what they *require* (`Platform.media`, see
+[[social-publishing]]): **LinkedIn / Threads** = `"any"` (text or image); **Pinterest** =
+`"image"` (the popup offers only Title + image); **TikTok** = `"video"` — and since
+WriterHelper authors no video, its popup is a **gate** (post by hand, paste the URL). If
+WriterHelper ever produces a video asset, TikTok flips to a real composer by changing its
+`media` and giving the adapter a video to upload (post-bridge's upload enum already allows
+`video/mp4`, `video/quicktime`).
+
 ## Extending
 
 - **More platforms**: add a `Platform(..., _make_pb("<name>"), supports_thread=False)`

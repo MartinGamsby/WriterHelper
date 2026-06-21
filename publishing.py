@@ -24,7 +24,7 @@ _EMBED_LINK_SLOTS = ("YouTube", "YouTube Shorts")
 # ========================================================================================
 class Platform:
     def __init__(self, key, label, link_name, max_length, make_poster,
-                 supports_thread=True, via=""):
+                 supports_thread=True, via="", media="any"):
         self.key = key
         self.label = label
         self.link_name = link_name      # the Link slot used as idempotence guard
@@ -37,6 +37,11 @@ class Platform:
         # "post-bridge" tags the buttons with a "(PB)" badge so the operator knows which
         # platforms go through the third-party service. See [[post-bridge-adapter]].
         self.via = via
+        # What media the platform REQUIRES of a post: "any" (text or image is fine),
+        # "image" (an image is mandatory — Pinterest, Instagram), or "video" (a video is
+        # mandatory — TikTok). WriterHelper authors text + image cards only, so a "video"
+        # platform can't be published to; the popup gates on this. See [[social-publishing]].
+        self.media = media
 
 
 # ========================================================================================
@@ -80,7 +85,7 @@ PLATFORMS = {
     # (stage_instagram_image, then publish) — 2200 is IG's caption limit.
     # See [[instagram-adapter]].
     "instagram": Platform("instagram", "Instagram", "Instagram", 2200, _make_ig,
-                          supports_thread=False),
+                          supports_thread=False, media="image"),
     # post-bridge-backed platforms ([[post-bridge-adapter]]): one shared API key, no
     # per-platform developer app. Text/image only (no native reply chain → no Thread
     # mode). max_length is each platform's caption ceiling. The grabbed card / article
@@ -89,10 +94,15 @@ PLATFORMS = {
                          _make_pb("linkedin"), supports_thread=False, via="post-bridge"),
     "threads": Platform("threads", "Threads", "Threads", 500,
                         _make_pb("threads"), supports_thread=False, via="post-bridge"),
+    # Pinterest pins are image-first — a text-only post isn't a thing, so it requires an
+    # image. TikTok is video-only; WriterHelper has no video to give it, so the popup
+    # gates it (media="video") rather than offering a post it can't fulfil.
     "pinterest": Platform("pinterest", "Pinterest", "Pinterest", 500,
-                          _make_pb("pinterest"), supports_thread=False, via="post-bridge"),
+                          _make_pb("pinterest"), supports_thread=False, via="post-bridge",
+                          media="image"),
     "tiktok": Platform("tiktok", "TikTok", "TikTok", 2200,
-                       _make_pb("tiktok"), supports_thread=False, via="post-bridge"),
+                       _make_pb("tiktok"), supports_thread=False, via="post-bridge",
+                       media="video"),
 }
 
 
@@ -170,12 +180,18 @@ def prepare_post(article, platform_key) -> dict:
         "text": text,
         "text_length": len(text),
         "fits": fits,
-        # A post that doesn't fit is best served as a thread where the adapter supports
-        # one; otherwise fall back to an image (the whole card as a picture).
-        "suggested_mode": ("text" if fits
+        # An image-required platform (Pinterest/Instagram) is always image mode. Else: a
+        # post that doesn't fit is best served as a thread where the adapter supports one,
+        # otherwise fall back to an image (the whole card as a picture).
+        "suggested_mode": ("image" if p.media == "image"
+                           else "text" if fits
                            else "thread" if p.supports_thread else "image"),
         # Lets the popup hide/disable the Thread radio for adapters without a reply chain.
         "supports_thread": p.supports_thread,
+        # The media the platform requires: "any" | "image" | "video". The popup uses it to
+        # offer only valid modes (image-only platforms) or to gate entirely (video, which
+        # WriterHelper can't author). See [[social-publishing]].
+        "media": p.media,
         "thread_text": thread_split.join_for_edit(segments),
         "thread_count": len(segments),
         "separator": thread_split.SEPARATOR,
@@ -293,10 +309,24 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
         return {"ok": False, "url": existing,
                 "error": "A %s link already exists. Clear it to re-post." % p.label}
 
+    # A video-only platform (TikTok) can't be served: WriterHelper authors text + image
+    # cards, never video. Gate it here too (the popup also blocks it) so a stray call fails
+    # cleanly rather than uploading a JPEG TikTok would reject.
+    if p.media == "video":
+        return {"ok": False, "url": "",
+                "error": "%s posts require a video; WriterHelper produces text and image "
+                         "cards only. Post there by hand and paste the URL." % p.label}
+
     # Instagram is image-only and needs its image already public (step 1); it carries no
     # text/thread modes and no link card, so it gets its own short path.
     if p.key == "instagram":
         return _publish_instagram(article, p, message, opts)
+
+    # Image-required platforms (Pinterest) reject a text/thread post — it must carry an
+    # image. The popup only offers image mode for these; this guards a direct call.
+    if p.media == "image" and mode != "image":
+        return {"ok": False, "url": "",
+                "error": "%s requires an image — use Title + image mode." % p.label}
 
     # Optional Bluesky link-preview card (None = plain post, as before).
     embed_url = (embed_candidate(article, message)

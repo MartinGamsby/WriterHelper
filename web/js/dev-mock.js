@@ -131,6 +131,9 @@
                 // post-bridge platforms have no native reply chain → no Thread mode.
                 const supportsThread = !['facebook', 'instagram',
                     'linkedin', 'threads', 'pinterest', 'tiktok'].includes(platform);
+                // Media a platform requires: image (Pinterest/Instagram), video (TikTok).
+                const mediaKind = ({ instagram: 'image', pinterest: 'image',
+                    tiktok: 'video' })[platform] || 'any';
                 return {
                     platform,
                     label: meta.label,
@@ -139,8 +142,9 @@
                     text: "My demo article:\nA paragraph of demo content.\nAnother bold one.",
                     text_length: 63,
                     fits: true,
-                    suggested_mode: "text",
+                    suggested_mode: mediaKind === 'image' ? 'image' : 'text',
                     supports_thread: supportsThread,
+                    media: mediaKind,
                     separator: "---",
                     thread_text: "My demo article:\nA paragraph of demo content.\n---\nAnother bold one.",
                     thread_count: 2,
