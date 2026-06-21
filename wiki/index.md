@@ -17,6 +17,7 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[social-publishing]] — two-phase publish behind a confirmation popup; text · thread · image modes
 - [[link-slots]] — named `(text,url)` link slots, the file footer, the publish guard
 - [[image-card-capture]] — html2canvas branded-JPEG generation (slug-named) + sizing
+- [[video-posts]] — PLANNED: short vertical videos (TikTok then YouTube Shorts) from the card; PoC = text fading in from black
 - [[invariants-and-traps]] — the non-negotiables, the landmines, tests, style
 - [[secrets]] — where credentials live; the LinkedIn scrub; the wiki rule
 - [[tag-vocabulary]] — controlled bilingual tags: `tag_vocab.py` vocabulary, FR↔EN pairing in `set_tags`, the facet-aware picker (`tag_index.py`), and the `migrate_tags.py` normalizer

@@ -85,3 +85,4 @@ Watermark `#7a9295` (green) else silver; page badge `#ade6b9` (green) / `#000033
 - [[content-flavors]] — the `content_md_separators` being captured
 - [[social-publishing]] — consumer of the PNG
 - [[web-ui]] · [[webapi-bridge]]
+- [[video-posts]] — PLANNED: the card is the basis for the first PoC video (fade-in)

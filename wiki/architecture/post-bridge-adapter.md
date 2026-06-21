@@ -75,7 +75,8 @@ The four wired platforms differ in what they *require* (`Platform.media`, see
 WriterHelper authors no video, its popup is a **gate** (post by hand, paste the URL). If
 WriterHelper ever produces a video asset, TikTok flips to a real composer by changing its
 `media` and giving the adapter a video to upload (post-bridge's upload enum already allows
-`video/mp4`, `video/quicktime`).
+`video/mp4`, `video/quicktime`) — this is the [[video-posts]] roadmap (TikTok then YouTube
+Shorts).
 
 ## Extending
 
