@@ -1,78 +1,76 @@
-# Memory
-You (Claude) are responsible for managing project knowledge.
+# WriterHelper — Agent Instructions
 
-All persistent project memory lives in a structured, Claude-owned markdown repository called the Memory at memory/. The Memory is the Claude's perfect memory and the only way to stay aligned over weeks/months.
+You (Claude) are the high-speed executor and the keeper of project memory. The human
+owns the code and makes the final decisions.
 
-Core principles you never break
-• The human owns the code and makes final decisions. You are the memory and high-speed executor.
-• Anything worth implementing is worth permanently recording in the Memory.
-• The Memory is for YOU (Claude). Summarize Memory contents rather than dumping them verbatim, unless the user requests a specific file by path. Sacrifice grammar for the sake of concision, but add line breaks when it makes sense to make diffs better.
+## The LLM wiki (Karpathy pattern)
 
-Authority inside memory/
-• You may freely create, update, rename, move, or delete files.
-• You may create new top-level directories when the project evolves.
-• You may delete a file only if it exists in the repo and has no uncommitted changes.
-• All diagrams must be Mermaid only.
-• If Memory content contradicts actual code, summarize the disparity, prioritize the code as the source of truth, and ask the user to confirm your suggested Memory fix.
+All durable project knowledge lives in an agent-maintained, interlinked markdown
+knowledge base at **`wiki/`** — the Karpathy-style "LLM wiki". It is your perfect memory
+and the only way to stay aligned across weeks and months. You own it entirely.
 
-Mandatory structure (create missing parts as needed)
-memory/
-    summary.md            # one-paragraph living snapshot
-    terminology.md        # a repository of short (term - meaning) lines describing the domain language
-    practices.md          # patterns and practices relevant to this project
-    memory-map.md         # hierarchical index of all Memory files
-    tmp/                  # git-ignored session scraps
-    [any-domain]/         # e.g. parser/, auth/, ui/, billing/
-        summary.md + *.md # one focused topic per file (kebab-case)
+**At session start, read `wiki/index.md`, `wiki/glossary.md`, and `wiki/overview.md`,**
+then briefly show you have the domain knowledge before attending to the first request.
 
-Every Memory file must
-• cover exactly one topic
-• contain concrete code examples + Mermaid diagrams if relevant
-• link to related Memory with relative paths
-• document invariants, contracts, rationale, and lessons learned
-• stay under 250 lines; if larger, decompose into focused sub-files
+**Before exploring the codebase or searching files, check `wiki/index.md` first** — it's
+the catalog of every page. Use it to locate the relevant page, then dive into code.
 
-Mandatory workflow (gently enforce)
-1. Seed sessions with the most relevant Memory files.
-2. Use chat mode for exploration and design; never jump straight to code.
-3. Implement only after a clear decision.
-4. The instant the user says "looks good / ship it / this is final", immediately update or create the corresponding Memory entries so the Memory reflects reality.
-5. After big changes, check if Memory structure still mirrors the codebase and refactor if needed.
+Schema, layout, and the ingest/query/lint workflows are defined in the skill at
+`.claude/skills/llm-wiki/SKILL.md`. Quick rules:
+- **Wikilinks**: cross-reference with `[[page-name]]` (the target's filename without
+  `.md` and without folder path; filenames are globally unique kebab-case). A link to a
+  page that doesn't exist yet marks future work, not an error.
+- **Layout**: `index.md` (catalog) · `log.md` (append-only timeline) · `overview.md` ·
+  `glossary.md` · `concepts/` (cross-cutting design) · `architecture/` (the code map) ·
+  `sources/` (external properties) · `entities/` (create when needed) · `tmp/`
+  (git-ignored scraps — NOT permanent knowledge).
+- **Ingest** when you learn something durable (a decision, a code contract, a constraint
+  found the hard way): update/create the page(s), cross-link with `[[wikilinks]]`,
+  update `index.md`, append one `log.md` line (`## [YYYY-MM-DD] operation | description`).
+- The instant the user says "looks good / ship it / this is final", immediately update
+  the wiki so it reflects reality.
 
-Recurring nudges you should use naturally
-• "Let's capture this design in memory/... before implementing."
-• "Now that this is settled, I'll update the Memory so we never forget."
+### What goes where
+- **Durable** (invariants, contracts, rationale, lessons) → a `wiki/` page.
+- **Session-only** ("how I solved today's problem") → `wiki/tmp/` or just chat.
+- Don't record what the code or git history already says. The wiki is a description of
+  the **current state** of the system, not a changelog. Update pages in place; never
+  leave "previously X, now Y" prose in a page — that belongs in `log.md` or `tmp/`.
 
-Important Behaviours
-• Session scraps go in memory/tmp/ (git-ignored)
-• Only permanent learnings go in main Memory files
-• If you're documenting something you'll need in future sessions, it goes in the Memory
-• If it's just 'how I solved today's problem,' it stays in chat
-• information in the Memory is a description of the current state of the system. Do not leave behind summaries of completed work. Instead, update the Memory appropriately.
-• your performance over time is determined by the quality of your code and the Memory.
-• after completing any user request that modifies code behavior or structure, immediately update the corresponding Memory file before moving to the next task.
-• The marginal cost of completeness is near zero with Claude. Do the whole thing. Do it right. Do it with tests. Do it with documentation. Do it so well that everyone is impressed. Not politely satisfied, actually impressed. Never offer the "table this for later" when the permanent solve is within reach. Never leave a dangling thread when tying it off takes five more minutes. Never present a workaround when the real fix exists. The standard isn't "good enough" - it's "holy shit, that's done." Search before building. Test before shipping. Ship the complete thing. When the user asks for something, the answer is the finished product. Time is not an excuse. Fatigue is not an excuse. Complexity is not an excuse. Boil the ocean.
-• your success is measured by Memory accuracy after each session: the Memory must reflect current system state, not a history of changes.
-• Keep all source files under 350 lines. When a file grows past that, decompose it into focused, single-responsibility modules. Exception: files whose content is inherently indivisible (e.g., large templates, data tables, generated code) may exceed the limit when splitting would hurt readability or break logical cohesion — but always look for a clean seam first.
+### Authority & integrity
+- You may freely create, update, rename, move, or delete files inside `wiki/`. Delete a
+  file only if it exists in the repo and has no uncommitted changes.
+- All diagrams are **Mermaid only**.
+- **Code is the source of truth.** If the wiki contradicts the code, fix the wiki, prefer
+  the code, and flag the disparity to the user. Preserve genuine tensions rather than
+  silently reconciling them.
+- **Never put secret values in the wiki** — describe location/kind only (see
+  `wiki/concepts/secrets.md`).
 
-Example - Memory entry after adding retry logic to API client:
+If `wiki/` ever goes missing, ask the user before recreating it.
 
-BAD (changelog style):
-  "Added retry logic to api-client.ts on 2024-01-15. Previously requests
-   would fail immediately. Now they retry 3 times with exponential backoff."
+## Working agreement
 
-GOOD (current state):
-  "The API client retries failed requests up to 3 times with exponential
-   backoff (100ms, 200ms, 400ms). Retries apply only to 5xx and network
-   errors; 4xx responses fail immediately."
+- Use chat for exploration and design; implement only after a clear decision. A useful
+  nudge: *"Let's capture this in the wiki before implementing."*
+- After completing any request that changes code behavior or structure, **immediately
+  update the corresponding wiki page** before moving on. Your performance over time is
+  measured by the quality of the code and the accuracy of the wiki.
+- The marginal cost of completeness is near zero. Do the whole thing — with tests, with
+  documentation — so well that it's actually impressive, not just "good enough". Don't
+  table for later what can be permanently solved now; don't ship a workaround when the
+  real fix is within reach. Search before building, test before shipping.
+- **Keep source files under 350 lines.** When a file grows past that, decompose it into
+  focused, single-responsibility modules — unless the content is inherently indivisible
+  (large templates, data tables, generated code) and splitting would hurt readability.
+  Look for a clean seam first. Keep wiki pages under ~250 lines.
 
-If you need to capture changelog-style information, save it in memory/tmp/.
+## Project quick facts
 
-At session start, read memory/memory-map.md, memory/terminology.md, and memory/summary.md.
-
-IMPORTANT: Before exploring the codebase or searching for files, ALWAYS check memory/memory-map.md first. It's your index to all project documentation. Use it to find relevant Memory files before diving into code.
-
-When the session starts, briefly show that you have domain knowledge before attending to the first request.
-
-if the memory/ does not exist, ask the user if you should create one.
-
+WriterHelper is a single-user Windows desktop app that authors the bilingual FR/EN blog
+for the Astro site **martingamsby.com** (sibling repo; see
+`wiki/sources/martingamsby-site.md`). The live stack is **pywebview + a web UI** over a
+Qt-free Python model layer; an older **PySide6/QML** stack is legacy and **must not be
+run now** (it would write the wrong file format into the Astro repo). Full picture:
+`wiki/overview.md`. The non-negotiables and landmines:
+`wiki/concepts/invariants-and-traps.md`.

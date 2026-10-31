@@ -428,7 +428,7 @@ Flickable {
                         anchors.topMargin: centeredName ? -9 : 0
                         anchors.bottomMargin: centeredName ? -9 : 0
                         anchors.rightMargin: 6
-                        text: menu.hl == "en" ? "linktr.ee/Gamsby" : "linktr.ee/MGamsby"
+                        text: menu.hl == "en" ? "MartinGamsby.com/en" : "MartinGamsby.com/fr"
                         font.pointSize: sbFontSize.value *0.8
                     }
                 }

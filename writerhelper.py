@@ -1,49 +1,27 @@
-import time
+# WriterHelper entry point: pywebview window hosting the web UI (web/index.html).
+# The legacy Qt/QML launcher is preserved as writerhelper_qt.py.
+import os
 import sys
 
-import os
-import subprocess
+import webview
 
-# ========================================================================================
-from PySide6.QtWidgets import QApplication
-from PySide6.QtQml import QQmlApplicationEngine
-from PySide6.QtCore import QTimer, QObject, Signal, Slot
-
-from time import strftime, localtime
-import backend as bak
-
-
-# ========================================================================================
-# Define our backend object, which we pass to QML.
-backend = None
-
-
-# ========================================================================================
-def run_ui():
-    #sys.argv += ['--style', 'Fusion']
-    app = QApplication(sys.argv)
-    backend = bak.Backend()
-
-    engine = QQmlApplicationEngine("ui/qml/main.qml")
-    engine.quit.connect(backend.quit)
-
-    engine.rootObjects()[0].setProperty('backend', backend)
-    app.exec()
-
-
+from articles import ArticlesModel
+from webapi import Api
 
 
 # ========================================================================================
 def main():
-    try:
-        run_ui()
-    except KeyboardInterrupt as e:
-        print("[INFO] Received keyboard interrupt %s" % str(e))
-        QApplication.instance().quit()
-    except Exception as e:
-        print("[ERROR] Exception received %s" % str(e))
-        QApplication.instance().quit()
-        raise
+    articles = ArticlesModel.create()
+    articles.fr().open_last_article()
+
+    api = Api(articles)
+
+    index = os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "index.html")
+    window = webview.create_window("Writer Helper", index, js_api=api,
+                                   width=1800, height=1024)
+    api.set_window(window)
+
+    webview.start(http_server=True, debug="--debug" in sys.argv)
 
 
 # ========================================================================================

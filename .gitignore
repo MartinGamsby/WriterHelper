@@ -2,7 +2,13 @@
 .idea/
 __pycache__/
 venv/
-richTextArea*.png
+richTextArea*
 settings*.ini
 /build
 /dist
+wiki/tmp/
+* - Copy*
+all_content_fr.txt
+posts.txt
+test.html
+browser_jobs/
