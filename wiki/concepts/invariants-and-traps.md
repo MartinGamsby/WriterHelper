@@ -20,10 +20,16 @@ working; step on a trap and you waste an hour.
   [[image-card-capture]].
 - **`hl` thread**: the same `hl` string flows model → INI filenames
   (`settings_<hl>.ini`, `settings_bsky_<hl>.ini`, `settings_x_<hl>.ini`) → capture name →
-  atproto `langs=[hl]`. Keep it consistent.
+  atproto `langs=[hl]` → browser-job ids/`hl` (which account Claude posts from). Keep it
+  consistent.
 - **Publish is two-phase + guarded**: `prepare_post` has no side effects; only `publish`
-  sends. `publish` refuses an existing-link slot, a no-facet article, and re-checks the
-  char limit / PNG existence. See [[social-publishing]].
+  sends (or queues). `publish` refuses an existing-link slot, a pending browser job for
+  the same post, a no-facet article, and re-checks the char limit / image existence —
+  identically for both transports (`_plan`). See [[social-publishing]], [[browser-hook]].
+- **Browser-job results are pulled**: the URL Claude reports lands in the slot via
+  `apply_results` on `get_state`/`prepare_post`/`browser_job` — never by editing the
+  `.md` from outside (the app's in-memory article would overwrite it on the next save).
+  See [[browser-hook]].
 - **Translate is one-way, fills only empties**: `translate(hl)` aborts if the
   destination has content. See [[machine-translation]].
 - **A `data:` image must never be left persisted**: a dropped/opened image enters as a
@@ -58,13 +64,14 @@ working; step on a trap and you waste an hour.
 - **`dev.html` + `js/dev-mock.js`** are browser-only dev aids (fake `window.pywebview`),
   never loaded by the real app. `dev.html` must be saved UTF-8 — PowerShell
   `Get-Content`/`Out-File` mangle the non-ASCII `→`; use the Write tool or HTML entities.
-- **`post_linkedin.py` is broken dead code** — unindented snippet, never committed, do
-  not import. See [[linkedin-adapter]], [[secrets]].
 - **`post_fb.PostFB` now inherits `Post`** and is wired into the UI (Facebook publish
   button, both langs). It has no
   `post_thread` (text/image only). See [[facebook-adapter]].
 - **`settings_<hl>.ini` point at the Astro repo** (`martingamsby.com/src/content/blog/<hl>`)
   with base URL `https://martingamsby.com/<hl>/blog/`. Git-ignored. See [[file-storage]].
+- **CWD matters**: captures (`richTextArea_*`), `settings*.ini` and `browser_jobs/` all
+  resolve against the app's working directory. Run the app, `/chrome-post` and
+  `browser_jobs.py` from the same folder (the repo root).
 - **Cruft — ignore, never pattern-match from**: `model - Copy*.py`,
   `qtquickcontrols2.conf_NOPE`, `test.html`, `all_content_fr.txt`, `posts.txt`.
 
@@ -72,9 +79,13 @@ working; step on a trap and you waste an hour.
 
 `tests/` covers the Qt-free layer: `test_article.py` (slug, length category,
 save/rename, links, `change_article` round-trip, V2, ref) and `test_publishing.py`
-(`prepare_post` decision, `publish` with a fake poster + monkeypatched `PLATFORMS`).
-`conftest.py` wires an `ArticlesModel` to temp posts folders + temp INIs via
-`config_dir`. Run `python -m pytest tests -q`. No Qt, no pywebview needed.
+(`prepare_post` decision, `publish` with a fake poster + monkeypatched `PLATFORMS`),
+`test_publish_browser.py` (transports, queueing, guards, slots, ingestion) and
+`test_browser_jobs.py` (job lifecycle, hook, clipboard, CLI), plus adapter/tag/site-push
+suites. `conftest.py` wires an `ArticlesModel` to temp posts folders + temp INIs via
+`config_dir`, and an **autouse** fixture points `publish_config.CONFIG_FILE` +
+`browser_jobs.JOBS_DIR` at temp paths (the `publish_ini` fixture writes that INI) so a
+dev's real settings/queue never leak into tests. Run `python -m pytest tests -q`. No Qt, no pywebview needed.
 
 ## Style
 

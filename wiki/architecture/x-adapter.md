@@ -1,6 +1,9 @@
 # X / Twitter adapter (`post_x.PostX`)
 
-Inherits [[post-base]]. Uses `tweepy` — both v2 (`tweepy.Client`) and v1 (`tweepy.API`).
+Inherits [[post-base]]. **Optional route:** X's default transport is the
+[[browser-hook]] (Claude in Chrome posts in the signed-in browser, threads included),
+because the API is pay-per-use; this adapter runs only with `x = api` in
+`settings_publish.ini`. Uses `tweepy` — both v2 (`tweepy.Client`) and v1 (`tweepy.API`).
 Limit 280 chars, one image per tweet.
 
 ## Config

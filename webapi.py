@@ -3,7 +3,9 @@
 import base64
 import webbrowser
 
+import browser_jobs
 import localize
+import platforms
 import rendering
 import publishing
 import serializers
@@ -12,16 +14,16 @@ import tag_vocab
 from articles import ArticlesModel
 
 # Link slots shown in the meta panel, in footer order. "publish" marks slots
-# with a platform adapter (clicking their button opens the confirmation popup).
+# with a platform (clicking their button opens the confirmation popup); how it is
+# reached — native API or Claude in Chrome — is platforms.Platform.transport.
 LINK_SLOTS = [
-    {"name": "Medium", "hls": ["fr"]},
+    {"name": "Medium", "hls": ["fr"], "publish": "medium"},
     {"name": "Typeshare", "hls": ["en"]},
     {"name": "X/Twitter", "hls": ["fr", "en"], "publish": "x"},
     {"name": "LinkedIn", "hls": ["en"], "publish": "linkedin"},
     {"name": "Facebook", "hls": ["fr", "en"], "publish": "facebook"},
     {"name": "Instagram", "hls": ["fr", "en"], "publish": "instagram"},
     {"name": "Bluesky", "hls": ["fr", "en"], "publish": "bluesky"},
-    # post-bridge-backed ([[post-bridge-adapter]]): one API key, no per-platform app.
     {"name": "Threads", "hls": ["fr", "en"], "publish": "threads"},
     {"name": "Pinterest", "hls": ["fr", "en"], "publish": "pinterest"},
     {"name": "TikTok", "hls": ["fr", "en"], "publish": "tiktok"},
@@ -29,6 +31,28 @@ LINK_SLOTS = [
     {"name": "YouTube Shorts", "hls": ["fr", "en"]},
     {"name": "Source", "hls": ["fr", "en"]},
 ]
+
+
+def link_slots(article):
+    """The meta panel's slots for `article`. A platform the operator hid
+    (settings_publish.ini [Hidden]) loses its publish button, and disappears entirely
+    unless its slot already holds a URL (never hide data)."""
+    slots = []
+    for slot in LINK_SLOTS:
+        if article.hl not in slot["hls"]:
+            continue
+        url = article.get_link(slot["name"])
+        pub = slot.get("publish", "")
+        if pub and platforms.is_hidden(pub):
+            if not url:
+                continue
+            pub = ""
+        slots.append({"name": slot["name"], "url": url, "publish": pub,
+                      # "browser" → a "(Chrome)" badge: Claude in Chrome posts it.
+                      "via": publishing.PLATFORMS[pub].via if pub else ""})
+    slots.append({"name": article.get_based_on_text(),
+                  "url": article.get_link(article.get_based_on_text()), "publish": ""})
+    return slots
 
 
 # ========================================================================================
@@ -53,20 +77,20 @@ class Api:
         return self._articles.get(hl)
 
     # ====================================================================================
+    def _apply_browser_results(self, a):
+        """Ingest URLs Claude in Chrome reported for this article (browser_jobs
+        `done`) into its link slots. The pull-based UI calls get_state after every
+        action and the publish popup polls, so results land without a push channel.
+        A broken job file must never break the UI, hence the guard."""
+        try:
+            browser_jobs.apply_results(a)
+        except Exception as exc:
+            print("[browser_jobs] couldn't apply results: %r" % exc)
+
     def get_state(self, hl):
         a = self._article(hl)
-        slots = []
-        for slot in LINK_SLOTS:
-            if hl in slot["hls"]:
-                pub = slot.get("publish", "")
-                slots.append({"name": slot["name"],
-                              "url": a.get_link(slot["name"]),
-                              "publish": pub,
-                              # The aggregator a publish slot routes through ("post-bridge"
-                              # → a "(PB)" button badge), "" for native/non-publish slots.
-                              "via": publishing.PLATFORMS[pub].via if pub else ""})
-        slots.append({"name": a.get_based_on_text(),
-                      "url": a.get_link(a.get_based_on_text()), "publish": ""})
+        self._apply_browser_results(a)
+        slots = link_slots(a)
         return {
             "hl": hl,
             "title": a.title,
@@ -205,7 +229,9 @@ class Api:
     # ====================================================================================
     # Publishing: popup data, then explicit user-confirmed send.
     def prepare_post(self, hl, platform):
-        return publishing.prepare_post(self._article(hl), platform)
+        a = self._article(hl)
+        self._apply_browser_results(a)   # a just-finished job shows as "already posted"
+        return publishing.prepare_post(a, platform)
 
     def publish(self, hl, platform, mode, message, options=None):
         return publishing.publish(self._article(hl), platform, mode, message, options)
@@ -215,8 +241,30 @@ class Api:
         self._article(hl).set_link(name, "")
         return True
 
+    # ====================================================================================
+    # Browser hook ([[browser-hook]]): jobs queued for Claude in Chrome.
+    def browser_job(self, hl, job_id):
+        """A queued job's current state (the popup polls this). Applies a finished
+        job's URL to the article first, so `status` reads "applied" once it's linked."""
+        self._apply_browser_results(self._article(hl))
+        return browser_jobs.load(job_id)
+
+    def cancel_browser_job(self, job_id):
+        job = browser_jobs.load(job_id)
+        if job and job["status"] == browser_jobs.PENDING:
+            browser_jobs.cancel(job_id)
+        return True
+
+    def run_browser_hook(self, job_id):
+        """Re-run the configured hook command for a pending job (e.g. the console was
+        closed before Claude finished)."""
+        job = browser_jobs.load(job_id)
+        if not job:
+            return {"ran": False, "command": "", "error": "No such job."}
+        return browser_jobs.run_hook(job)
+
     def publish_instagram_image(self, hl):
-        """Instagram step 1: copy the grabbed card into the site repo and git-push it
+        """Instagram-over-API step 1: copy the grabbed card into the site repo and git-push it
         so a public URL exists (IG fetches the image server-side). Returns
         {ok, public_url, log, error}; the popup then calls publish(... {image_url}).
         See [[instagram-adapter]]."""

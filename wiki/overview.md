@@ -4,8 +4,10 @@ WriterHelper is a personal, single-user, Windows desktop app for authoring the
 **bilingual (FR/EN) blog** behind [[martingamsby-site]] (the Astro site at
 martingamsby.com, one repo replacing two old Jekyll blogs). It pairs a French and an
 English article side by side, **auto-saves** an Astro `.md` post on every edit, renders
-a branded social image from the content, and publishes to Bluesky and X behind a
-confirmation popup.
+a branded social image from the content, and publishes it behind a confirmation popup:
+Bluesky through its API, everything else (X, LinkedIn, Facebook, Instagram, Threads,
+Pinterest, TikTok, Medium) by queueing a job that Claude in Chrome posts from the
+operator's signed-in browser ([[browser-hook]]).
 
 The whole point: write a post once, keep its FR/EN twin in lockstep, and get it onto
 the site + socials with minimal ceremony. Twins are coupled by a sticky
@@ -39,9 +41,11 @@ graph TD
     FR --> REND[rendering.py: card/social flavors]
     WEB -- html2canvas --> PNG[(richTextArea_slug_hl_N.jpg)]
     WEB -- prepare_post/publish --> PUB[publishing.py]
-    PUB --> PB[post_bsky.PostBsky]
-    PUB --> PX[post_x.PostX]
-    PUB -. fallback uses .-> PNG
+    PUB -- transport api --> PB[post_bsky.PostBsky + optional PostX/PostFB/PostIG]
+    PUB -- transport browser --> JOBS[(browser_jobs/*.json)]
+    JOBS <--> CC[Claude Code /chrome-post + Claude in Chrome]
+    JOBS -. apply_results on get_state .-> FR
+    PUB -. attaches .-> PNG
 ```
 
 ## Stack
@@ -57,7 +61,8 @@ step, vendored html2canvas. Packaged with PyInstaller (`writerhelper.spec`).
   [[file-storage]].
 - The save lifecycle, the rename-by-delete trick, and the pull-based UI: [[auto-save-and-pull-ui]].
 - The five render shapes of one article: [[content-flavors]].
-- Publishing decision + two-phase flow + popup: [[social-publishing]].
+- Publishing decision + two-phase flow + popup: [[social-publishing]]; the Claude in
+  Chrome route: [[browser-hook]].
 - The non-negotiables: [[invariants-and-traps]]. Secrets handling: [[secrets]].
 
 Start a session by reading [[index]], [[glossary]], and this page.

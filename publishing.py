@@ -1,109 +1,28 @@
 # Social publishing, split in two phases so the UI can show a confirmation
 # popup: prepare_post() computes what WOULD be sent (no side effects),
-# publish() actually sends it. No Qt.
+# publish() actually sends it — through a native adapter (transport "api") or by
+# queueing a job for Claude in Chrome (transport "browser", [[browser-hook]]).
+# The registry lives in platforms.py. No Qt.
 import os
 import re
 import sys
 import traceback
 import webbrowser
 
-import localize
+import browser_jobs
+import instagram_flow
+import publish_config
 import rendering
-import site_push
 import thread_split
+from platforms import PLATFORMS, Platform  # noqa: F401  (re-exported for callers/tests)
 
-# Bluesky is the only platform we hand an explicit link-preview card to (X/Facebook
+# Bluesky is the only platform we hand an explicit link-preview card to (the others
 # unfurl the URL in the post text themselves). A bare http(s) URL, for scanning the
 # message when no YouTube slot is set.
 _MSG_URL_RE = re.compile(r'https?://[^\s<>"\']+')
 # Link slots that hold a video URL worth turning into a Bluesky link card, preferred
 # over any URL found in the message text.
 _EMBED_LINK_SLOTS = ("YouTube", "YouTube Shorts")
-
-
-# ========================================================================================
-class Platform:
-    def __init__(self, key, label, link_name, max_length, make_poster,
-                 supports_thread=True, via="", media="any"):
-        self.key = key
-        self.label = label
-        self.link_name = link_name      # the Link slot used as idempotence guard
-        self.max_length = max_length
-        self.make_poster = make_poster  # callable(hl) -> Post adapter
-        # Whether the adapter overrides post_thread (a native reply chain). When False,
-        # a too-long post is best offered as Image, not Thread.
-        self.supports_thread = supports_thread
-        # The aggregator the post is routed through, "" for a native direct adapter.
-        # "post-bridge" tags the buttons with a "(PB)" badge so the operator knows which
-        # platforms go through the third-party service. See [[post-bridge-adapter]].
-        self.via = via
-        # What media the platform REQUIRES of a post: "any" (text or image is fine),
-        # "image" (an image is mandatory — Pinterest, Instagram), or "video" (a video is
-        # mandatory — TikTok). WriterHelper authors text + image cards only, so a "video"
-        # platform can't be published to; the popup gates on this. See [[social-publishing]].
-        self.media = media
-
-
-# ========================================================================================
-def _make_bsky(hl):
-    from post_bsky import PostBsky
-    return PostBsky(hl)
-
-
-def _make_x(hl):
-    from post_x import PostX
-    return PostX(hl)
-
-
-def _make_fb(hl):
-    from post_fb import PostFB
-    return PostFB(hl)
-
-
-def _make_ig(hl):
-    from post_ig import PostIG
-    return PostIG(hl)
-
-
-def _make_pb(platform):
-    """Factory for a post-bridge-backed platform (one API key, no per-platform app).
-    `platform` is the post-bridge platform string the adapter targets."""
-    def factory(hl):
-        from post_bridge import PostBridge
-        return PostBridge(hl, platform)
-    return factory
-
-
-PLATFORMS = {
-    "bluesky": Platform("bluesky", "Bluesky", "Bluesky", 300, _make_bsky),
-    "x": Platform("x", "X / Twitter", "X/Twitter", 280, _make_x),
-    # Facebook posts allow ~63k chars, so a post always "fits" as text (PostFB has no
-    # post_thread — text/image only).
-    "facebook": Platform("facebook", "Facebook", "Facebook", 63206, _make_fb,
-                         supports_thread=False),
-    # Instagram is image-only and image-must-be-public: it's a two-step flow
-    # (stage_instagram_image, then publish) — 2200 is IG's caption limit.
-    # See [[instagram-adapter]].
-    "instagram": Platform("instagram", "Instagram", "Instagram", 2200, _make_ig,
-                          supports_thread=False, media="image"),
-    # post-bridge-backed platforms ([[post-bridge-adapter]]): one shared API key, no
-    # per-platform developer app. Text/image only (no native reply chain → no Thread
-    # mode). max_length is each platform's caption ceiling. The grabbed card / article
-    # image attach via a LOCAL upload — no public-URL staging like the Meta IG path.
-    "linkedin": Platform("linkedin", "LinkedIn", "LinkedIn", 3000,
-                         _make_pb("linkedin"), supports_thread=False, via="post-bridge"),
-    "threads": Platform("threads", "Threads", "Threads", 500,
-                        _make_pb("threads"), supports_thread=False, via="post-bridge"),
-    # Pinterest pins are image-first — a text-only post isn't a thing, so it requires an
-    # image. TikTok is video-only; WriterHelper has no video to give it, so the popup
-    # gates it (media="video") rather than offering a post it can't fulfil.
-    "pinterest": Platform("pinterest", "Pinterest", "Pinterest", 500,
-                          _make_pb("pinterest"), supports_thread=False, via="post-bridge",
-                          media="image"),
-    "tiktok": Platform("tiktok", "TikTok", "TikTok", 2200,
-                       _make_pb("tiktok"), supports_thread=False, via="post-bridge",
-                       media="video"),
-}
 
 
 # ========================================================================================
@@ -123,28 +42,10 @@ def image_filename(article):
 
 
 # ========================================================================================
-def _ig_image_dest(article):
-    """The IG source image's filename inside the site repo (slug + hl, JPEG)."""
-    return "%s.%s.jpg" % (article.get_slug(), article.hl)
-
-
 def stage_instagram_image(article) -> dict:
-    """Step 1 of an Instagram post: copy the grabbed card into the site repo and
-    git-push it so a public URL exists (IG fetches the image server-side, so it must be
-    reachable BEFORE the post). Returns site_push's `{ok, public_url, log, error}`; the
-    public_url is handed back to `publish(... mode="image", {"image_url": url})`.
-    See [[instagram-adapter]]."""
-    img = image_filename(article)
-    if not os.path.isfile(img):
-        return {"ok": False, "public_url": "", "log": [],
-                "error": "%s not found — use Square, then Grab the image card first." % img}
-    repo = localize.find_repo_root(article.get_posts_folder())
-    if not repo:
-        return {"ok": False, "public_url": "", "log": [],
-                "error": "Couldn't locate the martingamsby.com checkout above %s."
-                         % article.get_posts_folder()}
-    commit_msg = "IG image: %s (%s)" % (article.get_slug(), article.hl)
-    return site_push.stage_and_push_image(repo, img, _ig_image_dest(article), commit_msg)
+    """Instagram-over-API step 1 (push the grabbed card so it has a public URL). See
+    instagram_flow / [[instagram-adapter]]."""
+    return instagram_flow.stage_image(article, image_filename(article))
 
 
 # ========================================================================================
@@ -161,6 +62,17 @@ def embed_candidate(article, message=""):
 
 
 # ========================================================================================
+def _suggested_mode(p, fits):
+    # An image-required platform is always image mode. Else: a post that doesn't fit is
+    # best served as a thread where one can be posted, otherwise as an image (the whole
+    # card as a picture).
+    if p.media == "image":
+        return "image"
+    if fits:
+        return "text"
+    return "thread" if p.supports_thread else "image"
+
+
 def prepare_post(article, platform_key) -> dict:
     """Everything the confirmation popup needs. Performs NO side effects."""
     p = PLATFORMS[platform_key]
@@ -172,6 +84,7 @@ def prepare_post(article, platform_key) -> dict:
     # un-numbered (counters are stamped at publish) but split with room reserved for
     # them, so turning numbering on never pushes a segment over the limit.
     segments = thread_split.split_text(text, p.max_length, number=True)
+    transport = p.transport
     info = {
         "platform": p.key,
         "label": p.label,
@@ -180,18 +93,22 @@ def prepare_post(article, platform_key) -> dict:
         "text": text,
         "text_length": len(text),
         "fits": fits,
-        # An image-required platform (Pinterest/Instagram) is always image mode. Else: a
-        # post that doesn't fit is best served as a thread where the adapter supports one,
-        # otherwise fall back to an image (the whole card as a picture).
-        "suggested_mode": ("image" if p.media == "image"
-                           else "text" if fits
-                           else "thread" if p.supports_thread else "image"),
-        # Lets the popup hide/disable the Thread radio for adapters without a reply chain.
+        "suggested_mode": _suggested_mode(p, fits),
+        # Lets the popup hide the Thread radio where no reply chain can be posted.
         "supports_thread": p.supports_thread,
-        # The media the platform requires: "any" | "image" | "video". The popup uses it to
-        # offer only valid modes (image-only platforms) or to gate entirely (video, which
+        # The media the platform requires: "any" | "image" | "video". The popup offers
+        # only valid modes (image-only platforms) or gates entirely (video, which
         # WriterHelper can't author). See [[social-publishing]].
         "media": p.media,
+        # "api" (posts now) or "browser" (queued for Claude in Chrome, [[browser-hook]]).
+        "transport": transport,
+        "via": p.via,
+        "compose_url": p.browser_url,
+        # A queued-but-unreported browser job for this post: the popup shows its status
+        # instead of a composer (the double-post guard while Claude is still working).
+        "pending_job": (browser_jobs.pending_for(article, p)
+                        if transport == "browser" else None),
+        "hook_command": publish_config.hook_command() if transport == "browser" else "",
         "thread_text": thread_split.join_for_edit(segments),
         "thread_count": len(segments),
         "separator": thread_split.SEPARATOR,
@@ -213,26 +130,8 @@ def prepare_post(article, platform_key) -> dict:
         # slot, else a URL in the text). The popup shows a checkbox when this is set.
         "embed_url": embed_candidate(article, text) if p.key == "bluesky" else "",
     }
-    if p.key == "instagram":
-        # The IG popup needs to know it can locate the site repo (step 1 = push the image
-        # there), what the pushed file will be called, and whether that image is ALREADY
-        # pushed — so reopening the popup skips straight to publish instead of forcing a
-        # redundant re-push. `text` is the default caption; `image_*` (the grabbed card)
-        # is the required, only attachable image.
-        repo = localize.find_repo_root(article.get_posts_folder())
-        info["ig_repo_found"] = bool(repo)
-        info["ig_image_dest"] = _ig_image_dest(article)
-        status = (site_push.image_status(repo, _ig_image_dest(article), img)
-                  if repo and img_exists else {"pushed": False, "public_url": ""})
-        info["ig_image_pushed"] = status["pushed"]
-        info["ig_public_url"] = status["public_url"]
-        # The image ACTUALLY sitting in the repo (what Instagram will fetch), as a data
-        # URL — so the popup can show it next to the current card and the operator can
-        # catch a stale/changed image. "" when nothing is staged for this post yet.
-        dest_abs = (os.path.join(repo, site_push.IG_ASSET_SUBDIR, _ig_image_dest(article))
-                    if repo else "")
-        info["ig_repo_image_data_url"] = (rendering.data_url(dest_abs)
-                                          if dest_abs and os.path.isfile(dest_abs) else "")
+    if p.key == "instagram" and transport == "api":
+        info.update(instagram_flow.prepare_extras(article, img, img_exists))
     return info
 
 
@@ -274,7 +173,7 @@ def _post_error(p, exc) -> str:
 # ========================================================================================
 def _resolve_image(article, source):
     """Local file path for an attachment, or `(None, error)`. `source` is
-    `"grabbed"` (the captured text-card PNG) or `"article"` (the post's own header
+    `"grabbed"` (the captured text-card JPEG) or `"article"` (the post's own header
     image, already self-hosted to a local file on save)."""
     if source == "grabbed":
         img = image_filename(article)
@@ -291,11 +190,60 @@ def _resolve_image(article, source):
 
 
 # ========================================================================================
+def _failure(p, exc) -> dict:
+    _log_post_exc(p, exc)
+    return {"ok": False, "url": "", "error": _post_error(p, exc)}
+
+
+def _plan(article, p, mode, message, opts):
+    """What a confirmed post consists of, independent of HOW it's sent:
+    `(posts, image, alt_text, error)` — `posts` is one message, or a thread's segments;
+    `image` is a local file attached to the first post (or None)."""
+    if mode == "thread":
+        if not p.supports_thread:
+            return None, None, "", "%s doesn't support threads." % p.label
+        posts = thread_split.split_on_separator(message)
+        if not posts:
+            return None, None, "", "Nothing to post."
+        if opts.get("number", True):
+            posts = thread_split.number_segments(posts)
+        over = [i + 1 for i, s in enumerate(posts) if len(s) > p.max_length]
+        if over:
+            return None, None, "", ("Post %s over the %d-character limit."
+                                    % (", ".join(map(str, over)), p.max_length))
+        source = opts.get("image", "none")
+    elif mode == "image":
+        posts = [message]
+        # Default to the grabbed text card (the historical image-mode attachment); the
+        # popup can also pick the article's own header image.
+        source = opts.get("image", "grabbed")
+    else:
+        if not message.strip():
+            return None, None, "", "Nothing to post."
+        posts = [message]
+        source = "none"
+    if mode != "thread" and len(message) > p.max_length:
+        return None, None, "", ("Text is %d characters; %s allows %d."
+                                % (len(message), p.label, p.max_length))
+
+    image = None
+    if source and source != "none":
+        image, error = _resolve_image(article, source)
+        if error:
+            return None, None, "", error
+    # The grabbed card carries the whole article as text, so its alt is the full plain
+    # text; the article header image is decorative, so use the title.
+    alt_text = (rendering.plain_text(article) if source == "grabbed"
+                else message if mode == "text" else article.title)
+    return posts, image, alt_text, None
+
+
 def publish(article, platform_key, mode, message, options=None) -> dict:
-    """Actually post. `mode` is "text" (message only), "image" (message + page-1
-    PNG), or "thread" (a reply chain split on `---` lines). `message` is the
-    user-confirmed text from the popup. `options` carries thread choices and the embed
-    flag: `{"number": bool, "image": "none"|"grabbed"|"article", "embed": bool}`."""
+    """Actually post (or queue for Claude in Chrome). `mode` is "text" (message only),
+    "image" (message + an image) or "thread" (a reply chain split on `---` lines).
+    `message` is the user-confirmed text from the popup. `options`:
+    `{"number": bool, "image": "none"|"grabbed"|"article", "embed": bool,
+    "image_url": str}` (image_url: Instagram-over-API only)."""
     p = PLATFORMS[platform_key]
     opts = options or {}
 
@@ -309,128 +257,61 @@ def publish(article, platform_key, mode, message, options=None) -> dict:
         return {"ok": False, "url": existing,
                 "error": "A %s link already exists. Clear it to re-post." % p.label}
 
-    # A video-only platform (TikTok) can't be served: WriterHelper authors text + image
-    # cards, never video. Gate it here too (the popup also blocks it) so a stray call fails
-    # cleanly rather than uploading a JPEG TikTok would reject.
+    transport = p.transport
+    if transport == "browser" and browser_jobs.pending_for(article, p):
+        return {"ok": False, "url": "",
+                "error": "A %s post is already queued for Claude in Chrome — wait for it "
+                         "or cancel it first." % p.label}
+
+    # A video-only platform can't be served: WriterHelper authors text + image cards,
+    # never video. Gate it here too (the popup also blocks it).
     if p.media == "video":
         return {"ok": False, "url": "",
                 "error": "%s posts require a video; WriterHelper produces text and image "
                          "cards only. Post there by hand and paste the URL." % p.label}
 
-    # Instagram is image-only and needs its image already public (step 1); it carries no
-    # text/thread modes and no link card, so it gets its own short path.
-    if p.key == "instagram":
-        return _publish_instagram(article, p, message, opts)
+    # Instagram over the Graph API needs its image already public (step 1); it gets its
+    # own short path. Over the browser it's an ordinary image post.
+    if p.key == "instagram" and transport == "api":
+        return instagram_flow.publish(article, p, message, opts, _failure)
 
-    # Image-required platforms (Pinterest) reject a text/thread post — it must carry an
-    # image. The popup only offers image mode for these; this guards a direct call.
     if p.media == "image" and mode != "image":
         return {"ok": False, "url": "",
                 "error": "%s requires an image — use Title + image mode." % p.label}
 
-    # Optional Bluesky link-preview card (None = plain post, as before).
+    posts, image, alt_text, error = _plan(article, p, mode, message, opts)
+    if error:
+        return {"ok": False, "url": "", "error": error}
+
+    if transport == "browser":
+        job = browser_jobs.create(article, p, mode, posts, image or "", alt_text)
+        return {"ok": True, "queued": True, "url": "", "job": job,
+                "hook": browser_jobs.run_hook(job), "error": ""}
+
+    # Optional Bluesky link-preview card (None = plain post). An attached image owns the
+    # post's embed slot, so no card in image mode.
     embed_url = (embed_candidate(article, message)
-                 if opts.get("embed") and p.key == "bluesky" else None) or None
-
-    if mode == "thread":
-        return _publish_thread(article, p, message, opts, embed_url)
-
-    if mode == "image":
-        # Default to the grabbed text card (the historical image-mode attachment); the
-        # popup can also pick the article's own header image.
-        source = opts.get("image", "grabbed")
-        img, error = _resolve_image(article, source)
-        if error:
-            return {"ok": False, "url": "", "error": error}
-        # The grabbed card carries the whole article as text, so its alt is the full
-        # plain text; the article header image is decorative, so use the title.
-        alt_text = rendering.plain_text(article) if source == "grabbed" else article.title
-        # An attached image owns the post's embed slot, so no link card here.
-        send = lambda: p.make_poster(article.hl).post(
-            msg=message, image_local_url=img, alt_text=alt_text)
-    else:
-        if len(message) > p.max_length:
-            return {"ok": False, "url": "",
-                    "error": "Text is %d characters; %s allows %d."
-                             % (len(message), p.label, p.max_length)}
-        send = lambda: p.make_poster(article.hl).post(
-            msg=message, image_local_url=None, alt_text=message, embed_url=embed_url)
-
+                 if opts.get("embed") and p.key == "bluesky" and mode != "image"
+                 else None) or None
     try:
-        url = send()
+        poster = p.make_poster(article.hl)
+        if mode == "thread":
+            urls = poster.post_thread(messages=posts, image_local_url=image,
+                                      alt_text=alt_text, embed_url=embed_url)
+        elif mode == "image":
+            urls = [poster.post(msg=message, image_local_url=image, alt_text=alt_text)]
+        else:
+            urls = [poster.post(msg=message, image_local_url=None, alt_text=message,
+                                embed_url=embed_url)]
     except Exception as exc:  # auth/network failure must reach the UI, not just the console
-        _log_post_exc(p, exc)
-        return {"ok": False, "url": "", "error": _post_error(p, exc)}
+        return _failure(p, exc)
+    if not urls or not urls[0]:
+        return {"ok": False, "url": "", "error": "%s post failed." % p.label}
 
-    article.set_link(p.link_name, url)
-    webbrowser.open(url)
-    return {"ok": True, "url": url, "error": ""}
-
-
-# ========================================================================================
-def _publish_instagram(article, p, caption, opts) -> dict:
-    """Post the (already-public) image + caption to Instagram. The public image URL
-    comes from the prior stage_instagram_image step, handed back in
-    `opts["image_url"]`. IG is image-only, so `caption` is the whole text."""
-    image_url = opts.get("image_url")
-    if not image_url:
-        return {"ok": False, "url": "",
-                "error": "Push the Instagram image to the site first (step 1)."}
-    if len(caption) > p.max_length:
-        return {"ok": False, "url": "",
-                "error": "Caption is %d characters; %s allows %d."
-                         % (len(caption), p.label, p.max_length)}
-    try:
-        url = p.make_poster(article.hl).post(msg=caption, image_url=image_url,
-                                             alt_text=caption)
-    except Exception as exc:  # auth/network failure must reach the UI, not just the console
-        _log_post_exc(p, exc)
-        return {"ok": False, "url": "", "error": _post_error(p, exc)}
-
-    article.set_link(p.link_name, url)
-    webbrowser.open(url)
-    return {"ok": True, "url": url, "error": ""}
-
-
-# ========================================================================================
-def _publish_thread(article, p, message, opts, embed_url=None) -> dict:
-    """Post `message` (segments separated by `---` lines) as a reply chain. The
-    first post's URL is stored in the link slot (the idempotence guard for the
-    whole thread). `embed_url` (if any) adds a link card to the first post."""
-    segments = thread_split.split_on_separator(message)
-    if not segments:
-        return {"ok": False, "url": "", "error": "Nothing to post."}
-
-    if opts.get("number", True):
-        segments = thread_split.number_segments(segments)
-
-    over = [i + 1 for i, s in enumerate(segments) if len(s) > p.max_length]
-    if over:
-        return {"ok": False, "url": "",
-                "error": "Post %s over the %d-character limit."
-                         % (", ".join(map(str, over)), p.max_length)}
-
-    image = None
-    source = opts.get("image", "none")
-    if source and source != "none":
-        image, error = _resolve_image(article, source)
-        if error:
-            return {"ok": False, "url": "", "error": error}
-
-    # Alt text: the grabbed card carries the whole article as text, so its alt is the
-    # full plain text; the article header image is decorative, so use the title.
-    alt_text = rendering.plain_text(article) if source == "grabbed" else article.title
-    try:
-        urls = p.make_poster(article.hl).post_thread(messages=segments,
-                                                     image_local_url=image,
-                                                     alt_text=alt_text,
-                                                     embed_url=embed_url)
-    except Exception as exc:  # auth/network failure must reach the UI, not just the console
-        _log_post_exc(p, exc)
-        return {"ok": False, "url": "", "error": _post_error(p, exc)}
-    if not urls:
-        return {"ok": False, "url": "", "error": "Thread post failed."}
-
+    # The first post's URL is the slot guard (for a thread: the whole chain's).
     article.set_link(p.link_name, urls[0])
     webbrowser.open(urls[0])
-    return {"ok": True, "url": urls[0], "urls": urls, "error": ""}
+    result = {"ok": True, "url": urls[0], "error": ""}
+    if mode == "thread":
+        result["urls"] = urls
+    return result

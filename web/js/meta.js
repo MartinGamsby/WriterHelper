@@ -209,13 +209,13 @@ const Meta = {
                 row = document.createElement('div');
                 row.className = 'link-row';
                 row.dataset.slot = key;
-                // Buttons routed through post-bridge get a "(PB)" badge so it's clear
-                // they go through the third-party aggregator. See [[post-bridge-adapter]].
-                const pbBadge = slot.via === 'post-bridge'
-                    ? ` <span class="pb-badge" title="Posts via post-bridge.com">(PB)</span>`
+                // Buttons routed to Claude in Chrome get a badge so it's clear the post
+                // is queued for the browser, not sent by an API. See [[browser-hook]].
+                const viaBadge = slot.via === 'browser'
+                    ? ` <span class="via-badge" title="Posted by Claude in Chrome (/chrome-post)">🌐</span>`
                     : '';
                 row.innerHTML = slot.publish
-                    ? `<button class="publish-btn">${slot.name}${pbBadge}</button><input>`
+                    ? `<button class="publish-btn">${slot.name}${viaBadge}</button><input>`
                     : `<span class="link-label">${slot.name}</span><input>`;
                 const input = row.querySelector('input');
                 const save = App.debounce(() =>

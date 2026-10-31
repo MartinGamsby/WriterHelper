@@ -12,7 +12,7 @@ graph TD
     APP --> ED[js/editor.js: content column]
     APP --> META[js/meta.js: meta column + link slots]
     APP --> CAP[js/capture.js: html2canvas]
-    META --> PUB[js/publish.js: confirmation popup]
+    META --> PUB[js/publish*.js: confirmation popup]
     APP -- get_state/set_field --> API
     CAP -- save_capture --> API
     PUB -- prepare_post/publish --> API
@@ -40,8 +40,12 @@ row: checklist sidebar | FR meta | FR content | EN content | EN meta. Columns ar
 - `js/meta.js` — builds + wires the meta column; renders link slots, attaches publish
   buttons.
 - `js/capture.js` — sizing helpers + html2canvas pagination ([[image-card-capture]]).
-- `js/publish.js` — the confirmation popup ([[social-publishing]]); Instagram gets its
-  own image-only, two-step (push image → publish) panel ([[instagram-adapter]]).
+- `js/publish.js` — the confirmation popup core ([[social-publishing]]): open/render,
+  modes, validate, send. Extended (via `Object.assign(Publish, …)`, loaded after it) by:
+  `publish-thread.js` (thread split/readout), `publish-preview.js` (the preview dock),
+  `publish-ig.js` (Instagram-over-API two-step panel, [[instagram-adapter]]) and
+  `publish-browser.js` (Queue label/note + the queued-job panel that polls
+  `browser_job`, [[browser-hook]]).
 - `js/dev-mock.js` + `dev.html` — browser-only dev harness (fake bridge); never loaded
   by the real app (and `dev.html` must stay UTF-8, [[invariants-and-traps]]).
 

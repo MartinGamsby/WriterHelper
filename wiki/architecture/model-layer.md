@@ -12,8 +12,10 @@ unit-tested directly.
   takes an `article`.
 - `articles.py` — [[articles-model]] (`ArticlesModel`) pairs FR + EN and owns
   `translate` ([[machine-translation]]).
-- `publishing.py` — [[publishing]]: the two-phase [[social-publishing]] flow +
-  `PLATFORMS` registry.
+- `publishing.py` — [[publishing]]: the two-phase [[social-publishing]] flow; registry
+  in `platforms.py`, Instagram-over-API in `instagram_flow.py`.
+- `browser_jobs.py` / `publish_config.py` — [[browser-hook]]: the Claude in Chrome job
+  queue (+ CLI) and the `settings_publish.ini` knobs.
 - `serializers.py` — [[serializers]]: the file-format seam ([[astro-format]] /
   [[jekyll-format]]).
 

@@ -36,6 +36,24 @@
         + "<text x='50%' y='50%' fill='#ade6b9' font-size='44' font-family='sans-serif' "
         + "text-anchor='middle'>Demo card</text></svg>");
 
+    // Platform table (mirrors platforms.PLATFORMS). Everything but Bluesky goes through
+    // the browser hook by default.
+    const META = {
+        x: { label: 'X / Twitter', slot: 'X/Twitter', max: 280, thread: true },
+        bluesky: { label: 'Bluesky', slot: 'Bluesky', max: 300, thread: true },
+        facebook: { label: 'Facebook', slot: 'Facebook', max: 63206 },
+        instagram: { label: 'Instagram', slot: 'Instagram', max: 2200, media: 'image' },
+        linkedin: { label: 'LinkedIn', slot: 'LinkedIn', max: 3000 },
+        threads: { label: 'Threads', slot: 'Threads', max: 500, thread: true },
+        pinterest: { label: 'Pinterest', slot: 'Pinterest', max: 500, media: 'image' },
+        tiktok: { label: 'TikTok', slot: 'TikTok', max: 2200, media: 'image' },
+        medium: { label: 'Medium', slot: 'Medium', max: 100000 },
+    };
+    // Link slots + fake browser jobs (a pending job "completes" after a few polls, as if
+    // Claude in Chrome had posted it and run `browser_jobs.py done`).
+    const links = { fr: {}, en: {} };
+    const jobs = {};
+
     const sample = (hl) => ({
         hl,
         title: hl === 'fr' ? "Mon article de démo" : "My demo article",
@@ -57,14 +75,13 @@
         title_color: "#ade6b9",
         length_short: "Short",
         links: [
-            { name: "X/Twitter", url: "", publish: "x", via: "" },
-            { name: "LinkedIn", url: "", publish: "linkedin", via: "post-bridge" },
-            { name: "Facebook", url: "", publish: "facebook", via: "" },
-            { name: "Instagram", url: "", publish: "instagram", via: "" },
-            { name: "Bluesky", url: "", publish: "bluesky", via: "" },
-            { name: "Threads", url: "", publish: "threads", via: "post-bridge" },
-            { name: "Pinterest", url: "", publish: "pinterest", via: "post-bridge" },
-            { name: "TikTok", url: "", publish: "tiktok", via: "post-bridge" },
+            ...(hl === 'fr' ? [{ name: "Medium", url: links[hl].Medium || "",
+                                 publish: "medium", via: "browser" }] : []),
+            ...['x', 'linkedin', 'facebook', 'instagram', 'bluesky', 'threads',
+                'pinterest', 'tiktok']
+                .filter(k => hl === 'en' || k !== 'linkedin')
+                .map(k => ({ name: META[k].slot, url: links[hl][META[k].slot] || "",
+                             publish: k, via: k === 'bluesky' ? "" : "browser" })),
             { name: "Source", url: "", publish: "" },
         ],
         content_md: "---\nlayout: post\ntitle: demo\n---\ndemo",
@@ -113,32 +130,33 @@
             open_prev_article: async () => true,
             open_next_article: async () => true,
             translate: async () => true,
-            clear_link: async () => true,
+            clear_link: async (hl, platform) => {
+                delete links[hl][META[platform].slot];
+                return true;
+            },
             open_url: async (url) => { console.log('open_url', url); return true; },
             save_capture: async (hl, page) => `richTextArea_demo_${hl}${page}.jpg`,
             prepare_post: async (hl, platform) => {
-                const meta = ({
-                    x: { label: 'X / Twitter', max: 280 },
-                    bluesky: { label: 'Bluesky', max: 300 },
-                    facebook: { label: 'Facebook', max: 63206 },
-                    instagram: { label: 'Instagram', max: 2200 },
-                    linkedin: { label: 'LinkedIn', max: 3000 },
-                    threads: { label: 'Threads', max: 500 },
-                    pinterest: { label: 'Pinterest', max: 500 },
-                    tiktok: { label: 'TikTok', max: 2200 },
-                })[platform] || { label: platform, max: 280 };
-                const isIg = platform === 'instagram';
-                // post-bridge platforms have no native reply chain → no Thread mode.
-                const supportsThread = !['facebook', 'instagram',
-                    'linkedin', 'threads', 'pinterest', 'tiktok'].includes(platform);
-                // Media a platform requires: image (Pinterest/Instagram), video (TikTok).
-                const mediaKind = ({ instagram: 'image', pinterest: 'image',
-                    tiktok: 'video' })[platform] || 'any';
+                const meta = META[platform] || { label: platform, max: 280 };
+                // ?ig=api in the URL exercises the Graph-API two-step Instagram panel.
+                const igApi = /[?&]ig=api/.test(location.search);
+                const isIg = platform === 'instagram' && igApi;
+                const supportsThread = !!meta.thread;
+                const mediaKind = meta.media || 'any';
+                const transport = (platform === 'bluesky' || isIg) ? 'api' : 'browser';
+                const pending = Object.values(jobs).find(j => j.hl === hl
+                    && j.platform === platform && j.status === 'pending') || null;
                 return {
                     platform,
                     label: meta.label,
                     max_length: meta.max,
-                    existing_url: "",
+                    existing_url: links[hl][meta.slot] || "",
+                    transport,
+                    via: transport === 'browser' ? 'browser' : '',
+                    compose_url: '',
+                    pending_job: pending,
+                    hook_command: /[?&]hook=1/.test(location.search)
+                        ? 'claude --chrome "/chrome-post {id}"' : '',
                     text: "My demo article:\nA paragraph of demo content.\nAnother bold one.",
                     text_length: 63,
                     fits: true,
@@ -168,13 +186,51 @@
                     ig_repo_image_data_url: (isIg && igPushed[hl]) ? SAMPLE_IMG : "",
                 };
             },
-            publish: async (hl, platform) => ({
-                ok: true,
-                url: platform === 'instagram'
-                    ? "https://www.instagram.com/p/DEMO123/"
-                    : "https://bsky.app/profile/demo/post/123",
-                error: "",
-            }),
+            publish: async (hl, platform, mode, message, options) => {
+                const meta = META[platform];
+                const igApi = /[?&]ig=api/.test(location.search);
+                if (platform === 'bluesky' || (platform === 'instagram' && igApi)) {
+                    const url = platform === 'instagram'
+                        ? "https://www.instagram.com/p/DEMO123/"
+                        : "https://bsky.app/profile/demo/post/123";
+                    links[hl][meta.slot] = url;
+                    return { ok: true, url, error: "" };
+                }
+                const id = `20261031-120000-${platform}-${hl}-demo`;
+                const posts = mode === 'thread'
+                    ? message.split(/^\s*-{3,}\s*$/m).map(s => s.trim()).filter(Boolean)
+                    : [message];
+                jobs[id] = { id, status: 'pending', platform, hl, label: meta.label,
+                    mode, posts, image: (options && options.image && options.image !== 'none')
+                        ? `C:/demo/richTextArea_demo_${hl}1.jpg` : '',
+                    account: platform === 'x' ? (hl === 'en' ? 'Martin_Gamsby' : 'MartinGamsby') : '',
+                    url: '', error: '', polls: 0 };
+                console.log('queued browser job', jobs[id]);
+                const hook = /[?&]hook=1/.test(location.search)
+                    ? { ran: true, command: `claude --chrome "/chrome-post ${id}"`, error: '' }
+                    : { ran: false, command: '', error: '' };
+                return { ok: true, queued: true, url: '', job: jobs[id], hook, error: '' };
+            },
+            browser_job: async (hl, id) => {
+                const j = jobs[id];
+                if (j && j.status === 'pending' && ++j.polls >= 2) {
+                    if (/[?&]fail=1/.test(location.search)) {
+                        j.status = 'failed';
+                        j.error = 'Chrome is signed in as a different account.';
+                    } else {
+                        j.status = 'applied';
+                        j.url = `https://example.com/${j.platform}/post/DEMO`;
+                        links[hl][META[j.platform].slot] = j.url;
+                    }
+                }
+                return j || null;
+            },
+            cancel_browser_job: async (id) => {
+                if (jobs[id] && jobs[id].status === 'pending') jobs[id].status = 'cancelled';
+                return true;
+            },
+            run_browser_hook: async (id) => ({ ran: true,
+                command: `claude --chrome "/chrome-post ${id}"`, error: '' }),
             publish_instagram_image: async (hl) => {
                 igPushed[hl] = true;   // a later prepare_post now reports it as pushed
                 return {

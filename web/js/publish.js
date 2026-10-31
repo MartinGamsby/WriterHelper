@@ -23,6 +23,7 @@ const Publish = {
     },
 
     close() {
+        this.stopPolling();   // publish-browser.js: stop watching a queued job
         document.getElementById('modal-overlay').classList.add('hidden');
     },
 
@@ -63,10 +64,17 @@ const Publish = {
             return;
         }
 
-        // Instagram has its own image-only, two-step (push image → publish) flow.
-        if (i.platform === 'instagram') { this.renderInstagram(); return; }
+        // Already queued for Claude in Chrome and not reported back yet: show that job's
+        // status (publish-browser.js) instead of a composer — the double-post guard.
+        if (i.pending_job) { this.renderBrowserJob(i.pending_job, null); return; }
 
-        // A video-only platform (TikTok) can't be served — WriterHelper authors no video.
+        // Instagram over the Graph API has its own two-step flow (publish-ig.js); over
+        // the browser it's an ordinary image post in the composer below.
+        if (i.platform === 'instagram' && i.transport === 'api') {
+            this.renderInstagram(); return;
+        }
+
+        // A video-only platform can't be served — WriterHelper authors no video.
         if (i.media === 'video') { this.renderUnsupportedVideo(); return; }
 
         // Image-required platforms (Pinterest) offer only the Title + image mode.
@@ -124,8 +132,9 @@ const Publish = {
             </label>
             <div class="pub-meta"><span id="pub-count"></span></div>
             <p class="warn hidden" id="pub-warn"></p>
+            ${this.browserNote()}
             <div class="modal-buttons">
-                <button id="pub-go" class="primary">Publish</button>
+                <button id="pub-go" class="primary">${this.goLabel()}</button>
                 <button id="pub-cancel">Cancel</button>
             </div>
           </div>
@@ -172,7 +181,7 @@ const Publish = {
     },
 
     // ====================================================================================
-    // A platform that REQUIRES a video (e.g. TikTok). WriterHelper authors text + branded
+    // A platform that REQUIRES a video. WriterHelper authors text + branded
     // image cards, never video, so there's nothing valid to post — explain that instead of
     // showing a Publish button that can only fail.
     renderUnsupportedVideo() {
@@ -186,180 +195,6 @@ const Publish = {
            ${i.label} link field to keep the article's footer complete.</p>
         <div class="modal-buttons"><button id="pub-cancel">Close</button></div>`;
         document.getElementById('pub-cancel').addEventListener('click', () => this.close());
-    },
-
-    // ====================================================================================
-    // Instagram is a special case: image-only, and the image must be PUBLIC before the
-    // API call (IG fetches it server-side). So it's an explicit two-step flow — (1) push
-    // the grabbed card to the site repo, (2) create the post — each with its own button
-    // and feedback. It must also be the LAST platform you publish to (the post URL only
-    // exists after publishing).
-    renderInstagram() {
-        const i = this.info;
-        const modal = document.getElementById('modal');
-        // A reopened popup whose image is already committed+pushed skips straight to
-        // step 2 — no redundant re-push. The public URL comes back from prepare_post.
-        const pushed = !!i.ig_image_pushed;
-        this.igImageUrl = pushed ? (i.ig_public_url || '') : '';
-
-        const canPush = i.image_exists && i.ig_repo_found;
-
-        // The image actually committed in the repo (what IG will fetch), shown so the
-        // operator can confirm it's the one they want — or spot that it's stale.
-        const repoImg = i.ig_repo_image_data_url;
-        const sameAsCard = repoImg && repoImg === i.image_data_url;
-        let repoCap, repoCls;
-        if (!repoImg) { repoCap = repoCls = ''; }
-        else if (pushed) { repoCls = 'ig-ok'; repoCap = '✓ In the repo now — exactly what Instagram will fetch.'; }
-        else if (sameAsCard) { repoCls = 'warn'; repoCap = '⚠ Matches your card, but this commit isn’t pushed yet — push to make it public.'; }
-        else { repoCls = 'warn'; repoCap = '⚠ Older image in the repo for this post — it differs from your current card; push to replace it.'; }
-        const repoImgBlock = repoImg
-            ? `<div class="ig-repo-img"><img src="${repoImg}" alt="image currently in the site repo">
-                 <div class="ig-repo-cap ${repoCls}">${repoCap}</div></div>`
-            : '';
-
-        const repoWarn = i.ig_repo_found ? '' :
-            `<p class="warn">Can't find the martingamsby.com checkout above the posts
-             folder — the image push (step 1) won't work until that's fixed.</p>`;
-
-        modal.innerHTML = `
-        <h3>Publish to Instagram — ${this.hl.toUpperCase()}</h3>
-        <p class="hint">Instagram is image-only and should be your <b>last</b> publish
-           step. Use the <b>Square</b> sizing on the card before grabbing.</p>
-        ${repoWarn}
-        <div class="pub-cols">
-          <div class="pub-controls">
-            <label class="ig-field">Caption
-              <textarea id="pub-text" rows="7"></textarea>
-            </label>
-            <div class="pub-meta"><span id="pub-count"></span></div>
-            <ol class="ig-steps">
-              <li class="ig-step">
-                <div class="ig-step-head">
-                  <b>1 · Push image to the site</b>
-                  <button id="ig-push" ${canPush ? '' : 'disabled'}>${pushed ? 'Re-push image' : 'Push image'}</button>
-                </div>
-                <div class="ig-step-status" id="ig-push-status">${pushed
-                    ? '<span class="ig-ok">✓ Already pushed — re-push only if you changed the card.</span>'
-                    : (i.image_exists
-                        ? 'Ready to push the grabbed card so Instagram can fetch it.'
-                        : '<span class="warn">No grabbed card yet — Square + Grab it first.</span>')}</div>
-                ${repoImgBlock}
-              </li>
-              <li class="ig-step">
-                <div class="ig-step-head">
-                  <b>2 · Publish to Instagram</b>
-                  <button id="ig-go" class="primary" disabled>Publish</button>
-                </div>
-                <div class="ig-step-status" id="ig-go-status">${pushed ? 'Image is public — ready to publish.' : 'Push the image first.'}</div>
-              </li>
-            </ol>
-            <p class="warn hidden" id="pub-warn"></p>
-            <div class="modal-buttons"><button id="pub-cancel">Cancel</button></div>
-          </div>
-          <div class="pub-preview">
-            <div class="pv-label">Preview — what you'll post</div>
-            <div id="pub-preview-body"></div>
-          </div>
-        </div>`;
-
-        const textarea = document.getElementById('pub-text');
-        textarea.value = this.drafts.image_caption;
-        textarea.addEventListener('input', () => {
-            this.drafts.image_caption = textarea.value;
-            this.igValidate();
-        });
-        const pushBtn = document.getElementById('ig-push');
-        if (pushBtn) { pushBtn.addEventListener('click', () => this.pushIgImage()); }
-        document.getElementById('ig-go').addEventListener('click', () => this.sendInstagram());
-        document.getElementById('pub-cancel').addEventListener('click', () => this.close());
-        this.igValidate();
-    },
-
-    // Caption length + step-2 gating (image pushed AND caption fits + non-empty).
-    igValidate() {
-        const i = this.info;
-        const text = document.getElementById('pub-text').value;
-        const count = document.getElementById('pub-count');
-        count.textContent = `${text.length} / ${i.max_length}`;
-        count.classList.toggle('over', text.length > i.max_length);
-        document.getElementById('ig-go').disabled =
-            !(this.igImageUrl && text.length > 0 && text.length <= i.max_length);
-        this.renderIgPreview(text);
-    },
-
-    renderIgPreview(text) {
-        const i = this.info;
-        const host = document.getElementById('pub-preview-body');
-        host.className = '';
-        host.innerHTML = this.postCard({
-            body: text, image: i.image_exists ? i.image_data_url : null,
-            missing: !i.image_exists, count: text.length, over: text.length > i.max_length });
-    },
-
-    // Step 1: stage + git-push the grabbed JPEG; stream the per-step log into the card.
-    async pushIgImage() {
-        const btn = document.getElementById('ig-push');
-        const status = document.getElementById('ig-push-status');
-        btn.disabled = true;
-        status.innerHTML = '<span class="ig-busy">Pushing image to the site repo…</span>';
-
-        let result;
-        try {
-            result = await API.publish_instagram_image(this.hl);
-        } catch (e) {
-            result = { ok: false, log: [],
-                       error: 'Image push failed: ' + (e && e.message ? e.message : e) };
-        }
-
-        const lines = (result.log || [])
-            .map(l => `<div class="ig-log-line">✓ ${this.escapeHtml(l)}</div>`).join('');
-        if (result.ok) {
-            this.igImageUrl = result.public_url;
-            status.innerHTML = lines +
-                `<div class="ig-log-line ok">Public URL: ${this.escapeHtml(result.public_url)}</div>`;
-            document.getElementById('ig-go-status').textContent =
-                'Image is public — ready to publish.';
-            btn.textContent = 'Re-push image';
-        } else {
-            status.innerHTML = lines +
-                `<div class="ig-log-line err">✗ ${this.escapeHtml(result.error || 'Push failed.')}</div>`;
-        }
-        btn.disabled = false;
-        this.igValidate();
-    },
-
-    // Step 2: create the IG post from the now-public image URL + caption.
-    async sendInstagram() {
-        const go = document.getElementById('ig-go');
-        const warn = document.getElementById('pub-warn');
-        go.disabled = true;
-        go.textContent = 'Publishing…';
-
-        let result;
-        try {
-            result = await API.publish(this.hl, 'instagram', 'image',
-                document.getElementById('pub-text').value, { image_url: this.igImageUrl });
-        } catch (e) {
-            result = { ok: false, error: 'Publish failed: ' + (e && e.message ? e.message : e) };
-        }
-
-        if (result.ok) {
-            await App.refresh(this.hl);
-            const modal = document.getElementById('modal');
-            modal.innerHTML = `
-            <h3>Published to Instagram ✓</h3>
-            <p><a href="${result.url}">${result.url}</a></p>
-            <p class="hint">The Instagram link is saved into the article — commit + push
-               the post so the site carries it too.</p>
-            <div class="modal-buttons"><button id="pub-cancel">Close</button></div>`;
-            document.getElementById('pub-cancel').addEventListener('click', () => this.close());
-        } else {
-            warn.textContent = result.error;
-            warn.classList.remove('hidden');
-            go.textContent = 'Publish';
-            this.igValidate();
-        }
     },
 
     mode() {
@@ -380,11 +215,6 @@ const Publish = {
     embedEnabled(mode) {
         const el = document.getElementById('pub-embed');
         return this.embedAvailable(mode) && el && el.checked;
-    },
-
-    // Split the edited thread blob back into segments (mirrors thread_split.py).
-    segments(text) {
-        return text.split(/^\s*-{3,}\s*$/m).map(s => s.trim()).filter(Boolean);
     },
 
     threadNumber() { return document.getElementById('pub-number').checked; },
@@ -445,108 +275,13 @@ const Publish = {
         this.renderPreview(mode, text);
     },
 
-    // Per-segment counts, accounting for the projected " (i/n)" counter when numbering
-    // is on. Publish is blocked if any segment is over the limit or there are none.
-    validateThread(text, go) {
-        const i = this.info;
-        const segs = this.numberedSegments(text);
-        const n = segs.length;
-        const segsEl = document.getElementById('pub-segs');
-        let anyOver = false;
-
-        const parts = segs.map((s, idx) => {
-            const over = s.length > i.max_length;
-            anyOver = anyOver || over;
-            return `<span class="seg${over ? ' over' : ''}">#${idx + 1} ${s.length}/${i.max_length}</span>`;
-        });
-        segsEl.innerHTML = n ? `<b>${n} post${n > 1 ? 's' : ''}:</b> ${parts.join(' · ')}`
-                             : '<span class="over">no posts — add some text</span>';
-        go.disabled = anyOver || n === 0;
-    },
-
-    // The segments exactly as they'll be sent: split + the projected " (i/n)" counter
-    // appended when numbering is on (mirrors thread_split.number_segments).
-    numberedSegments(text) {
-        const segs = this.segments(text);
-        const n = segs.length;
-        if (!this.threadNumber() || n <= 1) return segs;
-        return segs.map((s, idx) => `${s} (${idx + 1}/${n})`);
-    },
-
-    // ====================================================================================
-    escapeHtml(s) {
-        return s.replace(/[&<>"]/g, c => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    },
-
-    // One rendered "post" card. `over`/`missing` flag problems; `image` is a data URL.
-    postCard({ body, image, count, over, missing }) {
-        const i = this.info;
-        const media = image
-            ? `<img class="pv-media" src="${image}" alt="">`
-            : (missing ? `<div class="pv-media-missing">no image to attach — set an article image or “Grab” the card</div>` : '');
-        const text = body ? `<div class="pv-body">${this.escapeHtml(body)}</div>` : '';
-        const badge = (count !== undefined)
-            ? `<div class="pv-foot${over ? ' over' : ''}">${count}/${i.max_length}</div>` : '';
-        return `<div class="pv-post${over ? ' over' : ''}">
-            <div class="pv-head">
-                <div class="pv-avatar">M</div>
-                <div class="pv-who"><b>Martin Gamsby</b><span>${i.author} · now</span></div>
-            </div>
-            ${text}${media}${badge}
-        </div>`;
-    },
-
-    // A mock link-preview card for the right-hand preview ("" when no embed is on).
-    embedCardHtml(mode) {
-        if (!this.embedEnabled(mode)) return '';
-        const url = this.info.embed_url;
-        const video = /youtu\.?be/.test(url);
-        return `<div class="pv-embed">${video ? '▶ ' : '🔗 '}
-            <b>${this.escapeHtml(this.linkHost(url))}</b>
-            <span>${this.escapeHtml(url)}</span></div>`;
-    },
-
-    renderPreview(mode, text) {
-        const i = this.info;
-        const host = document.getElementById('pub-preview-body');
-
-        if (mode === 'image') {
-            host.className = '';
-            const exists = this.imageSourceExists();
-            host.innerHTML = this.postCard({
-                body: text, image: exists ? this.imageSourceData() : null,
-                missing: !exists, count: text.length, over: text.length > i.max_length });
-            return;
-        }
-
-        if (mode === 'thread') {
-            const segs = this.numberedSegments(text);
-            const imgData = this.threadImage() ? this.threadImageData() : '';
-            host.className = 'pv-thread';
-            // The link card (if any) rides the first post, and only without an image.
-            host.innerHTML = segs.length
-                ? segs.map((s, idx) => this.postCard({
-                    body: s, count: s.length, over: s.length > i.max_length,
-                    image: (idx === 0 && imgData) ? imgData : null,
-                    missing: idx === 0 && this.threadImage() && !imgData })
-                    + (idx === 0 && !imgData ? this.embedCardHtml(mode) : '')).join('')
-                : '<div class="pv-empty">Add some text to preview the thread.</div>';
-            return;
-        }
-
-        host.className = '';
-        host.innerHTML = this.postCard({
-            body: text, count: text.length, over: text.length > i.max_length })
-            + this.embedCardHtml(mode);
-    },
 
     // ====================================================================================
     async send() {
         const go = document.getElementById('pub-go');
         const warn = document.getElementById('pub-warn');
         go.disabled = true;
-        go.textContent = 'Publishing…';
+        go.textContent = this.info.via === 'browser' ? 'Queueing…' : 'Publishing…';
 
         const mode = this.mode();
         const options = {};
@@ -570,7 +305,9 @@ const Publish = {
             result = { ok: false, error: 'Publish failed: ' + (e && e.message ? e.message : e) };
         }
 
-        if (result.ok) {
+        if (result.ok && result.queued) {
+            this.renderBrowserJob(result.job, result.hook);   // Claude posts it, then reports
+        } else if (result.ok) {
             await App.refresh(this.hl);
             const modal = document.getElementById('modal');
             const extra = (result.urls && result.urls.length > 1)
@@ -584,7 +321,7 @@ const Publish = {
         } else {
             warn.textContent = result.error;
             warn.classList.remove('hidden');
-            go.textContent = 'Publish';
+            go.textContent = this.goLabel();
             this.validate();
         }
     },

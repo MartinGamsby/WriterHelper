@@ -23,25 +23,26 @@ The meta column exposes these slots, language-conditional (from `LINK_SLOTS` in
 
 | Slot | Visible on | Behaviour |
 |---|---|---|
-| Medium | FR | text field |
+| Medium | FR | publish button 🌐 (story: title + body) |
 | Typeshare | EN | text field |
-| X/Twitter | both | publish button → popup ([[social-publishing]]) |
-| LinkedIn | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
-| Facebook | both | publish button → popup ([[facebook-adapter]]) |
-| Instagram | both | publish button → popup; image-only, two-step ([[instagram-adapter]]) |
-| Bluesky | both | publish button → popup |
-| Threads | both | publish button → popup; **(PB)** ([[post-bridge-adapter]]) |
-| Pinterest | both | publish button → popup; **(PB)**, image-required ([[post-bridge-adapter]]) |
-| TikTok | both | publish button → popup; **(PB)**, video-only → gated, paste URL ([[post-bridge-adapter]]) |
+| X/Twitter | both | publish button 🌐 (default; `x = api` → native) |
+| LinkedIn | EN | publish button 🌐 (personal profile) |
+| Facebook | both | publish button 🌐 (default; `facebook = api` → Page, [[facebook-adapter]]) |
+| Instagram | both | publish button 🌐, image-only (`instagram = api` → two-step, [[instagram-adapter]]) |
+| Bluesky | both | publish button, native API ([[bluesky-adapter]]) |
+| Threads | both | publish button 🌐 |
+| Pinterest | both | publish button 🌐, image-required |
+| TikTok | both | publish button 🌐, image (photo post) |
 | YouTube | both | text field; preferred Bluesky link-card source ([[social-publishing]]) |
 | YouTube Shorts | both | text field; Bluesky link-card source |
 | Source | both | text field |
-
-A publish button whose platform routes through an aggregator shows a small **(PB)**
-badge after its name (post-bridge.com — `Platform.via == "post-bridge"`, surfaced as the
-slot's `via` in `get_state`, rendered by `meta.js`). Native direct adapters show no
-badge. See [[post-bridge-adapter]].
 | "Based on" / "Basé sur" | both | appended dynamically; label = `get_based_on_text()` |
+
+Slots are built by `webapi.link_slots(article)`. 🌐 = `via == "browser"`: the post is
+queued for Claude in Chrome and the URL fills in when `/chrome-post` reports back
+([[browser-hook]]). A platform listed in `settings_publish.ini [Hidden]` loses its
+publish button; its slot disappears unless it already holds a URL (then it's a plain
+field — data is never hidden).
 
 The "Based on" link is auto-seeded by `new_article(copy_current=True)` (the "Make V2"
 button), pointing at the previous version's URL.
@@ -64,4 +65,4 @@ links.
   translated copy won't auto-translate that link's name; it's set independently.
 
 ## See also
-- [[article-model]] · [[social-publishing]] · [[templates]]
+- [[article-model]] · [[social-publishing]] · [[browser-hook]] · [[templates]]
