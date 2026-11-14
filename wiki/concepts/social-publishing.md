@@ -2,8 +2,10 @@
 
 Publishing to a social platform is **two-phase**: a side-effect-free `prepare_post`
 that fills a confirmation popup, then a `publish` that actually sends only what the user
-confirmed. Code: `publishing.py` ([[publishing]]) + `js/publish.js`. This replaced the
-old "click a link label → instant post".
+confirmed. Code: `publishing.py` ([[publishing]]) + `js/publish*.js`. Each platform is
+reached by one of two **transports**: `api` (a native adapter posts immediately — always
+Bluesky) or `browser` (the post is **queued for Claude in Chrome** and the URL arrives
+later — the default for everything else). See [[browser-hook]].
 
 ## The three modes (text · thread · image)
 
@@ -26,19 +28,19 @@ to it but the user can override to any mode.
 ## Media requirements (`Platform.media`) — what each platform *needs*
 
 Beyond char limits, a platform constrains which modes are even valid. Each `Platform`
-carries `media`: `"any"` (text or image — Bluesky, X, Facebook, LinkedIn, Threads),
-`"image"` (an image is **mandatory** — Pinterest, Instagram), or `"video"` (a video is
-mandatory — TikTok). `prepare_post` returns it, and the popup acts on it:
+carries `media`: `"any"` (text or image — Bluesky, X, Facebook, LinkedIn, Threads,
+Medium), `"image"` (an image is **mandatory** — Instagram, Pinterest, TikTok photo
+posts), or `"video"` (no platform today; the [[video-posts]] roadmap). `prepare_post`
+returns it, and the popup acts on it:
 - **`"image"`** → only the **Title + image** mode is offered (Text/Thread radios omitted),
-  `suggested_mode` is forced to `image`, and Publish stays disabled until an image exists.
-- **`"video"`** → the popup shows a **gate** ("TikTok posts require a video") instead of a
-  composer: WriterHelper authors text + branded image cards, never video, so there's
-  nothing to post — the operator posts by hand and pastes the URL into the link slot.
+  `suggested_mode` is forced to `image`, and the go button stays disabled until an image
+  exists.
+- **`"video"`** → the popup shows a **gate** (`renderUnsupportedVideo`) instead of a
+  composer: WriterHelper authors no video yet.
 
 `publish()` re-checks both server-side (a `video` platform is refused; an `image` platform
-rejects a non-image mode) so a stray call fails cleanly rather than uploading a JPEG the
-platform would reject. Instagram's `media` is `"image"` too, but it keeps its own two-step
-panel ([[instagram-adapter]]) rather than the generic image mode.
+rejects a non-image mode). Instagram **over the API** keeps its own two-step panel
+([[instagram-adapter]]); over the browser it's an ordinary image post.
 
 ## Editable split points (Thread mode)
 
@@ -78,61 +80,45 @@ single embed slot). The card is built at publish time by
 `post_bsky.fetch_external_card` ([[bluesky-adapter]]); a fetch failure posts plain rather
 than blocking. The preview dock shows a mock card (`▶` for video links).
 
-## `publish(article, platform_key, mode, message, options=None) → {ok, url, error}`
+## `publish(article, platform_key, mode, message, options=None) → dict`
 
 The only method with side effects. `options` carries thread choices, the image source,
 and the embed flag `{"number": bool, "image": "none"|"grabbed"|"article", "embed": bool}`
-(`image` is read in both thread and image modes; embed honoured only for Bluesky, and only
-without an image on that post).
+(`image` is read in both thread and image modes; embed honoured only for Bluesky over the
+API, and only without an image on that post).
 1. No facet → refused (facets are mandatory).
 2. Existing link for the slot → `{ok: False, url: existing, error}`. (Clear it to re-post.)
-3. `mode == "thread"` → `_publish_thread`: split `message` on `---`, optionally number,
-   reject any over-limit segment, resolve the image source via `_resolve_image` (attaches
-   to the first post only; grabbed alt = full text, article alt = title), post the reply
-   chain via `poster.post_thread`; the **first** post's URL becomes the slot guard
-   (`urls[]` also returned). [[thread-split]]
-4. `mode == "image"` → resolves the image source via `_resolve_image` (default `"grabbed"`
-   for back-compat); posts `message` + that image (grabbed alt = full article plain text,
-   article alt = title).
-5. `mode == "text"` → re-checks `len(message) <= max_length`; posts text only.
-6. On success → `set_link(slot, url)` (re-saves the footer, [[link-slots]]) +
-   `webbrowser.open(url)`.
+3. Browser transport with a still-pending job for this article+platform → refused.
+4. `media == "video"` → refused; Instagram-over-API → its two-step path; image-required
+   platform + non-image mode → refused.
+5. `_plan` turns the confirmed input into `(posts, image, alt_text)`, transport-agnostic:
+   - **thread** → refused where `supports_thread` is False; split `message` on `---`,
+     optionally number, reject any over-limit segment; image source default `"none"`.
+     [[thread-split]]
+   - **image** → `[message]` + image source default `"grabbed"`.
+   - **text** → `[message]`, refused when blank.
+   - non-thread `message` over `max_length` → refused. `_resolve_image` resolves the
+     source; alt = full plain text for the grabbed card, else the title (text mode: the
+     message).
+6. **browser** → `browser_jobs.create(...)` + `run_hook` → `{ok, queued: True, url: "",
+   job, hook}`; the link is written later by `apply_results` ([[browser-hook]]).
+   **api** → `post_thread` / `post`; the **first** URL becomes the slot guard
+   (`set_link`, re-saves the footer, [[link-slots]]) + `webbrowser.open`; thread results
+   also carry `urls[]`.
 
 ## `PLATFORMS` registry
 
-| key | label | link slot | max_length | adapter |
-|---|---|---|---|---|
-| `bluesky` | Bluesky | `Bluesky` | 300 | `PostBsky(hl)` ([[bluesky-adapter]]) |
-| `x` | X / Twitter | `X/Twitter` | 280 | `PostX(hl)` ([[x-adapter]]) |
-| `facebook` | Facebook | `Facebook` | 63206 | `PostFB(hl)` ([[facebook-adapter]]) — text/image only |
-| `instagram` | Instagram | `Instagram` | 2200 | `PostIG(hl)` ([[instagram-adapter]]) — image-only, two-step |
-| `linkedin` | LinkedIn | `LinkedIn` | 3000 | `PostBridge(hl,"linkedin")` ([[post-bridge-adapter]]) — text/image |
-| `threads` | Threads | `Threads` | 500 | `PostBridge(hl,"threads")` ([[post-bridge-adapter]]) — text/image |
-| `pinterest` | Pinterest | `Pinterest` | 500 | `PostBridge(hl,"pinterest")` ([[post-bridge-adapter]]) — **image required** |
-| `tiktok` | TikTok | `TikTok` | 2200 | `PostBridge(hl,"tiktok")` ([[post-bridge-adapter]]) — **video-only, gated** |
+Lives in `platforms.py` (re-exported by `publishing`); the table with transports is in
+[[publishing]] and [[browser-hook]]. `supports_thread` is True for Bluesky, X and
+Threads (native `post_thread`, or the browser composer's "add post"); False elsewhere,
+so `prepare_post` suggests **Image** rather than **Thread** for a too-long post, and
+`js/publish.js` **omits the Thread radio** and the hint reads "post as image".
 
-`make_poster` imports the adapter lazily, so a missing/broken adapter doesn't break
-import and tests can monkeypatch the registry. Each `Platform` carries `supports_thread`;
-when it's False (Facebook, Instagram, and the post-bridge platforms), `prepare_post`
-suggests **Image** rather than **Thread** for a too-long post and returns
-`supports_thread`, which `js/publish.js` reads to **omit the Thread radio entirely** and
-to make the too-long hint read "post as image" (not "thread suggested"). So a no-thread
-platform never offers a mode its adapter can't fulfil.
+## The popup (`js/publish*.js`)
 
-## Instagram — the exception (image-only, two-step)
-
-Instagram doesn't fit the three-modes shape: it's **image-only**, and its image must be
-**public before** the API call (Meta fetches it server-side). So `js/publish.js` gives it
-its own panel — an editable caption (full text, ≤ 2200) over two explicit buttons:
-**(1) Push image** (`publish_instagram_image` → `stage_instagram_image` git-pushes the
-grabbed JPEG to the site and returns a public raw URL, streaming the steps into the card)
-and **(2) Publish** (unlocked once the URL exists; `publish(...,"image",caption,
-{image_url})`). It must be the **last** platform you publish to. Full design:
-[[instagram-adapter]].
-
-## The popup (`js/publish.js`)
-
-`Publish.open(hl, platform)` calls `prepare_post`, seeds per-mode drafts (text = full
+`Publish.open(hl, platform)` calls `prepare_post`. A `pending_job` short-circuits to the
+browser job's status panel (`publish-browser.js`); Instagram-over-API to its two-step
+panel (`publish-ig.js`). Otherwise it seeds per-mode drafts (text = full
 text, thread = `thread_text`, image = title), and renders a **two-column** modal: the
 left column holds the controls — three radio modes (text · thread · image) defaulted to
 `suggested_mode`, an **editable** textarea (switching modes swaps the remembered draft),
@@ -140,7 +126,10 @@ the live `count / max_length` (text/image) or per-segment readout + Number/Image
 checkboxes (thread), plus an **Image source** radio pair (grabbed card / article image)
 in image mode. Publish is disabled when over the limit, when text is empty, in image mode
 when the selected image source is missing, or in thread mode when any segment is over. If
-already posted, it shows the existing URL + a "Clear link (allow re-post)" button.
+already posted, it shows the existing URL + a "Clear link (allow re-post)" button. For a
+browser-routed platform the go button reads **Queue for Claude in Chrome** with a 🌐 note,
+and a successful queue swaps the modal to the job panel (copyable `/chrome-post <id>`,
+3 s poll → "Posted ✓", failure reason + "Edit & re-queue", Cancel job, Run hook again).
 
 ## The live preview dock (`renderPreview`)
 
@@ -165,6 +154,6 @@ The right column is a WYSIWYG **"what you'll post"** dock that re-renders on eve
   to the poster.
 
 ## See also
-- [[publishing]] · [[post-base]] · [[bluesky-adapter]] · [[x-adapter]]
+- [[browser-hook]] · [[publishing]] · [[post-base]] · [[bluesky-adapter]] · [[x-adapter]]
 - [[image-card-capture]] — produces the PNG image mode attaches
 - [[link-slots]] — where the returned URL is stored

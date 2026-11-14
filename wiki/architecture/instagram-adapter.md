@@ -1,5 +1,9 @@
 # Instagram adapter (`post_ig.PostIG`)
 
+> **Optional route.** Instagram's default transport is the [[browser-hook]] (Claude in
+> Chrome uploads the local card, no Business account, no repo push). This adapter and
+> the two-step flow below apply only with `instagram = api` in `settings_publish.ini`.
+
 Posts ONE image to an Instagram **Business/Creator** feed via Meta's Graph API Content
 Publishing flow. It **rides the same Page plumbing as [[facebook-adapter]]** (the IG
 account is linked to the FB Page) and **reuses `settings_fb_<hl>.ini`** — with one extra
@@ -26,11 +30,12 @@ Why last: the image must be public **before** step 3, and the IG post URL doesn'
 
 ## The two-step popup (image-only)
 
-IG carries no text/thread modes and no link card, so `js/publish.js` renders it as its
+IG carries no text/thread modes and no link card, so `js/publish-ig.js` renders it as its
 own image-only panel with two explicit, feedback-bearing steps ([[social-publishing]]):
 
 - **Step 1 — Push image** → `webapi.publish_instagram_image` →
-  `publishing.stage_instagram_image` → `site_push.stage_and_push_image`. Copies the
+  `publishing.stage_instagram_image` → `instagram_flow.stage_image` →
+  `site_push.stage_and_push_image`. Copies the
   grabbed JPEG into the site repo and **git-pushes just that file**, streaming each git
   step (copied → committed → pushed) into the card and handing back the **public raw
   URL**. Disabled until a card is grabbed and the repo is found.
@@ -149,9 +154,9 @@ sequence (image_url + caption + creation_id), the settings-file reuse, the `imag
 requirement, and that a Graph error / missing permalink raises. `tests/test_site_push.py`
 mocks git to assert remote→slug/branch parsing, the raw-URL build, the
 copy+add+commit+push sequence, and the failure / "nothing to commit" paths. Wiring cases
-(registry, the `_publish_instagram` guards, `stage_instagram_image`) live in
-`tests/test_publishing.py` (`fake_ig` / `FakeIGPoster`).
+(registry, the `instagram_flow.publish` guards, `stage_instagram_image`) live in
+`tests/test_publishing.py` (`fake_ig` / `FakeIGPoster`, `ig_api` pins the API route).
 
 ## See also
-- [[facebook-adapter]] · [[publishing]] · [[social-publishing]] · [[post-base]]
+- [[browser-hook]] · [[facebook-adapter]] · [[publishing]] · [[social-publishing]] · [[post-base]]
 - [[image-card-capture]] · [[link-slots]] · [[secrets]] · [[martingamsby-site]]

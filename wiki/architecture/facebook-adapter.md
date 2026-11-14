@@ -1,13 +1,15 @@
 # Facebook adapter (`post_fb.PostFB`)
 
-Posts to a Facebook **Page** via the Graph API. Inherits [[post-base]] and is wired into
-the UI: the Facebook link slot is a Publish button on **both** languages
-([[link-slots]]), routing through [[publishing]]'s `PLATFORMS["facebook"]`.
+Posts to a Facebook **Page** via the Graph API. Inherits [[post-base]]. **Optional
+route:** Facebook's default transport is the [[browser-hook]], which posts on the
+operator's **personal profile** through Claude in Chrome; this adapter is used only with
+`facebook = api` in `settings_publish.ini` ([[publishing]]'s `PLATFORMS["facebook"]`).
 
 > **Pages only — you cannot post to a personal profile/timeline via the API.** Meta
 > removed personal-profile publishing in 2018 (the old `publish_actions` permission); the
 > Graph API exposes no write to a user's own feed. So programmatic posting targets a
-> **Page** (what this adapter does); a personal-profile post must be done by hand. A Page
+> **Page** (what this adapter does); a personal-profile post goes through the
+> [[browser-hook]]. A Page
 > is anyway the right home for public content (analytics, no friend-graph limits).
 
 ## Config

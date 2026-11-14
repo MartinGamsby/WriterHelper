@@ -14,10 +14,11 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[machine-translation]] — one-way Google translate that fills only an empty twin
 - [[auto-save-and-pull-ui]] — save-on-every-edit, rename-by-delete, the pull-based UI
 - [[content-flavors]] — the five render shapes of one article
-- [[social-publishing]] — two-phase publish behind a confirmation popup; text · thread · image modes
+- [[social-publishing]] — two-phase publish behind a confirmation popup; text · thread · image modes; api vs browser transport
+- [[browser-hook]] — posting via Claude in Chrome: `browser_jobs/` queue, `/chrome-post` skill, pulled results, `settings_publish.ini` (transports, hidden, hook, accounts)
 - [[link-slots]] — named `(text,url)` link slots, the file footer, the publish guard
 - [[image-card-capture]] — html2canvas branded-JPEG generation (slug-named) + sizing
-- [[video-posts]] — PLANNED: short vertical videos (TikTok then YouTube Shorts) from the card; PoC = text fading in from black
+- [[video-posts]] — PLANNED: short vertical videos (TikTok video, YouTube Shorts) from the card, posted via the browser hook; PoC = text fading in from black
 - [[invariants-and-traps]] — the non-negotiables, the landmines, tests, style
 - [[secrets]] — where credentials live; the LinkedIn scrub; the wiki rule
 - [[tag-vocabulary]] — controlled bilingual tags: `tag_vocab.py` vocabulary, FR↔EN pairing in `set_tags`, the facet-aware picker (`tag_index.py`), and the `migrate_tags.py` normalizer
@@ -33,15 +34,13 @@ between pages with `[[page-name]]` (filename without `.md`/path). Schema + workf
 - [[templates]] — the markdown templates + placeholder vocabulary
 - [[web-ui]] — `web/`: layout, JS modules, the two columns
 - [[webapi-bridge]] — `webapi.Api`: methods, `get_state` shape, the no-public-attrs invariant
-- [[publishing]] — `publishing.py`: `PLATFORMS` registry + prepare/publish module reference
+- [[publishing]] — `platforms.py` registry (transports) + `publishing.py` prepare/publish/`_plan` + `instagram_flow.py`
 - [[thread-split]] — `thread_split.py`: pure long-article → editable thread splitter
 - [[post-base]] — `post.py`: the adapter base class + override contract
 - [[bluesky-adapter]] — `post_bsky.PostBsky` (atproto); clickable link facets + optional external link-preview card (`fetch_external_card`, YouTube-aware)
-- [[x-adapter]] — `post_x.PostX` (tweepy v1+v2)
-- [[facebook-adapter]] — `post_fb.PostFB` (Graph API Page posts; wired, text/image only); includes the non-expiring Page-token steps
-- [[instagram-adapter]] — `post_ig.PostIG` (Graph API, reuses the FB token + `IgUserId`); image-only, IG-must-be-last, two-step auto-push of the JPEG to a public GitHub-raw URL (`site_push.py`)
-- [[post-bridge-adapter]] — `post_bridge.PostBridge` (post-bridge.com aggregator); one API key → LinkedIn/Threads/Pinterest/TikTok, local image upload, text/image only, async URL via post-results polling
-- [[linkedin-adapter]] — `post_linkedin.py` (BROKEN native attempt; LinkedIn now posts via [[post-bridge-adapter]])
+- [[x-adapter]] — `post_x.PostX` (tweepy v1+v2); optional (`x = api`), default is the browser hook
+- [[facebook-adapter]] — `post_fb.PostFB` (Graph API **Page** posts); optional (`facebook = api`), default is the browser hook (personal profile); includes the non-expiring Page-token steps
+- [[instagram-adapter]] — `post_ig.PostIG` (Graph API, reuses the FB token + `IgUserId`); optional (`instagram = api`): image-only, IG-must-be-last, two-step auto-push of the JPEG to a public GitHub-raw URL (`site_push.py`)
 - [[legacy-qt-ui]] — the superseded PySide6/QML stack (do not run now)
 
 ## Sources (external properties)

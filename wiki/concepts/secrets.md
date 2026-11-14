@@ -14,9 +14,12 @@ the wiki, never the value.**
 - `settings_fb_<hl>.ini` — Facebook **and** Instagram: `PageId`, a long-lived Page
   `Token` (the secret), and `IgUserId` (the IG Business account id, not secret). Shared by
   both Meta adapters. See [[facebook-adapter]], [[instagram-adapter]].
-- `settings_postbridge.ini` — post-bridge.com `[Access] ApiKey` (the `pb_live_…` key, the
-  secret); one hl-independent file for every post-bridge platform. Optional `[Accounts]`
-  pins (account ids) are not secret. See [[post-bridge-adapter]].
+- `settings_publish.ini` — publishing knobs (transport pins, hidden platforms, hook
+  command, expected account handles, Pinterest boards). **Not secret** — no tokens. See
+  [[browser-hook]].
+- The [[browser-hook]] platforms (X by default, LinkedIn, Facebook profile, Instagram,
+  Threads, Pinterest, TikTok, Medium) hold **no credentials at all**: they post through the
+  operator's own signed-in Chrome session.
 - `settings_<hl>.ini` — paths + the site base URL (not secret, but user-private; also
   git-ignored). See [[file-storage]].
 
@@ -27,11 +30,11 @@ contents into chat.
 
 Credentials had been hardcoded in `post_linkedin.py` and, worse, duplicated into a docs
 file. The fix: the docs-file values were **scrubbed from git history** (commits
-rewritten) and `post_linkedin.py`'s values redacted in the working tree. The adapter
-stays broken/unused ([[linkedin-adapter]]).
+rewritten) and `post_linkedin.py` was later deleted outright (LinkedIn now posts through
+the [[browser-hook]], no developer app).
 
-If LinkedIn is ever revived, **rotate the leaked `client_secret` / `access_token`** in
-the LinkedIn developer console first — redaction removes the copy, not the validity.
+The leaked `client_secret` / `access_token` should be **revoked** in the LinkedIn
+developer console (or the app deleted) — redaction removes the copy, not the validity.
 
 ## Rule for the wiki
 
@@ -41,4 +44,4 @@ a credential in git history. (Mirrors the user's standing `never-duplicate-secre
 memory.)
 
 ## See also
-- [[invariants-and-traps]] · [[post-base]] · [[linkedin-adapter]] · [[file-storage]]
+- [[invariants-and-traps]] · [[post-base]] · [[browser-hook]] · [[file-storage]]

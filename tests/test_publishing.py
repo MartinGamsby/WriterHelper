@@ -60,6 +60,12 @@ def fake_bsky(monkeypatch):
 
 
 @pytest.fixture
+def ig_api(publish_ini):
+    """Route the REAL Instagram registry row through the Graph API (two-step flow)."""
+    publish_ini("[Transport]\ninstagram = api\n")
+
+
+@pytest.fixture
 def fake_ig(monkeypatch):
     monkeypatch.setitem(publishing.PLATFORMS, "instagram",
                         Platform("instagram", "Instagram", "Instagram", 2200, FakeIGPoster))
@@ -136,20 +142,32 @@ def test_prepare_image_required_platform_forces_image_mode(fr, monkeypatch):
     assert info["suggested_mode"] == "image"
 
 
-def test_prepare_video_platform_exposes_media(fr):
-    # TikTok is video-only; the popup gates on this flag.
-    info = publishing.prepare_post(fr, "tiktok")
+def test_prepare_video_platform_exposes_media(fr, monkeypatch):
+    # A video-only platform (none today; the [[video-posts]] roadmap) is gated by the
+    # popup on this flag.
+    monkeypatch.setitem(publishing.PLATFORMS, "vid",
+                        Platform("vid", "Vid", "Vid", 100, FakePoster, media="video"))
+    info = publishing.prepare_post(fr, "vid")
     assert info["media"] == "video"
 
 
-def test_publish_video_platform_refused(fr):
-    # WriterHelper authors no video, so a TikTok post is refused before any adapter call
-    # (no network), and no link is recorded.
+def test_publish_video_platform_refused(fr, monkeypatch):
+    # WriterHelper authors no video, so a video-only post is refused before any adapter
+    # call, and no link is recorded.
+    monkeypatch.setitem(publishing.PLATFORMS, "vid",
+                        Platform("vid", "Vid", "Vid", 100, FakePoster, media="video"))
     fr.set_facets(["dev"])
-    result = publishing.publish(fr, "tiktok", "image", "Peu importe")
+    result = publishing.publish(fr, "vid", "image", "Peu importe")
     assert result["ok"] is False
     assert "video" in result["error"].lower()
-    assert fr.get_link("TikTok") == ""
+    assert fr.get_link("Vid") == ""
+
+
+def test_tiktok_is_an_image_post_via_the_browser(fr):
+    # TikTok photo posts carry the card as a picture — no more video gate.
+    info = publishing.prepare_post(fr, "tiktok")
+    assert info["media"] == "image"
+    assert info["transport"] == "browser"
 
 
 def test_publish_image_required_rejects_text_mode(fr):
@@ -455,7 +473,7 @@ def test_instagram_is_registered_image_only_with_caption_limit():
     assert (p.label, p.link_name, p.max_length) == ("Instagram", "Instagram", 2200)
 
 
-def test_prepare_instagram_exposes_repo_flag_and_dest(fr, monkeypatch):
+def test_prepare_instagram_exposes_repo_flag_and_dest(fr, ig_api, monkeypatch):
     monkeypatch.chdir(os.path.dirname(fr.get_posts_folder()))
     fr.set_title("Mon Titre")
     fr.set_content("Court.")
@@ -471,7 +489,7 @@ def test_prepare_instagram_exposes_repo_flag_and_dest(fr, monkeypatch):
     assert info["ig_repo_image_data_url"] == ""   # nothing staged + no repo
 
 
-def test_prepare_instagram_includes_repo_image_data_url(fr, tmp_path, monkeypatch):
+def test_prepare_instagram_includes_repo_image_data_url(fr, ig_api, tmp_path, monkeypatch):
     # The image actually committed in the repo is surfaced as a data URL so the popup can
     # show it (and the operator can spot a stale/changed image).
     monkeypatch.chdir(tmp_path)
@@ -481,22 +499,22 @@ def test_prepare_instagram_includes_repo_image_data_url(fr, tmp_path, monkeypatc
     ig_dir = tmp_path / "site" / "public" / "assets" / "ig"
     ig_dir.mkdir(parents=True)
     (ig_dir / "mon-titre.fr.jpg").write_bytes(b"jpgcard")
-    monkeypatch.setattr(publishing.localize, "find_repo_root",
+    monkeypatch.setattr(publishing.instagram_flow.localize, "find_repo_root",
                         lambda start: str(tmp_path / "site"))
-    monkeypatch.setattr(publishing.site_push, "image_status",
+    monkeypatch.setattr(publishing.instagram_flow.site_push, "image_status",
                         lambda repo, dest, img: {"pushed": True, "public_url": "https://raw/x.jpg"})
     info = publishing.prepare_post(fr, "instagram")
     assert info["ig_repo_image_data_url"].startswith("data:")
 
 
-def test_prepare_instagram_reports_already_pushed_image(fr, tmp_path, monkeypatch):
+def test_prepare_instagram_reports_already_pushed_image(fr, ig_api, tmp_path, monkeypatch):
     # An already-staged+pushed card is surfaced so the popup skips the redundant re-push.
     monkeypatch.chdir(tmp_path)
     fr.set_title("Mon Titre")
     fr.set_facets(["dev"])
     (tmp_path / publishing.image_filename(fr)).write_bytes(b"jpg")
-    monkeypatch.setattr(publishing.localize, "find_repo_root", lambda start: "/site")
-    monkeypatch.setattr(publishing.site_push, "image_status",
+    monkeypatch.setattr(publishing.instagram_flow.localize, "find_repo_root", lambda start: "/site")
+    monkeypatch.setattr(publishing.instagram_flow.site_push, "image_status",
                         lambda repo, dest, img: {"pushed": True,
                                                  "public_url": "https://raw/x.jpg"})
     info = publishing.prepare_post(fr, "instagram")
@@ -565,14 +583,14 @@ def test_stage_instagram_image_stages_via_site_push(fr, tmp_path, monkeypatch):
     fr.set_title("Mon Titre")
     fr.set_facets(["dev"])
     (tmp_path / publishing.image_filename(fr)).write_bytes(b"jpg")
-    monkeypatch.setattr(publishing.localize, "find_repo_root", lambda start: "/site")
+    monkeypatch.setattr(publishing.instagram_flow.localize, "find_repo_root", lambda start: "/site")
     captured = {}
 
     def fake_stage(repo, local_image, dest_name, commit_msg):
         captured.update(repo=repo, dest_name=dest_name, commit_msg=commit_msg)
         return {"ok": True, "public_url": "https://raw/x.jpg", "log": [], "error": ""}
 
-    monkeypatch.setattr(publishing.site_push, "stage_and_push_image", fake_stage)
+    monkeypatch.setattr(publishing.instagram_flow.site_push, "stage_and_push_image", fake_stage)
     result = publishing.stage_instagram_image(fr)
     assert result["public_url"] == "https://raw/x.jpg"
     assert captured["repo"] == "/site"

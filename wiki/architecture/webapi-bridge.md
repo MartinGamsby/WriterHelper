@@ -32,10 +32,13 @@ doesn't introspect the bridge object.) See [[invariants-and-traps]].
 | `open_image(hl)` | bool | Native **image** file dialog; reads the file and hands it to `set_excerpt_img` as a `data:` URL so it runs the self-hosting hook (→ webp). False on cancel. Drag-drop skips this — JS reads the file and calls `set_field(hl,'excerpt_image',<data url>)`. See [[astro-format]]. |
 | `open_prev_article(hl)` / `open_next_article(hl)` | True | |
 | `translate(hl)` | bool | → `ArticlesModel.translate`. |
-| `prepare_post(hl, platform)` | dict | No side effects — popup data. Includes `facets_ok` (≥1 facet) + thread seed (`thread_text`/`thread_count`/`separator`). |
-| `publish(hl, platform, mode, message, options=None)` | `{ok,url,error}` | Sends. `mode` ∈ text/thread/image; `options={"number","image"}` for thread, `{"image_url"}` for Instagram (image-only) ([[social-publishing]]). |
+| `prepare_post(hl, platform)` | dict | Applies finished browser jobs first (`browser_jobs.apply_results`), then `publishing.prepare_post` — popup data. Includes `facets_ok` (≥1 facet) + thread seed (`thread_text`/`thread_count`/`separator`). |
+| `publish(hl, platform, mode, message, options=None)` | `{ok,url,error}` or `{ok,queued,job,hook}` | Sends (api) or queues for Claude in Chrome (browser, [[browser-hook]]). `mode` ∈ text/thread/image; `options={"number","image"}` for thread, `{"image_url"}` for Instagram (image-only) ([[social-publishing]]). |
 | `clear_link(hl, platform)` | True | Clears the slot to allow re-post. |
-| `publish_instagram_image(hl)` | `{ok,public_url,log,error}` | Instagram **step 1**: copies the grabbed JPEG into the site repo + git-pushes it so a public raw URL exists ([[instagram-adapter]]). The popup then calls `publish(hl,"instagram","image",caption,{image_url})`. |
+| `browser_job(hl, job_id)` | job dict / None | Applies finished jobs, then returns the job (the popup polls this every 3 s). |
+| `cancel_browser_job(job_id)` | True | Cancels a **pending** job (no-op otherwise). |
+| `run_browser_hook(job_id)` | `{ran,command,error}` | Re-runs the `[Hook] command` for a job. |
+| `publish_instagram_image(hl)` | `{ok,public_url,log,error}` | Instagram-over-API **step 1**: copies the grabbed JPEG into the site repo + git-pushes it so a public raw URL exists ([[instagram-adapter]]). The popup then calls `publish(hl,"instagram","image",caption,{image_url})`. |
 | `save_capture(hl, page, data_url)` | filename | Writes the JPEG `richTextArea_<slug>_<hl><page>.jpg` (CWD), name from `publishing.capture_filename` — slug-tied to the article. |
 | `open_url(url)` | True | Opens in the system browser. |
 
@@ -48,9 +51,11 @@ content_md_separators_br, content_short, watermark`.
 
 `facets` is the selected list, `all_facets` the five available (`serializers.FACETS`);
 `post_url` is the public Astro URL; `content_md` is the Astro file.
-`links[]` is `{name, url, publish}` (`publish` = `"x"`/`"facebook"`/`"instagram"`/`"bluesky"`/`""`); slot
-visibility + the publish flag come from `LINK_SLOTS`, with the "Based on"/"Basé sur"
-slot appended dynamically ([[link-slots]]). `excerpt_image_local` is a `data:` URL so the
+`get_state` first ingests finished browser jobs for that article (`apply_results`), so
+a URL reported by `/chrome-post` shows up on the next pull. `links[]` is
+`{name, url, publish, via}` (`publish` = a `PLATFORMS` key or `""`; `via` = `"browser"`
+→ 🌐 badge), built by `webapi.link_slots` from `LINK_SLOTS` minus operator-hidden
+platforms, with the "Based on"/"Basé sur" slot appended dynamically ([[link-slots]]). `excerpt_image_local` is a `data:` URL so the
 card `<img>` renders and html2canvas can capture without tainting the canvas.
 
 ## See also

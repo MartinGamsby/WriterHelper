@@ -2,12 +2,12 @@
 
 `Post` is the inheritance base for new platform adapters. `PostBsky`
 ([[bluesky-adapter]]), `PostX` ([[x-adapter]]), `PostFB` ([[facebook-adapter]]),
-`PostIG` ([[instagram-adapter]]), and `PostBridge` ([[post-bridge-adapter]]) inherit it.
+and `PostIG` ([[instagram-adapter]]) inherit it. Platforms without an adapter
+(LinkedIn, Threads, Pinterest, TikTok, Medium) are posted by Claude in Chrome instead
+([[browser-hook]]) — `Platform.make_poster` is None for them.
 (`PostFB` predated the base and was rewritten onto it; it skips the optional
 `post_thread` override — text/image only. `PostIG` is image-only and takes a **public
-`image_url`** instead of a local upload — see below. `PostBridge` posts via the
-post-bridge.com aggregator with one shared key — it overrides `config_filename` to a
-single hl-independent file and skips `post_thread`.)
+`image_url`** instead of a local upload — see below.)
 
 ## Class shape
 
@@ -70,7 +70,7 @@ site stays uniform.
 
 `PostIG` ([[instagram-adapter]]) adds an `image_url=None` kwarg and **ignores
 `image_local_url`/`embed_url`**: Instagram fetches a public image URL server-side rather
-than accepting a local upload, so `publishing._publish_instagram` calls
+than accepting a local upload, so `instagram_flow.publish` calls
 `post(msg=caption, image_url=<public URL>)` after a separate step makes that URL public.
 
 ## See also

@@ -6,6 +6,26 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from articles import ArticlesModel  # noqa: E402
+import browser_jobs  # noqa: E402
+import publish_config  # noqa: E402
+
+
+# ========================================================================================
+@pytest.fixture(autouse=True)
+def isolated_publish_state(tmp_path, monkeypatch):
+    """Never read the developer's real settings_publish.ini or browser_jobs/ queue:
+    point both at empty temp locations (defaults apply until a test writes them)."""
+    monkeypatch.setattr(publish_config, "CONFIG_FILE",
+                        str(tmp_path / "settings_publish.ini"))
+    monkeypatch.setattr(browser_jobs, "JOBS_DIR", str(tmp_path / "browser_jobs"))
+
+
+@pytest.fixture
+def publish_ini(tmp_path):
+    """Write the (isolated) settings_publish.ini: publish_ini("[Transport]\\nx = api")."""
+    def write(text):
+        (tmp_path / "settings_publish.ini").write_text(text, encoding="utf-8")
+    return write
 
 
 # ========================================================================================
