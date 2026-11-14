@@ -3,7 +3,7 @@
 The external property WriterHelper authors for. A single bilingual personal site (Astro
 5 + content collections, GitHub Pages, apex domain **martingamsby.com**) that replaced
 two separate Jekyll blogs and a dead WordPress site. Sibling checkout at
-`C:\Users\Martin\Documents\GitHub\martingamsby.com`.
+`C:\Users\marti\Documents\GitHub\martingamsby.com`.
 
 WriterHelper is its **deterministic authoring app**: it writes the FR/EN `.md` pair
 directly into `src/content/blog/{fr,en}/` ([[file-storage]], [[astro-format]]). The
