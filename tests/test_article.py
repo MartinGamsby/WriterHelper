@@ -387,6 +387,71 @@ def test_image_thumb_round_trips(fr):
 
 
 # ========================================================================================
+# Unmodelled frontmatter keys survive a load -> save. `aliases:` backs a guidepour.com /
+# guidance4.com link printed in the book; the publish rewrite once dropped it (site
+# commit b88ba04), 404-ing guidepour.com/fin-du-monde.
+_ALIASED_POST = (
+    '---\n'
+    'title: "Fin du monde"\n'
+    'date: 2017-03-15\n'
+    'translationKey: 2017-03-15-end-of-the-world\n'
+    'facets: [fiction]\n'
+    'aliases: [fin-du-monde]\n'
+    'tags: [Guide Pour,Interverti (Roman),Djosh Sho,Gamsblurb]\n'
+    'image: /assets/posts/2017-03-15-fin-du-monde.header.webp\n'
+    'imageThumb: /assets/posts/2017-03-15-fin-du-monde.thumb.webp\n'
+    '---\n'
+    '\n'
+    'Corps.\n'
+)
+
+
+def test_aliases_round_trip_byte_identical(fr):
+    assert fr.change_article(_ALIASED_POST, "2017-03-15", change_ref=False)
+    assert fr.content_md() == _ALIASED_POST
+
+
+def test_aliases_survive_publish_edits(fr):
+    """The publish step sets the image and appends social links; aliases must stay."""
+    assert fr.change_article(_ALIASED_POST, "2017-03-15", change_ref=False)
+    fr.set_link("X/Twitter", "https://x.com/a")
+    fr.set_content("Corps modifié.")
+    out = fr.content_md()
+    assert "\naliases: [fin-du-monde]\n" in out
+    assert "- [X/Twitter](https://x.com/a)" in out
+
+
+def test_unknown_block_key_round_trips(fr):
+    post = _ALIASED_POST.replace(
+        "aliases: [fin-du-monde]\n", "aliases:\n  - fin-du-monde\n  - fdm\nseries: Guide\n")
+    assert fr.change_article(post, "2017-03-15", change_ref=False)
+    assert fr.content_md() == post
+
+
+def test_new_article_drops_aliases(fr):
+    """A fresh post or a V2 copy must not claim the same alias (the site build throws)."""
+    assert fr.change_article(_ALIASED_POST, "2017-03-15", change_ref=False)
+    fr.new_article(copy_current=True)
+    assert "aliases" not in fr.content_md()
+
+
+def test_jekyll_keys_not_carried_into_astro(fr):
+    jekyll = (
+        '---\n'
+        'layout: post\n'
+        'title: "Vieux"\n'
+        'ref: x\n'
+        'tags: [Gamsblurb]\n'
+        '---\n'
+        '\n'
+        'Corps.\n'
+    )
+    assert fr.change_article(jekyll, "2017-03-15", change_ref=False)
+    out = fr.content_md()
+    assert "layout:" not in out and "ref:" not in out
+
+
+# ========================================================================================
 def test_make_v2_seeds_based_on_link(fr):
     fr.set_date("2026-06-13")
     fr.set_title("Original")

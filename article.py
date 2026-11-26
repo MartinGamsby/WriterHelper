@@ -36,6 +36,7 @@ class ArticleModel:
         self.facets = []          # pair-shared: dev|physics|fiction|music|ideas
         self.draft = False        # pair-shared: hides the post from the site build
         self.translation_key = ""  # sticky pairing key; see get_translation_key
+        self.extra_frontmatter = []  # unmodelled frontmatter lines (e.g. aliases), kept verbatim
         self.mini = False
         self.medium = False
         self.ref = None
@@ -353,6 +354,8 @@ class ArticleModel:
         self.content_file.last_filename = ""
         self.links = []
         self.translation_key = ""     # a fresh post gets a fresh pairing key
+        # Never inherit aliases: a "V2" copy claiming the same alias fails the site build.
+        self.extra_frontmatter = []
         if copy_current:
             print("copy article", self.hl)
             # First, because we want the proper url

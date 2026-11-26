@@ -11,6 +11,15 @@ import rendering
 DEFAULT_TAGS = "Gamsblurb"
 FACETS = ["dev", "physics", "fiction", "music", "ideas"]
 
+# Frontmatter keys serialize() writes itself. Any OTHER top-level key in a loaded
+# Astro post (e.g. `aliases: [fin-du-monde]`, which the site turns into the redirect
+# stub behind a link printed in the book) is kept verbatim and written back, so a
+# load -> save never drops data WriterHelper doesn't model. Losing `aliases` this way
+# once broke guidepour.com/fin-du-monde and guidance4.com/end-of-the-world.
+OWNED_KEYS = {"title", "date", "translationKey", "facets", "tags", "draft",
+              "image", "imageThumb"}
+_TOP_KEY_RE = re.compile(r'^([A-Za-z_][\w-]*)\s*:')
+
 # A footer link slot is one `- [name](target)` list item. The target is captured up
 # to the entry's final `)` and MAY span multiple lines: legacy Bluesky slots hold the
 # post *text* (a multi-line value) instead of a URL, and that data must round-trip,
@@ -39,8 +48,11 @@ def serialize(article) -> str:
         "date: %s" % article.date,
         "translationKey: %s" % article.get_translation_key(),
         "facets: [%s]" % ", ".join(article.facets),
-        "tags: [%s]" % article.get_tags(),
     ]
+    # Unowned keys go back where the site's posts carry `aliases:` (after facets), so
+    # re-saving an unedited post is byte-identical.
+    fm.extend(getattr(article, "extra_frontmatter", None) or [])
+    fm.append("tags: [%s]" % article.get_tags())
     if article.draft:
         fm.append("draft: true")          # omitted when publishing
     if article.excerpt_image:
@@ -130,6 +142,7 @@ def _load_jekyll(article, text, header, change_ref):
     article.facets = []
     article.draft = False
     article.translation_key = ""   # Jekyll has none; a key is generated on first save
+    article.extra_frontmatter = []   # Jekyll-only keys (layout, ref…) don't carry over
 
     _load_footer(article, parts[3] if len(parts) == 4 else "")
 
@@ -166,11 +179,31 @@ def _load_astro(article, text, header, change_ref):
     article.facets = [str(f) for f in (header.get("facets") or [])]
     article.draft = bool(header.get("draft", False))
     article.translation_key = str(header.get("translationKey") or "")
+    article.extra_frontmatter = _extra_frontmatter(text)
 
     _load_footer(article, footer)
 
     if change_ref:
         _resolve_astro_twin(article)
+
+
+def _extra_frontmatter(text):
+    """Raw frontmatter lines of every top-level key NOT in OWNED_KEYS, in file order.
+    A key's continuation lines (indented, or `- item` list entries) stay with it, so
+    block-style YAML round-trips too. Returns a list of lines (no newlines)."""
+    m = re.match(r'^\s*---\s*\n(.*?)\n---\s*\n', text, re.S)
+    if not m:
+        return []
+    out, keep = [], False
+    for line in m.group(1).split("\n"):
+        key = _TOP_KEY_RE.match(line)
+        if key:
+            keep = key.group(1) not in OWNED_KEYS
+        elif not line.strip():
+            continue   # blank lines carry nothing
+        if keep:
+            out.append(line.rstrip("\r"))
+    return out
 
 
 def _astro_body_footer(text):
