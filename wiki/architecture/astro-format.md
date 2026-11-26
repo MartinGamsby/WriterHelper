@@ -39,6 +39,7 @@ Enforced site-side by `src/content.config.ts` zod schema.
 | `draft` | `draft` | emitted `draft: true` ONLY when True; omitted to publish |
 | `image` | `excerpt_image` | header/OG image; emitted only when non-empty; a local `…header.webp` once self-hosted |
 | `imageThumb` | `image_thumb` | 160² list thumbnail; emitted only alongside a self-hosted `image`; round-tripped on load so edits never strip it |
+| *any other key* (e.g. `aliases`) | `extra_frontmatter` | **not modelled, kept verbatim**: on load every top-level key not in `serializers.OWNED_KEYS` is captured as raw lines (with its block continuation lines) and written back right after `facets:`, so a load→save is byte-identical. `aliases: [slug]` is the site's redirect for a `guidepour.com`/`guidance4.com` link printed in the book; dropping it 404s that link. New posts and V2 copies start with none (a duplicate alias fails the site build); Jekyll keys never carry over |
 | body | `content` | no title heading |
 | footer | `footer_md()` | `- [text](url)` lines; whole `---` + footer block omitted when no links |
 
